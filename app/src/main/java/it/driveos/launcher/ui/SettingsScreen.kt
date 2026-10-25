@@ -62,6 +62,8 @@ fun SettingsScreen(
     autoThemeSource: String?,
     onOpenVehicle: () -> Unit,
     onOpenRadio: () -> Unit,
+    onOpenSmartStart: () -> Unit,
+    smartStartEnabled: Boolean,
     onEditLocation: () -> Unit,
     onHomeSettings: () -> Unit,
     onAndroidSettings: () -> Unit,
@@ -92,8 +94,10 @@ fun SettingsScreen(
 
             SectionTitle("Veicolo e radio")
             SettingRow("Veicolo (CAN)", "Fari, carburante, pneumatici, spie e tema automatico", onOpenVehicle)
-            SettingRow("Radio", "Canali memorizzati" + (if (settings.radioPresets.isNotEmpty()) " (${settings.radioPresets.size})" else ""), onOpenRadio)
-            SettingRow("App radio", describe(settings.radioApp), onPickRadio)
+            SettingRow("Radio integrata", "Sintonizzatore e canali memorizzati" + (if (settings.radioPresets.isNotEmpty()) " (${settings.radioPresets.size})" else ""), onOpenRadio)
+            SettingRow("Avvio intelligente (Bluetooth)",
+                if (smartStartEnabled) "Attivo: musica/nav all'arrivo del telefono" else "Spento: avvia musica e nav quando colleghi il telefono", onOpenSmartStart)
+            SettingRow("App radio (ripiego esterno)", describe(settings.radioApp), onPickRadio)
 
             SectionTitle("App")
             SettingRow("Navigazione", describe(settings.navApp), onPickNav)

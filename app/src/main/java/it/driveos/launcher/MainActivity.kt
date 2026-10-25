@@ -38,6 +38,10 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import it.driveos.launcher.apps.AppKey
+import it.driveos.launcher.automation.ConnectionTrigger
+import it.driveos.launcher.automation.SmartAction
+import it.driveos.launcher.automation.SmartStart
+import it.driveos.launcher.automation.SmartStartConfig
 import it.driveos.launcher.calendar.AgendaFormatter
 import it.driveos.launcher.dashboard.CardType
 import it.driveos.launcher.media.MediaSources
@@ -81,16 +85,20 @@ import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.ZoneId
 
-enum class Screen { DASHBOARD, APPS, SETTINGS, DEVICE_INFO, NAV, MUSIC, CALENDAR, CLOCK, VEHICLE, RADIO }
+enum class Screen { DASHBOARD, APPS, SETTINGS, DEVICE_INFO, NAV, MUSIC, CALENDAR, CLOCK, VEHICLE, RADIO, SMART_START }
 
 private enum class PickerTarget(val title: String) {
     NAV("App di navigazione"),
     MUSIC("App musica"),
     PHONE("App telefono"),
     RADIO("App radio"),
+    ONLINE_MUSIC("App musica online (streaming)"),
+    OFFLINE_MUSIC("App musica offline (locale)"),
 }
 
 private enum class TextTarget { HOME_ADDRESS, WORK_ADDRESS, LOCATION }
+
+private const val ANDROID_AUTO_PKG = "com.google.android.projection.gearhead"
 
 /**
  * Unica activity: schermata Home (categoria HOME) e voce nell'elenco app (LAUNCHER).
@@ -123,11 +131,14 @@ class MainActivity : ComponentActivity() {
         driveApp.calendarRepository.refresh()
         driveApp.vehicleRepository.start()
         driveApp.systemControls.refresh()
+        driveApp.bluetoothWatcher.start()
+        driveApp.connectivityWatcher.start()
     }
 
     override fun onPause() {
         super.onPause()
         driveApp.vehicleRepository.stop()
+        driveApp.bluetoothWatcher.stop()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -169,6 +180,10 @@ class MainActivity : ComponentActivity() {
         val vehicleChanges by driveApp.vehicleRepository.changeCounts.collectAsStateWithLifecycle()
         val volumeState by driveApp.systemControls.volume.collectAsStateWithLifecycle()
         val windowBrightness by driveApp.systemControls.windowBrightness.collectAsStateWithLifecycle()
+        val btConnected by driveApp.bluetoothWatcher.connected.collectAsStateWithLifecycle()
+        val online by driveApp.connectivityWatcher.online.collectAsStateWithLifecycle()
+        val radioState by driveApp.radioController.state.collectAsStateWithLifecycle()
+        val radioDetected by driveApp.radioController.detected.collectAsStateWithLifecycle()
         val scope = rememberCoroutineScope()
         val snackbar = remember { SnackbarHostState() }
         var picker by remember { mutableStateOf<PickerTarget?>(null) }
@@ -181,6 +196,8 @@ class MainActivity : ComponentActivity() {
         var offSnaps by remember { mutableStateOf<List<Map<String, String>>>(emptyList()) }
         var scanning by remember { mutableStateOf(false) }
         var scanResult by remember { mutableStateOf<String?>(null) }
+        var vehicleExportStatus by remember { mutableStateOf<String?>(null) }
+        val smartTrigger = remember { ConnectionTrigger() }
         val context: Context = this
         val pm = context.packageManager
 
@@ -227,6 +244,49 @@ class MainActivity : ComponentActivity() {
         LaunchedEffect(s.discoveredActions, s.lightsBinding?.id) {
             val fromBindings = s.signalBindings.mapNotNull { SignalIds.actionOf(it.id) }
             driveApp.vehicleRepository.updateListenedActions((s.discoveredActions + fromBindings).toSet())
+        }
+
+        // Radio integrata: ascolta lo stato dai broadcast (azioni scoperte che sembrano "radio/fm").
+        LaunchedEffect(s.discoveredActions) {
+            val radioActions = s.discoveredActions.filter {
+                val l = it.lowercase(); "radio" in l || ".fm" in l || "fm_" in l || "tuner" in l
+            }.toSet()
+            driveApp.radioController.start(radioActions)
+        }
+
+        fun runSmartStart() {
+            val aaInstalled = pm.getLaunchIntentForPackage(ANDROID_AUTO_PKG) != null
+            val config = SmartStartConfig(
+                enabled = s.smartStartEnabled,
+                playMusic = s.smartStartMusic,
+                startNav = s.smartStartNav,
+                launchAndroidAuto = s.smartStartAndroidAuto && aaInstalled,
+                hasOnlineMusic = s.onlineMusicApp != null,
+                hasOfflineMusic = s.offlineMusicApp != null,
+                hasNav = s.navApp != null,
+            )
+            val plan = SmartStart.plan(config, online)
+            if (plan.isEmpty()) { message("Avvio intelligente: niente da fare (controlla le app scelte)."); return }
+            plan.forEach { action ->
+                when (action) {
+                    SmartAction.PLAY_ONLINE -> driveApp.mediaRepository.resumeOrPlay(s.onlineMusicApp?.packageName)
+                    SmartAction.PLAY_OFFLINE -> driveApp.mediaRepository.resumeOrPlay(s.offlineMusicApp?.packageName)
+                    SmartAction.START_NAV -> s.navApp?.let { nav -> Launcher.launchApp(context, nav) }
+                    SmartAction.LAUNCH_ANDROID_AUTO ->
+                        pm.getLaunchIntentForPackage(ANDROID_AUTO_PKG)?.let { intent ->
+                            runCatching { context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                        }
+                }
+            }
+        }
+
+        // Scatto automatico: il telefono si collega in Bluetooth → avvio intelligente.
+        LaunchedEffect(btConnected) {
+            if (smartTrigger.onState(btConnected) && s.smartStartEnabled) {
+                driveApp.connectivityWatcher.refresh()
+                kotlinx.coroutines.delay(1500) // lascia stabilizzare rete e sessioni audio
+                runSmartStart()
+            }
         }
 
         // Stato dei fari e tema automatico.
@@ -342,7 +402,7 @@ class MainActivity : ComponentActivity() {
         BackHandler(enabled = true) {
             if (controlsOpen) { controlsOpen = false } else screen = when (screen) {
                 Screen.DEVICE_INFO -> Screen.SETTINGS
-                Screen.VEHICLE, Screen.RADIO -> Screen.SETTINGS
+                Screen.VEHICLE, Screen.RADIO, Screen.SMART_START -> Screen.SETTINGS
                 else -> Screen.DASHBOARD
             }
         }
@@ -496,6 +556,8 @@ class MainActivity : ComponentActivity() {
                                 autoThemeSource = autoResult?.source?.label,
                                 onOpenVehicle = { screen = Screen.VEHICLE },
                                 onOpenRadio = { screen = Screen.RADIO },
+                                onOpenSmartStart = { screen = Screen.SMART_START },
+                                smartStartEnabled = s.smartStartEnabled,
                                 onEditLocation = { textDialog = TextTarget.LOCATION },
                                 onHomeSettings = { report(Launcher.openSystemSettings(context, Settings.ACTION_HOME_SETTINGS)) },
                                 onAndroidSettings = { report(Launcher.openSystemSettings(context, Settings.ACTION_SETTINGS)) },
@@ -545,20 +607,61 @@ class MainActivity : ComponentActivity() {
                                     }
                                 },
                                 onRemoveBinding = { b -> scope.launch { driveApp.settingsRepository.removeBinding(b.id, b.role) } },
+                                exportStatus = vehicleExportStatus,
+                                onExport = {
+                                    scope.launch {
+                                        val json = org.json.JSONObject().apply {
+                                            put("generato", java.time.ZonedDateTime.now().toString())
+                                            put("segnali", org.json.JSONObject().also { o -> vehicleSignals.forEach { (k, v) -> o.put(k, v) } })
+                                            put("azioniScoperte", org.json.JSONArray(s.discoveredActions))
+                                            put("collegamenti", org.json.JSONArray(s.signalBindings.map { "${it.role}:${it.id}=${it.onValue}/${it.offValue}" }))
+                                        }
+                                        val stamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmm"))
+                                        val r = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                            it.driveos.launcher.system.Exporter.save(context, "driveos_veicolo_$stamp.json", "application/json", json.toString(2).toByteArray())
+                                        }
+                                        vehicleExportStatus = if (r.ok) "Scansione salvata in: " + r.saved.joinToString(" · ")
+                                        else "Export non riuscito. " + r.errors.firstOrNull().orEmpty()
+                                    }
+                                },
                                 onBack = { screen = Screen.SETTINGS },
                             )
 
                             Screen.RADIO -> RadioScreen(
+                                state = radioState,
+                                detected = radioDetected,
                                 presets = s.radioPresets,
-                                radioConfigured = s.radioApp != null,
-                                canTune = false,
-                                onPlay = { openOrPick(s.radioApp, PickerTarget.RADIO) },
+                                currentKhz = radioState?.khz,
+                                onTune = { p ->
+                                    driveApp.radioController.tune(p.khz)
+                                    if (!radioDetected) message("Comando inviato (sperimentale). Se non cambia, esporta i dati in Veicolo.")
+                                },
+                                onSeekDown = { driveApp.radioController.seekDown() },
+                                onSeekUp = { driveApp.radioController.seekUp() },
+                                onStepDown = { driveApp.radioController.stepDown() },
+                                onStepUp = { driveApp.radioController.stepUp() },
+                                onPlayPause = { driveApp.radioController.power(radioState?.playing != true) },
                                 onAdd = { radioDialog = true },
                                 onRemove = { p -> scope.launch {
                                     driveApp.settingsRepository.setRadioPresets(RadioPresetLogic.remove(s.radioPresets, p.band, p.khz))
                                 } },
-                                onOpenRadioApp = { openOrPick(s.radioApp, PickerTarget.RADIO) },
-                                onChooseRadioApp = { picker = PickerTarget.RADIO },
+                                onOpenExternal = { openOrPick(s.radioApp, PickerTarget.RADIO) },
+                                onBack = { screen = Screen.SETTINGS },
+                            )
+
+                            Screen.SMART_START -> SmartStartScreen(
+                                settings = s,
+                                appLabel = { key -> apps.firstOrNull { it.key == key }?.label },
+                                btConnected = btConnected,
+                                online = online,
+                                androidAutoInstalled = pm.getLaunchIntentForPackage(ANDROID_AUTO_PKG) != null,
+                                onToggleEnabled = { scope.launch { repo.setSmartStartEnabled(it) } },
+                                onToggleMusic = { scope.launch { repo.setSmartStartMusic(it) } },
+                                onToggleNav = { scope.launch { repo.setSmartStartNav(it) } },
+                                onToggleAndroidAuto = { scope.launch { repo.setSmartStartAndroidAuto(it) } },
+                                onPickOnline = { picker = PickerTarget.ONLINE_MUSIC },
+                                onPickOffline = { picker = PickerTarget.OFFLINE_MUSIC },
+                                onRunNow = { runSmartStart() },
                                 onBack = { screen = Screen.SETTINGS },
                             )
                         }
@@ -584,6 +687,8 @@ class MainActivity : ComponentActivity() {
                         PickerTarget.MUSIC -> s.musicApp
                         PickerTarget.PHONE -> s.phoneApp
                         PickerTarget.RADIO -> s.radioApp
+                        PickerTarget.ONLINE_MUSIC -> s.onlineMusicApp
+                        PickerTarget.OFFLINE_MUSIC -> s.offlineMusicApp
                     },
                     onPick = { entry ->
                         scope.launch {
@@ -592,6 +697,8 @@ class MainActivity : ComponentActivity() {
                                 PickerTarget.MUSIC -> repo.setMusicApp(entry?.key)
                                 PickerTarget.PHONE -> repo.setPhoneApp(entry?.key)
                                 PickerTarget.RADIO -> repo.setRadioApp(entry?.key)
+                                PickerTarget.ONLINE_MUSIC -> repo.setOnlineMusicApp(entry?.key)
+                                PickerTarget.OFFLINE_MUSIC -> repo.setOfflineMusicApp(entry?.key)
                             }
                         }
                         picker = null

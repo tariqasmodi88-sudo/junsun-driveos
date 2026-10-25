@@ -4,7 +4,18 @@ Launcher (schermata Home) per l'autoradio **Junsun FF_866X** ("V1 Pro") montata 
 **VW Tiguan 2016**. È una normale app Android: **non modifica firmware, partizioni,
 impostazioni di fabbrica né l'MCU** e non richiede root né permessi speciali.
 
-Versione attuale: **0.3.0**
+Versione attuale: **0.4.0**
+
+### Novità 0.4.0
+
+- **Avvio intelligente (sostituisce AutoLink):** quando il telefono si collega in Bluetooth,
+  DriveOS avvia da solo la musica — **Spotify se c'è rete, brani locali se offline** — e,
+  se vuoi, la navigazione, **restando sulla Home DriveOS**. In *Impostazioni → Avvio intelligente*.
+- **Radio integrata:** la radio ora vive **dentro DriveOS** (frequenza, ricerca, preset) e non
+  apre più la schermata Junsun. Mostra la frequenza solo se il firmware la pubblica; i comandi
+  sono sperimentali finché non adattiamo i parametri esatti di questa radio (vedi export).
+- **Export della scansione veicolo:** pulsante *Esporta* nella schermata Veicolo, salva
+  `driveos_veicolo_*.json` in *Download/DriveOS* e sulla chiavetta.
 
 ### Novità 0.3.0
 

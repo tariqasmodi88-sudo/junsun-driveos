@@ -46,6 +46,13 @@ data class DriveSettings(
     val latitude: Double = 0.0,
     val longitude: Double = 0.0,
     val radioPresets: List<RadioPreset> = emptyList(),
+    // Avvio intelligente alla connessione Bluetooth (sostituisce AutoLink).
+    val smartStartEnabled: Boolean = false,
+    val smartStartMusic: Boolean = true,
+    val smartStartNav: Boolean = false,
+    val smartStartAndroidAuto: Boolean = false,
+    val onlineMusicApp: AppKey? = null,
+    val offlineMusicApp: AppKey? = null,
 ) {
     val lightsBinding: SignalBinding? get() = signalBindings.firstOrNull { it.role == SignalRole.LIGHTS }
     val gaugeBindings: List<SignalBinding> get() = signalBindings.filter { it.role == SignalRole.GAUGE }
@@ -72,6 +79,12 @@ class SettingsRepository(context: Context) {
         val LAT = stringPreferencesKey("latitude")
         val LON = stringPreferencesKey("longitude")
         val PRESETS = stringPreferencesKey("radio_presets")
+        val SS_ENABLED = stringPreferencesKey("ss_enabled")
+        val SS_MUSIC = stringPreferencesKey("ss_music")
+        val SS_NAV = stringPreferencesKey("ss_nav")
+        val SS_AA = stringPreferencesKey("ss_aa")
+        val ONLINE_MUSIC = stringPreferencesKey("online_music_app")
+        val OFFLINE_MUSIC = stringPreferencesKey("offline_music_app")
     }
 
     val settings: Flow<DriveSettings> = store.data
@@ -96,6 +109,12 @@ class SettingsRepository(context: Context) {
                 latitude = p[Keys.LAT]?.toDoubleOrNull() ?: 0.0,
                 longitude = p[Keys.LON]?.toDoubleOrNull() ?: 0.0,
                 radioPresets = RadioPresetCodec.decode(p[Keys.PRESETS]),
+                smartStartEnabled = p[Keys.SS_ENABLED] == "1",
+                smartStartMusic = p[Keys.SS_MUSIC] != "0",
+                smartStartNav = p[Keys.SS_NAV] == "1",
+                smartStartAndroidAuto = p[Keys.SS_AA] == "1",
+                onlineMusicApp = AppKey.decode(p[Keys.ONLINE_MUSIC]),
+                offlineMusicApp = AppKey.decode(p[Keys.OFFLINE_MUSIC]),
             )
         }
 
@@ -129,6 +148,13 @@ class SettingsRepository(context: Context) {
     suspend fun setRadioPresets(presets: List<RadioPreset>) {
         store.edit { it[Keys.PRESETS] = RadioPresetCodec.encode(presets) }
     }
+
+    suspend fun setSmartStartEnabled(on: Boolean) { store.edit { it[Keys.SS_ENABLED] = if (on) "1" else "0" } }
+    suspend fun setSmartStartMusic(on: Boolean) { store.edit { it[Keys.SS_MUSIC] = if (on) "1" else "0" } }
+    suspend fun setSmartStartNav(on: Boolean) { store.edit { it[Keys.SS_NAV] = if (on) "1" else "0" } }
+    suspend fun setSmartStartAndroidAuto(on: Boolean) { store.edit { it[Keys.SS_AA] = if (on) "1" else "0" } }
+    suspend fun setOnlineMusicApp(key: AppKey?) = setApp(Keys.ONLINE_MUSIC, key)
+    suspend fun setOfflineMusicApp(key: AppKey?) = setApp(Keys.OFFLINE_MUSIC, key)
 
     suspend fun setHomeAddress(address: String) {
         store.edit { it[Keys.HOME] = address.trim() }

@@ -66,6 +66,8 @@ fun VehicleScreen(
     onAssignLights: (Candidate) -> Unit,
     onAddGauge: (String) -> Unit,
     onRemoveBinding: (SignalBinding) -> Unit,
+    exportStatus: String?,
+    onExport: () -> Unit,
     onBack: () -> Unit,
 ) {
     var showAll by remember { mutableStateOf(false) }
@@ -74,7 +76,13 @@ fun VehicleScreen(
     val lights = settings.lightsBinding
 
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Veicolo (CAN)", onBack)
+        ScreenHeader("Veicolo (CAN)", onBack) {
+            ActionButton("Esporta", androidx.compose.material.icons.Icons.Filled.Share, onClick = onExport,
+                modifier = Modifier.width(150.dp), highlighted = true)
+        }
+        exportStatus?.let {
+            Text(it, fontSize = 14.sp, color = colors.primary, modifier = Modifier.padding(horizontal = 20.dp))
+        }
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 4.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),

@@ -13,6 +13,11 @@
          Sul dispositivo (Android 10) non ha effetto; serve se il firmware fosse aggiornato a 11+. -->
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" tools:ignore="QueryAllPackagesPermission" />
 
+    <!-- Avvio intelligente: rileva rete e stato del Bluetooth (nessuna richiesta a runtime su Android 10). -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
     <!-- Visibilita' dei pacchetti (rilevante da Android 11; su Android 10 non ha effetto). -->
     <queries>
         <intent>

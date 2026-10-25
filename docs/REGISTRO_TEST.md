@@ -54,3 +54,20 @@ veicolo (CAN), pannello controlli (volume/luminosità), radio con memorizzazione
 | Pannello controlli: volume reale | Da verificare | AudioManager, nessun permesso |
 | Pannello controlli: luminosità finestra / sistema | Da verificare | Sistema solo con permesso WRITE_SETTINGS |
 | Radio: salvataggio e apertura canali | Da verificare | La sintonizzazione diretta dipende da un comando dell'app radio, da scoprire |
+
+## 2026-10-25 — v0.4.0
+
+Nuove funzioni: avvio intelligente su Bluetooth (sostituzione AutoLink), export diretto
+della scansione veicolo, radio integrata (non apre più l'app Junsun).
+
+| Test | Esito | Note |
+|---|---|---|
+| 10 nuovi test unitari (piano avvio intelligente, trigger connessione, parsing frequenza/stato radio) | **10/10 superati** | Totale logica pura: 30/30 |
+| Compilazione APK v0.4 (Compose) | Da verificare | GitHub Actions |
+| Avvio intelligente: musica online/offline alla connessione BT | **Da verificare sul veicolo** | "best-effort": l'app deve esporre una MediaSession |
+| Avvio navigazione alla connessione | Da verificare | Apre l'app di navigazione scelta |
+| Rilevamento online/offline (ConnectivityManager) | Da verificare | |
+| Rilevamento Bluetooth connesso (A2DP/HFP) | Da verificare | |
+| Export scansione veicolo (pulsante dedicato) | Da verificare | Salva driveos_veicolo_*.json in Download/DriveOS e su chiavetta |
+| Radio integrata: lettura stato dai broadcast | **Da verificare sul veicolo** | Mostra la frequenza solo se il firmware la pubblica |
+| Radio integrata: comandi (sintonizza/cerca) | **Sperimentale** | Prova protocolli MTK/FYT; da adattare con l'export reale |

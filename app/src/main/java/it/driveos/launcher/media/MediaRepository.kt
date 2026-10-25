@@ -186,4 +186,41 @@ class MediaRepository(context: Context) {
     fun previous() {
         controller?.transportControls?.skipToPrevious()
     }
+
+    /** Numero di sessioni che risultano in riproduzione (per sapere se "play" ha funzionato). */
+    fun playingCount(): Int = runCatching {
+        manager?.getActiveSessions(listenerComponent).orEmpty().count { it.playbackState?.state == PlaybackState.STATE_PLAYING }
+    }.getOrDefault(0)
+
+    /**
+     * Avvia/riprende la riproduzione di un pacchetto specifico (avvio intelligente), SENZA
+     * aprire la sua interfaccia: se esiste già una sessione la comanda, altrimenti invia il
+     * tasto "play" all'app. Best-effort: se l'app non espone una sessione, potrebbe non partire.
+     */
+    fun resumeOrPlay(packageName: String?) = handler.post {
+        refreshSessions()
+        val sessions = runCatching { manager?.getActiveSessions(listenerComponent).orEmpty() }.getOrDefault(emptyList())
+        val target = packageName?.let { pkg -> sessions.firstOrNull { it.packageName == pkg } }
+            ?: sessions.firstOrNull()
+        if (target != null) {
+            runCatching { target.transportControls.play() }
+        } else if (packageName != null) {
+            sendMediaButton(packageName)
+        }
+    }
+
+    /** Invia KEYCODE_MEDIA_PLAY direttamente a un pacchetto (non apre finestre). */
+    private fun sendMediaButton(packageName: String) {
+        runCatching {
+            val down = android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_MEDIA_PLAY)
+            val up = android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, android.view.KeyEvent.KEYCODE_MEDIA_PLAY)
+            listOf(down, up).forEach { ev ->
+                val i = android.content.Intent(android.content.Intent.ACTION_MEDIA_BUTTON).apply {
+                    setPackage(packageName)
+                    putExtra(android.content.Intent.EXTRA_KEY_EVENT, ev)
+                }
+                app.sendBroadcast(i)
+            }
+        }
+    }
 }

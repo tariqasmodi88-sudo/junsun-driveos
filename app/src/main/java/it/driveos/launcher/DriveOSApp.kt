@@ -2,9 +2,12 @@ package it.driveos.launcher
 
 import android.app.Application
 import it.driveos.launcher.apps.AppRepository
+import it.driveos.launcher.automation.BluetoothWatcher
+import it.driveos.launcher.automation.ConnectivityWatcher
 import it.driveos.launcher.calendar.CalendarRepository
 import it.driveos.launcher.controls.SystemControls
 import it.driveos.launcher.media.MediaRepository
+import it.driveos.launcher.radio.RadioController
 import it.driveos.launcher.settings.SettingsRepository
 import it.driveos.launcher.system.CrashLog
 import it.driveos.launcher.vehicle.VehicleRepository
@@ -23,6 +26,12 @@ class DriveOSApp : Application() {
         private set
     lateinit var systemControls: SystemControls
         private set
+    lateinit var bluetoothWatcher: BluetoothWatcher
+        private set
+    lateinit var connectivityWatcher: ConnectivityWatcher
+        private set
+    lateinit var radioController: RadioController
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -33,5 +42,8 @@ class DriveOSApp : Application() {
         calendarRepository = CalendarRepository(this)
         vehicleRepository = VehicleRepository(this)
         systemControls = SystemControls(this)
+        bluetoothWatcher = BluetoothWatcher(this)
+        connectivityWatcher = ConnectivityWatcher(this)
+        radioController = RadioController(this)
     }
 }
