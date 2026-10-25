@@ -119,8 +119,8 @@ class VehicleRepository(context: Context) {
     private fun putExtras(action: String, extras: Bundle) {
         val updates = LinkedHashMap<String, String>()
         for (key in extras.keySet()) {
-            val value = runCatching { extras.get(key)?.toString() }.getOrNull() ?: continue
-            if (value.length <= 120) updates[SignalIds.broadcast(action, key)] = value
+            val value = runCatching { ExtraFormat.stringify(extras.get(key)) }.getOrNull() ?: continue
+            updates[SignalIds.broadcast(action, key)] = value
         }
         if (updates.isNotEmpty()) merge(updates)
     }
@@ -170,9 +170,35 @@ class VehicleRepository(context: Context) {
             "/proc/mtk_mcu/illumination",
         )
 
-        /** Tutte le azioni broadcast sensate da ascoltare (sistema + scoperte + servizio CAN TS). */
+        /**
+         * Canali veicolo noti di QUESTA radio (ForFan/Hazens, suite TS/TXZ), ricavati
+         * dall'export reale. Ascoltati sempre, anche senza una nuova scansione.
+         */
+        val knownVehicleActions = listOf(
+            // Dati CAN (il più importante: porta carburante/temperature/porte…)
+            "com.ts.can.BROADCAST_CAN_INFO",
+            "com.ts.can.BROADCAST_CAN_UPT",
+            "com.ts.can.ac",
+            "com.ts.can.device",
+            "com.ts.can.excd",
+            "com.ts.can.BROADCAST_CAMERA_KEY",
+            // Eventi veicolo
+            "comm.power.ENTER_REVERSE",
+            "comm.power.QUIT_REVERSE",
+            "com.cusc.action.ACC_OFF",
+            "forfan.adas.turnlight_state",
+            "com.autoai.iot.tpms",
+            "vendor.hazens.vehicle.info.vin",
+            // Avvisi di sistema MTK
+            "mediatek.intent.action.BATTERY_WARNING",
+            "mediatek.intent.action.THERMAL_WARNING",
+            // Radio (suite media TS)
+            "com.ts.main.radio",
+        )
+
+        /** Tutte le azioni broadcast sensate da ascoltare (sistema + note + scoperte). */
         fun allListenActions(discovered: Collection<String>): Set<String> =
-            (ActionFilter.systemActions + discovered + listOf(
+            (ActionFilter.systemActions + knownVehicleActions + discovered + listOf(
                 "com.ts.car.client.ACTION_CHANGED_LOG_STATE",
                 "com.ts.car.client.ACTION_REMOTE_SLEEP",
                 "com.ts.car.client.ACTION_REMOTE_WAKEUP",

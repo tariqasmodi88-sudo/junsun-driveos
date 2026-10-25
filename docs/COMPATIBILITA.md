@@ -28,6 +28,23 @@ Altre: iGO PAL, GpsTest, Contatti, Files, FileManager, Gallery.
   → Per questi valori servono: broadcast del servizio `com.ts.car.client` catturati **in marcia**,
   oppure un adattatore **OBD-II (ELM327)** collegato alla Tiguan. La radio FM non espone frequenza nell'export statico.
 
+## Canali trovati (scansione estesa 2026-10-25, board Hazens / suite TS-TXZ)
+
+Azioni broadcast reali da ascoltare (ora in `knownVehicleActions`):
+- **`com.ts.can.BROADCAST_CAN_INFO`** — dati CAN (carburante, temperature, porte…). Da decodificare
+  con il registro in marcia: gli extra possono essere array di byte/interi (ora resi leggibili).
+- `com.autoai.iot.tpms` — pressione pneumatici (TPMS).
+- `comm.power.ENTER_REVERSE` / `comm.power.QUIT_REVERSE` — retromarcia.
+- `forfan.adas.turnlight_state` — frecce. `com.cusc.action.ACC_OFF` — quadro.
+- `mediatek.intent.action.BATTERY_WARNING` / `THERMAL_WARNING` — avvisi.
+- `vendor.hazens.vehicle.info.vin` — VIN (board **Hazens**).
+- Radio: suite media **TS** (`com.ts.main.radio`, `com.ts.dvdplayer.*`), voce **TXZ** (`txz.fm.*`).
+- Proiezione: **SpeedPlay** (`com.suding.speedplay`). Comandi UI: `forfan.intent.action.VOLUME/MUTE/EQ/MODE…`.
+
+Prossimo passo: registro continuo in marcia → decodificare gli extra di `BROADCAST_CAN_INFO`
+(mappare quali indici dell'array sono carburante/temperatura/pneumatici) e individuare l'azione
+di sintonizzazione radio.
+
 ## Ipotesi da confermare (con l'esportazione JSON di DriveOS)
 
 - SoC: fonti discordanti (MediaTek MT8667 o Unisoc UIS8666); "alps/mssi" suggerisce MediaTek.

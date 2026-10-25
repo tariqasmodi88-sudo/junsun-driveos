@@ -43,8 +43,8 @@ class VehicleLogService : Service() {
             val extras = intent.extras ?: return
             val updates = HashMap<String, String>()
             for (key in extras.keySet()) {
-                val v = runCatching { extras.get(key)?.toString() }.getOrNull() ?: continue
-                if (v.length <= 160) updates[SignalIds.broadcast(action, key)] = v
+                val v = runCatching { ExtraFormat.stringify(extras.get(key)) }.getOrNull() ?: continue
+                updates[SignalIds.broadcast(action, key)] = v
             }
             if (updates.isNotEmpty()) record(updates)
         }

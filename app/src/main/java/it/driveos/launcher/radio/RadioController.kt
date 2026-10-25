@@ -105,6 +105,9 @@ class RadioController(context: Context) {
     private companion object {
         /** Azioni da ascoltare per leggere lo stato (unione con quelle scoperte dalla scansione). */
         val listenActions = listOf(
+            // Suite media TS/ForFan di QUESTA radio (dall'export reale)
+            "com.ts.main.radio", "com.ts.dvdplayer.MEDIA_CHANGE", "txz.fm.setdistance",
+            // Altri firmware comuni (best-effort)
             "com.fyt.radio.STATE", "com.fyt.fmradio.STATE", "com.fyt.FM_STATE",
             "com.microntek.radio.STATE", "com.syu.radio.STATE",
             "android.intent.action.FM_STATE", "com.android.fmradio.STATE",
