@@ -1,0 +1,181 @@
+package it.driveos.launcher.ui
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import it.driveos.launcher.BuildConfig
+import it.driveos.launcher.apps.AppKey
+import it.driveos.launcher.settings.DriveSettings
+import it.driveos.launcher.settings.ThemeMode
+import it.driveos.launcher.ui.theme.AccentColors
+import it.driveos.launcher.ui.theme.AccentNames
+
+@Composable
+fun SettingsScreen(
+    settings: DriveSettings,
+    appLabel: (AppKey) -> String?,
+    onPickNav: () -> Unit,
+    onEditHome: () -> Unit,
+    onPickMusic: () -> Unit,
+    onPickPhone: () -> Unit,
+    onThemeMode: (ThemeMode) -> Unit,
+    onAccent: (Int) -> Unit,
+    onHomeSettings: () -> Unit,
+    onAndroidSettings: () -> Unit,
+    onDeviceInfo: () -> Unit,
+    onBack: () -> Unit,
+) {
+    fun describe(key: AppKey?): String =
+        if (key == null) "Non configurata" else appLabel(key) ?: "App non trovata (${key.packageName})"
+
+    Column(Modifier.fillMaxSize()) {
+        ScreenHeader("Impostazioni", onBack)
+        Column(
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            SectionTitle("App")
+            SettingRow("Navigazione", describe(settings.navApp), onPickNav)
+            SettingRow("Indirizzo di casa", settings.homeAddress.ifBlank { "Non impostato" }, onEditHome)
+            SettingRow("Musica", describe(settings.musicApp), onPickMusic)
+            SettingRow("Telefono", describe(settings.phoneApp), onPickPhone)
+
+            SectionTitle("Aspetto")
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ThemeMode.entries.forEach { mode ->
+                    Chip(
+                        label = when (mode) {
+                            ThemeMode.DARK -> "Scuro"
+                            ThemeMode.LIGHT -> "Chiaro"
+                            ThemeMode.SYSTEM -> "Come il sistema"
+                        },
+                        selected = settings.themeMode == mode,
+                        onClick = { onThemeMode(mode) },
+                    )
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                AccentColors.forEachIndexed { index, color ->
+                    val selected = settings.accentIndex == index
+                    Box(
+                        Modifier
+                            .size(52.dp)
+                            .clip(CircleShape)
+                            .background(color)
+                            .then(
+                                if (selected) Modifier.border(4.dp, MaterialTheme.colorScheme.onBackground, CircleShape)
+                                else Modifier
+                            )
+                            .clickable { onAccent(index) }
+                    )
+                }
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    AccentNames.getOrElse(settings.accentIndex) { "" },
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            SectionTitle("Sistema")
+            SettingRow("Launcher predefinito", "Scegli quale schermata Home usare (DriveOS o quella Junsun)", onHomeSettings)
+            SettingRow("Impostazioni Android", "Apre le impostazioni di sistema", onAndroidSettings)
+            SettingRow("Info dispositivo", "Riepilogo hardware ed esportazione dei dati per lo sviluppo", onDeviceInfo)
+
+            SectionTitle("Informazioni")
+            Text(
+                "DriveOS ${BuildConfig.VERSION_NAME}. Radio, Bluetooth, CANBUS e retrocamera restano " +
+                    "gestiti dalle app Junsun originali: DriveOS non le modifica.",
+                fontSize = 15.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+@Composable
+private fun SectionTitle(text: String) {
+    Text(
+        text.uppercase(),
+        fontSize = 13.sp,
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = 1.5.sp,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(top = 14.dp, bottom = 2.dp),
+    )
+}
+
+@Composable
+private fun SettingRow(title: String, value: String, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surface,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(Modifier.padding(horizontal = 20.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(title, fontSize = 19.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    value,
+                    fontSize = 15.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun Chip(label: String, selected: Boolean, onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(14.dp),
+        color = if (selected) colors.primary else colors.surfaceVariant,
+        contentColor = if (selected) colors.onPrimary else colors.onSurface,
+    ) {
+        Text(label, fontSize = 17.sp, modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp))
+    }
+}
