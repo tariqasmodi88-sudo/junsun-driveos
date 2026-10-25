@@ -5,7 +5,9 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.provider.CalendarContract
 import android.provider.Settings
+import android.content.ContentUris
 import it.driveos.launcher.apps.AppKey
 import it.driveos.launcher.nav.NavIntentBuilder
 import it.driveos.launcher.nav.NavRequest
@@ -45,6 +47,37 @@ object Launcher {
             "Impossibile aprire le impostazioni di sistema."
         )
     }
+
+    /** Apre Google Calendar se installato, altrimenti l'app calendario predefinita. */
+    fun openCalendar(context: Context): LaunchResult {
+        context.packageManager.getLaunchIntentForPackage(GOOGLE_CALENDAR)?.let {
+            return start(context, it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), "")
+        }
+        val uri = CalendarContract.CONTENT_URI.buildUpon().appendPath("time")
+            .appendPath(System.currentTimeMillis().toString()).build()
+        return start(
+            context,
+            Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            "Nessuna app calendario installata. Installa Google Calendar dal Play Store.",
+        )
+    }
+
+    fun openCalendarEvent(context: Context, eventId: Long, begin: Long, end: Long): LaunchResult {
+        val intent = Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventId))
+            .putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, begin)
+            .putExtra(CalendarContract.EXTRA_EVENT_END_TIME, end)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return start(context, intent, "Nessuna app calendario può aprire l'evento.")
+    }
+
+    fun openAppDetails(context: Context): LaunchResult = start(
+        context,
+        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + context.packageName))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+        "Impossibile aprire le impostazioni dell'app.",
+    )
+
+    private const val GOOGLE_CALENDAR = "com.google.android.calendar"
 
     private fun viewIntent(request: NavRequest): Intent =
         Intent(Intent.ACTION_VIEW, Uri.parse(request.uri))

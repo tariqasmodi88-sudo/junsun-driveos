@@ -10,6 +10,8 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import it.driveos.launcher.apps.AppKey
 import it.driveos.launcher.apps.FavoritesCodec
+import it.driveos.launcher.dashboard.DashboardLayout
+import it.driveos.launcher.nav.DestinationHistory
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -24,6 +26,9 @@ data class DriveSettings(
     val musicApp: AppKey? = null,
     val phoneApp: AppKey? = null,
     val homeAddress: String = "",
+    val workAddress: String = "",
+    val recentDestinations: List<String> = emptyList(),
+    val layout: DashboardLayout = DashboardLayout.DEFAULT,
     val favorites: List<String> = emptyList(),
     val themeMode: ThemeMode = ThemeMode.DARK,
     val accentIndex: Int = 0,
@@ -38,6 +43,9 @@ class SettingsRepository(context: Context) {
         val MUSIC = stringPreferencesKey("music_app")
         val PHONE = stringPreferencesKey("phone_app")
         val HOME = stringPreferencesKey("home_address")
+        val WORK = stringPreferencesKey("work_address")
+        val RECENT = stringPreferencesKey("recent_destinations")
+        val LAYOUT = stringPreferencesKey("dashboard_layout")
         val FAVORITES = stringPreferencesKey("favorites")
         val THEME = stringPreferencesKey("theme_mode")
         val ACCENT = intPreferencesKey("accent_index")
@@ -51,6 +59,9 @@ class SettingsRepository(context: Context) {
                 musicApp = AppKey.decode(p[Keys.MUSIC]),
                 phoneApp = AppKey.decode(p[Keys.PHONE]),
                 homeAddress = p[Keys.HOME].orEmpty(),
+                workAddress = p[Keys.WORK].orEmpty(),
+                recentDestinations = DestinationHistory.decode(p[Keys.RECENT]),
+                layout = DashboardLayout.fromId(p[Keys.LAYOUT]),
                 favorites = FavoritesCodec.decode(p[Keys.FAVORITES]),
                 themeMode = p[Keys.THEME]
                     ?.let { name -> ThemeMode.entries.firstOrNull { it.name == name } }
@@ -65,6 +76,26 @@ class SettingsRepository(context: Context) {
 
     suspend fun setHomeAddress(address: String) {
         store.edit { it[Keys.HOME] = address.trim() }
+    }
+
+    suspend fun setWorkAddress(address: String) {
+        store.edit { it[Keys.WORK] = address.trim() }
+    }
+
+    suspend fun addRecentDestination(destination: String) {
+        store.edit {
+            it[Keys.RECENT] = DestinationHistory.encode(DestinationHistory.add(DestinationHistory.decode(it[Keys.RECENT]), destination))
+        }
+    }
+
+    suspend fun removeRecentDestination(destination: String) {
+        store.edit {
+            it[Keys.RECENT] = DestinationHistory.encode(DestinationHistory.remove(DestinationHistory.decode(it[Keys.RECENT]), destination))
+        }
+    }
+
+    suspend fun setLayout(layout: DashboardLayout) {
+        store.edit { it[Keys.LAYOUT] = layout.id }
     }
 
     suspend fun toggleFavorite(key: AppKey) {

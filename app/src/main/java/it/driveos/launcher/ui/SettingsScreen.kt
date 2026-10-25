@@ -3,6 +3,7 @@ package it.driveos.launcher.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +35,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import it.driveos.launcher.BuildConfig
 import it.driveos.launcher.apps.AppKey
+import it.driveos.launcher.dashboard.DashboardLayout
+import it.driveos.launcher.ui.cards.LayoutPreview
 import it.driveos.launcher.settings.DriveSettings
 import it.driveos.launcher.settings.ThemeMode
 import it.driveos.launcher.ui.theme.AccentColors
@@ -45,6 +48,12 @@ fun SettingsScreen(
     appLabel: (AppKey) -> String?,
     onPickNav: () -> Unit,
     onEditHome: () -> Unit,
+    onEditWork: () -> Unit,
+    onLayout: (DashboardLayout) -> Unit,
+    notificationAccess: Boolean,
+    onNotificationAccess: () -> Unit,
+    calendarAccess: Boolean,
+    onCalendarAccess: () -> Unit,
     onPickMusic: () -> Unit,
     onPickPhone: () -> Unit,
     onThemeMode: (ThemeMode) -> Unit,
@@ -66,9 +75,20 @@ fun SettingsScreen(
                 .padding(horizontal = 24.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            SectionTitle("Schermata Home")
+            Row(
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                DashboardLayout.entries.forEach { layout ->
+                    LayoutOption(layout, selected = settings.layout == layout, onClick = { onLayout(layout) })
+                }
+            }
+
             SectionTitle("App")
             SettingRow("Navigazione", describe(settings.navApp), onPickNav)
             SettingRow("Indirizzo di casa", settings.homeAddress.ifBlank { "Non impostato" }, onEditHome)
+            SettingRow("Indirizzo di lavoro", settings.workAddress.ifBlank { "Non impostato" }, onEditWork)
             SettingRow("Musica", describe(settings.musicApp), onPickMusic)
             SettingRow("Telefono", describe(settings.phoneApp), onPickPhone)
 
@@ -108,6 +128,19 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+
+            SectionTitle("Permessi")
+            SettingRow(
+                "Accesso alle notifiche",
+                if (notificationAccess) "Attivo: brano in riproduzione e indicazioni del navigatore"
+                else "Non attivo: tocca per abilitare DriveOS (serve per Musica e guida)",
+                onNotificationAccess,
+            )
+            SettingRow(
+                "Calendario",
+                if (calendarAccess) "Collegato (sola lettura)" else "Non collegato: tocca per mostrare i tuoi impegni",
+                onCalendarAccess,
+            )
 
             SectionTitle("Sistema")
             SettingRow("Launcher predefinito", "Scegli quale schermata Home usare (DriveOS o quella Junsun)", onHomeSettings)
@@ -177,5 +210,24 @@ private fun Chip(label: String, selected: Boolean, onClick: () -> Unit) {
         contentColor = if (selected) colors.onPrimary else colors.onSurface,
     ) {
         Text(label, fontSize = 17.sp, modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp))
+    }
+}
+
+@Composable
+private fun LayoutOption(layout: DashboardLayout, selected: Boolean, onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(20.dp),
+        color = if (selected) colors.primary.copy(alpha = 0.16f) else colors.surface,
+        border = if (selected) androidx.compose.foundation.BorderStroke(3.dp, colors.primary) else null,
+        modifier = Modifier.width(236.dp),
+    ) {
+        Column(Modifier.padding(14.dp)) {
+            LayoutPreview(layout, Modifier.width(208.dp).height(117.dp))
+            Spacer(Modifier.height(10.dp))
+            Text(layout.title, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(layout.description, fontSize = 14.sp, color = colors.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
     }
 }
