@@ -58,6 +58,7 @@ import it.driveos.launcher.ui.QuickBar
 import it.driveos.launcher.ui.RadioPresetDialog
 import it.driveos.launcher.ui.RadioScreen
 import it.driveos.launcher.ui.SettingsScreen
+import it.driveos.launcher.ui.SmartStartScreen
 import it.driveos.launcher.ui.TextInputDialog
 import it.driveos.launcher.ui.VehicleScreen
 import it.driveos.launcher.ui.theme.AutoThemeState
@@ -655,10 +656,10 @@ class MainActivity : ComponentActivity() {
                                 btConnected = btConnected,
                                 online = online,
                                 androidAutoInstalled = pm.getLaunchIntentForPackage(ANDROID_AUTO_PKG) != null,
-                                onToggleEnabled = { scope.launch { repo.setSmartStartEnabled(it) } },
-                                onToggleMusic = { scope.launch { repo.setSmartStartMusic(it) } },
-                                onToggleNav = { scope.launch { repo.setSmartStartNav(it) } },
-                                onToggleAndroidAuto = { scope.launch { repo.setSmartStartAndroidAuto(it) } },
+                                onToggleEnabled = { on -> scope.launch { repo.setSmartStartEnabled(on) } },
+                                onToggleMusic = { on -> scope.launch { repo.setSmartStartMusic(on) } },
+                                onToggleNav = { on -> scope.launch { repo.setSmartStartNav(on) } },
+                                onToggleAndroidAuto = { on -> scope.launch { repo.setSmartStartAndroidAuto(on) } },
                                 onPickOnline = { picker = PickerTarget.ONLINE_MUSIC },
                                 onPickOffline = { picker = PickerTarget.OFFLINE_MUSIC },
                                 onRunNow = { runSmartStart() },
