@@ -24,7 +24,16 @@ Versione attuale: **0.1.0**: prototipo reale (Fase 3 + avvio della navigazione, 
 
 Nessuna funzione mostra dati inventati: se qualcosa non è configurato, lo dice.
 
-## 1. Compilare l'APK (una volta sola: installare Android Studio)
+## 0. Scaricare l'APK già compilato (consigliato)
+
+Ogni modifica caricata su GitHub viene compilata e testata automaticamente (GitHub Actions).
+L'ultima versione si scarica sempre da:
+
+<https://github.com/tariqasmodi88-sudo/junsun-driveos/releases/latest/download/DriveOS.apk>
+
+Aprilo con Chrome direttamente sull'autoradio e installalo.
+
+## 1. Compilare l'APK in locale (facoltativo: Android Studio)
 
 Visual Studio Code da solo non basta per le app Android: serve **Android Studio** (gratuito),
 che include l'SDK Android e il JDK.

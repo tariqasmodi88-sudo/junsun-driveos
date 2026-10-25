@@ -10,8 +10,8 @@ Ambiente: workspace cloud, nessun dispositivo Android, nessun accesso ai reposit
 |---|---|---|
 | Compilazione logica pura (`AppKey`, `FavoritesCodec`, `AppSearch`, `NavIntentBuilder`) con Kotlin 2.0.21 | Superato | Compilatore Kotlin standalone, senza Android |
 | 18 test unitari della logica pura | **18/18 superati** | Eseguiti con un runner minimale compatibile con le annotazioni JUnit |
-| Compilazione completa APK (Compose, DataStore, AndroidX) | **Da verificare** | Richiede Android Studio sul PC (SDK non scaricabile da qui) |
-| `gradlew test` con JUnit reale | Da verificare | |
+| Compilazione completa APK (Compose, DataStore, AndroidX) | **Superato** | GitHub Actions, build-1 (25/10/2026): APK debug 24 MB |
+| `gradlew testDebugUnitTest` con JUnit reale | **Superato** | GitHub Actions, build-1 |
 | Installazione su Junsun FF_866X | Da verificare | |
 | Comparsa tra le app Home / scelta come predefinita | Da verificare | |
 | Riavvio radio con DriveOS predefinito | Da verificare | |
