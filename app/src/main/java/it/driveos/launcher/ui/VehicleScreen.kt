@@ -21,6 +21,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -77,7 +78,7 @@ fun VehicleScreen(
 
     Column(Modifier.fillMaxSize()) {
         ScreenHeader("Veicolo (CAN)", onBack) {
-            ActionButton("Esporta", androidx.compose.material.icons.Icons.Filled.Share, onClick = onExport,
+            ActionButton("Esporta", Icons.Filled.Share, onClick = onExport,
                 modifier = Modifier.width(150.dp), highlighted = true)
         }
         exportStatus?.let {
