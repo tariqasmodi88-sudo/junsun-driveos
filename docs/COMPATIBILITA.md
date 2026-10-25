@@ -16,6 +16,18 @@ Junsun: Navi, Radio, Video, Music, Bluetooth, BT Music, AV_IN, DSP, Car Info,
 ApkInstaller, AutoLink. Google: Play Store, Google, Gemini, Chrome, YouTube.
 Altre: iGO PAL, GpsTest, Contatti, Files, FileManager, Gallery.
 
+## Dati confermati dall'export DriveOS (2026-10-25)
+
+- Vendor firmware: **ForFan** (custom "tengshi"). Proprietà `forfan.*` presenti.
+- **Fari/illuminazione: `prop:forfan_light_state` = on/off** → usato per il tema automatico (nessuna calibrazione).
+- Navigatore di sistema: `prop:forfan.navi.name = com.google.android.apps.maps` → DriveOS lo auto-seleziona.
+- Proiezione telefono: dongle **SpeedPlay** `com.suding.speedplay` (wireless CarPlay/AndroidAuto) → usato dall'avvio intelligente.
+- Servizio CAN: **`com.ts.car.client`** (azioni note: sleep/wakeup, AVM 360). 
+- **Telemetria (carburante, olio, temperatura, pneumatici): NON esposta** come proprietà né come broadcast
+  nell'export. Le `*.radio.*` presenti sono il modem cellulare (RIL), non la radio FM.
+  → Per questi valori servono: broadcast del servizio `com.ts.car.client` catturati **in marcia**,
+  oppure un adattatore **OBD-II (ELM327)** collegato alla Tiguan. La radio FM non espone frequenza nell'export statico.
+
 ## Ipotesi da confermare (con l'esportazione JSON di DriveOS)
 
 - SoC: fonti discordanti (MediaTek MT8667 o Unisoc UIS8666); "alps/mssi" suggerisce MediaTek.

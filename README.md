@@ -4,7 +4,18 @@ Launcher (schermata Home) per l'autoradio **Junsun FF_866X** ("V1 Pro") montata 
 **VW Tiguan 2016**. È una normale app Android: **non modifica firmware, partizioni,
 impostazioni di fabbrica né l'MCU** e non richiede root né permessi speciali.
 
-Versione attuale: **0.4.0**
+Versione attuale: **0.5.0**
+
+### Novità 0.5.0
+
+- **Barra in basso riorganizzata:** Home · Naviga · **Radio** · Musica · Telefono · App.
+  *Impostazioni* è ora nell'elenco App (in testa).
+- **Tema automatico dai fari, senza calibrazione:** su questo firmware ForFan DriveOS legge
+  `forfan_light_state` → fari accesi = tema scuro.
+- **Navigatore auto-rilevato:** usa quello impostato nel sistema (Google Maps) se non ne hai scelto uno.
+- **Striscia stato veicolo sulla Home:** fari e i valori che colleghi (carburante, temperatura…)
+  sempre visibili; le **spie compaiono solo quando scattano**. Mostra solo dati reali.
+- Avvio intelligente: riconosce anche il dongle **SpeedPlay** oltre ad Android Auto.
 
 ### Novità 0.4.0
 

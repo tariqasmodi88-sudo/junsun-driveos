@@ -61,6 +61,7 @@ import it.driveos.launcher.ui.SettingsScreen
 import it.driveos.launcher.ui.SmartStartScreen
 import it.driveos.launcher.ui.TextInputDialog
 import it.driveos.launcher.ui.VehicleScreen
+import it.driveos.launcher.ui.VehicleStatusStrip
 import it.driveos.launcher.ui.theme.AutoThemeState
 import it.driveos.launcher.radio.RadioBand
 import it.driveos.launcher.radio.RadioPreset
@@ -68,10 +69,11 @@ import it.driveos.launcher.radio.RadioPresetLogic
 import it.driveos.launcher.settings.ThemeMode
 import it.driveos.launcher.vehicle.ActionDiscovery
 import it.driveos.launcher.vehicle.CandidateFinder
-import it.driveos.launcher.vehicle.LightsResolver
+import it.driveos.launcher.vehicle.KnownVehicleSignals
 import it.driveos.launcher.vehicle.SignalBinding
 import it.driveos.launcher.vehicle.SignalIds
 import it.driveos.launcher.vehicle.SignalRole
+import it.driveos.launcher.vehicle.VehicleStatus
 import it.driveos.launcher.ui.cards.CalendarCard
 import it.driveos.launcher.ui.cards.ClockCard
 import it.driveos.launcher.ui.cards.MusicCard
@@ -99,7 +101,8 @@ private enum class PickerTarget(val title: String) {
 
 private enum class TextTarget { HOME_ADDRESS, WORK_ADDRESS, LOCATION }
 
-private const val ANDROID_AUTO_PKG = "com.google.android.projection.gearhead"
+// App di proiezione telefono presenti su questi firmware: Android Auto e il dongle SpeedPlay.
+private val PROJECTION_PKGS = listOf("com.google.android.projection.gearhead", "com.suding.speedplay")
 
 /**
  * Unica activity: schermata Home (categoria HOME) e voce nell'elenco app (LAUNCHER).
@@ -255,13 +258,14 @@ class MainActivity : ComponentActivity() {
             driveApp.radioController.start(radioActions)
         }
 
+        val projectionPkg = PROJECTION_PKGS.firstOrNull { pm.getLaunchIntentForPackage(it) != null }
+
         fun runSmartStart() {
-            val aaInstalled = pm.getLaunchIntentForPackage(ANDROID_AUTO_PKG) != null
             val config = SmartStartConfig(
                 enabled = s.smartStartEnabled,
                 playMusic = s.smartStartMusic,
                 startNav = s.smartStartNav,
-                launchAndroidAuto = s.smartStartAndroidAuto && aaInstalled,
+                launchAndroidAuto = s.smartStartAndroidAuto && projectionPkg != null,
                 hasOnlineMusic = s.onlineMusicApp != null,
                 hasOfflineMusic = s.offlineMusicApp != null,
                 hasNav = s.navApp != null,
@@ -274,8 +278,10 @@ class MainActivity : ComponentActivity() {
                     SmartAction.PLAY_OFFLINE -> driveApp.mediaRepository.resumeOrPlay(s.offlineMusicApp?.packageName)
                     SmartAction.START_NAV -> s.navApp?.let { nav -> Launcher.launchApp(context, nav) }
                     SmartAction.LAUNCH_ANDROID_AUTO ->
-                        pm.getLaunchIntentForPackage(ANDROID_AUTO_PKG)?.let { intent ->
-                            runCatching { context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                        projectionPkg?.let { pkg ->
+                            pm.getLaunchIntentForPackage(pkg)?.let { intent ->
+                                runCatching { context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                            }
                         }
                 }
             }
@@ -290,8 +296,20 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // Stato dei fari e tema automatico.
-        val lightsResolved = s.lightsBinding?.let { LightsResolver.resolve(it, vehicleSignals[it.id]) }
+        // Auto-seleziona il navigatore impostato nel sistema (es. forfan.navi.name = Maps).
+        LaunchedEffect(apps, vehicleSignals[KnownVehicleSignals.SYSTEM_NAV_PROP]) {
+            if (s.navApp == null && apps.isNotEmpty()) {
+                val pkg = KnownVehicleSignals.systemNavPackage(vehicleSignals)
+                if (pkg != null) apps.firstOrNull { it.key.packageName == pkg }?.let {
+                    driveApp.settingsRepository.setNavApp(it.key)
+                }
+            }
+        }
+
+        // Stato dei fari (collegamento esplicito o segnale noto automatico) e tema automatico.
+        val lightsResolved = VehicleStatus.lightsOn(s.lightsBinding, vehicleSignals)
+        val vehicleGauges = remember(s.signalBindings, vehicleSignals) { VehicleStatus.gauges(s.signalBindings, vehicleSignals) }
+        val vehicleAlerts = remember(s.signalBindings, vehicleSignals) { VehicleStatus.activeAlerts(s.signalBindings, vehicleSignals) }
         var autoTick by remember { mutableStateOf(0) }
         LaunchedEffect(Unit) {
             while (true) { kotlinx.coroutines.delay(60_000); autoTick++ }
@@ -439,6 +457,12 @@ class MainActivity : ComponentActivity() {
                             onVehicle = { screen = Screen.VEHICLE },
                             onRadio = { screen = Screen.RADIO },
                         )
+                        VehicleStatusStrip(
+                            lightsOn = lightsResolved,
+                            gauges = vehicleGauges,
+                            alerts = vehicleAlerts,
+                            onOpenVehicle = { screen = Screen.VEHICLE },
+                        )
                     }
                     Box(Modifier.weight(1f).fillMaxWidth()) {
                         when (screen) {
@@ -533,6 +557,7 @@ class MainActivity : ComponentActivity() {
                                 favorites = s.favorites,
                                 onLaunch = { report(Launcher.launchApp(context, it)) },
                                 onToggleFavorite = { key -> scope.launch { repo.toggleFavorite(key) } },
+                                onOpenSettings = { screen = Screen.SETTINGS },
                                 onBack = { screen = Screen.DASHBOARD },
                             )
 
@@ -607,6 +632,14 @@ class MainActivity : ComponentActivity() {
                                         )
                                     }
                                 },
+                                onAddAlert = { id, activeValue ->
+                                    scope.launch {
+                                        driveApp.settingsRepository.upsertBinding(
+                                            SignalBinding(id, SignalRole.ALERT, SignalIds.describe(id).take(28), onValue = activeValue, offValue = null)
+                                        )
+                                    }
+                                    message("Spia creata: attiva quando il valore è «$activeValue».")
+                                },
                                 onRemoveBinding = { b -> scope.launch { driveApp.settingsRepository.removeBinding(b.id, b.role) } },
                                 exportStatus = vehicleExportStatus,
                                 onExport = {
@@ -655,7 +688,7 @@ class MainActivity : ComponentActivity() {
                                 appLabel = { key -> apps.firstOrNull { it.key == key }?.label },
                                 btConnected = btConnected,
                                 online = online,
-                                androidAutoInstalled = pm.getLaunchIntentForPackage(ANDROID_AUTO_PKG) != null,
+                                androidAutoInstalled = projectionPkg != null,
                                 onToggleEnabled = { on -> scope.launch { repo.setSmartStartEnabled(on) } },
                                 onToggleMusic = { on -> scope.launch { repo.setSmartStartMusic(on) } },
                                 onToggleNav = { on -> scope.launch { repo.setSmartStartNav(on) } },
@@ -671,10 +704,10 @@ class MainActivity : ComponentActivity() {
                         current = screen,
                         onHome = { screen = Screen.DASHBOARD },
                         onNav = { openOrPick(s.navApp, PickerTarget.NAV) },
+                        onRadio = { screen = Screen.RADIO },
                         onMusic = { openOrPick(s.musicApp, PickerTarget.MUSIC) },
                         onPhone = { openOrPick(s.phoneApp, PickerTarget.PHONE) },
                         onApps = { screen = Screen.APPS },
-                        onSettings = { screen = Screen.SETTINGS },
                     )
                 }
             }

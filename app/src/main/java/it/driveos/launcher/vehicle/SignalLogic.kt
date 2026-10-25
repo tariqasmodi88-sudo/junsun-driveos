@@ -115,7 +115,7 @@ object CandidateFinder {
 }
 
 /** Ruolo di un segnale collegato dall'utente. */
-enum class SignalRole { LIGHTS, GAUGE }
+enum class SignalRole { LIGHTS, GAUGE, ALERT }
 
 /**
  * Collegamento salvato: "questo segnale indica i fari" oppure "mostra questo segnale

@@ -3,7 +3,7 @@ package it.driveos.launcher.ui.theme
 import android.content.Context
 import android.content.res.Configuration
 import it.driveos.launcher.settings.DriveSettings
-import it.driveos.launcher.vehicle.LightsResolver
+import it.driveos.launcher.vehicle.VehicleStatus
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -19,9 +19,8 @@ object AutoThemeState {
     data class Result(val dark: Boolean, val source: AutoSource)
 
     fun compute(context: Context, settings: DriveSettings, signals: Map<String, String>, now: ZonedDateTime = ZonedDateTime.now()): Result {
-        val lightsBinding = settings.lightsBinding
-        val lightsValue = lightsBinding?.let { signals[it.id] }
-        val lightsOn = LightsResolver.resolve(lightsBinding, lightsValue)
+        // Fari: dal collegamento esplicito o dai segnali noti (es. forfan_light_state).
+        val lightsOn = VehicleStatus.lightsOn(settings.lightsBinding, signals)
 
         val systemNight = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
             Configuration.UI_MODE_NIGHT_YES

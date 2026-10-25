@@ -45,6 +45,7 @@ import it.driveos.launcher.settings.DriveSettings
 import it.driveos.launcher.vehicle.Candidate
 import it.driveos.launcher.vehicle.SignalBinding
 import it.driveos.launcher.vehicle.SignalIds
+import it.driveos.launcher.vehicle.SignalRole
 
 /**
  * Schermata Veicolo: mostra i segnali che il firmware pubblica, scopre le azioni delle app
@@ -66,6 +67,7 @@ fun VehicleScreen(
     onRecordOff: () -> Unit,
     onAssignLights: (Candidate) -> Unit,
     onAddGauge: (String) -> Unit,
+    onAddAlert: (String, String) -> Unit,
     onRemoveBinding: (SignalBinding) -> Unit,
     exportStatus: String?,
     onExport: () -> Unit,
@@ -74,6 +76,8 @@ fun VehicleScreen(
     var showAll by remember { mutableStateOf(false) }
     val colors = MaterialTheme.colorScheme
     val gaugeIds = settings.gaugeBindings.map { it.id }.toSet()
+    val alertBindings = settings.signalBindings.filter { it.role == SignalRole.ALERT }
+    val alertIds = alertBindings.map { it.id }.toSet()
     val lights = settings.lightsBinding
 
     Column(Modifier.fillMaxSize()) {
@@ -125,13 +129,29 @@ fun VehicleScreen(
                         modifier = Modifier.clickable { onRemoveBinding(it) })
                 }
             }
+            if (lights == null && lightsResolved != null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Check, null, tint = colors.primary, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Fari rilevati automaticamente su questo firmware (forfan_light_state). Il tema automatico li usa già.",
+                        fontSize = 14.sp, color = colors.onSurface)
+                }
+            }
 
-            Label("3 · Valori sul cruscotto")
+            Label("3 · Valori sempre visibili (cruscotto)")
             settings.gaugeBindings.forEach { g ->
                 SignalRow(g.label, (signals[g.id] ?: "—") + (if (g.unit.isNotBlank()) " ${g.unit}" else ""),
                     "Rimuovi", colors.error) { onRemoveBinding(g) }
             }
-            Hint("Tocca «+» su un segnale per mostrarlo sempre (carburante, pressione pneumatici, spie).")
+            Hint("Tocca «+» su un segnale per mostrarlo sempre (carburante, temperatura, olio…).")
+
+            Label("4 · Spie (attive solo quando scattano)")
+            if (alertBindings.isEmpty()) Hint("Tocca «!» su un segnale per usarlo come spia (es. pressione pneumatici, avaria).")
+            alertBindings.forEach { a ->
+                val active = signals[a.id]?.let { v -> if (a.onValue != null) v == a.onValue else v != a.offValue } ?: false
+                SignalRow(a.label + if (active) "  ●" else "", (signals[a.id] ?: "—"),
+                    "Rimuovi", colors.error) { onRemoveBinding(a) }
+            }
 
             Label("Segnali letti ora (${signals.size})")
             if (signals.isEmpty()) {
@@ -140,9 +160,11 @@ fun VehicleScreen(
                 val shown = if (showAll) signals.entries.toList() else signals.entries.take(14)
                 LazyColumn(Modifier.fillMaxWidth().heightIn(max = 360.dp)) {
                     items(shown, key = { it.key }) { (id, value) ->
-                        val isGauge = id in gaugeIds
-                        SignalRow(SignalIds.describe(id), value, if (isGauge) "✓" else "+",
-                            if (isGauge) colors.primary else colors.onSurface) { if (!isGauge) onAddGauge(id) }
+                        LiveSignalRow(
+                            name = SignalIds.describe(id), value = value,
+                            isGauge = id in gaugeIds, isAlert = id in alertIds,
+                            onGauge = { onAddGauge(id) }, onAlert = { onAddAlert(id, value) },
+                        )
                     }
                 }
                 if (!showAll && signals.size > 14) {
@@ -226,8 +248,29 @@ private fun SignalRow(name: String, value: String, trailing: String, trailingCol
         Text(value, fontSize = 15.sp, fontFamily = FontFamily.Monospace, color = colors.onSurfaceVariant,
             maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.width(110.dp))
         Spacer(Modifier.width(10.dp))
-        Box(Modifier.size(34.dp).clickable { onTrailing() }, contentAlignment = Alignment.Center) {
-            Text(trailing, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = trailingColor)
+        Box(Modifier.clickable { onTrailing() }.padding(horizontal = 4.dp, vertical = 4.dp), contentAlignment = Alignment.Center) {
+            Text(trailing, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = trailingColor)
+        }
+    }
+}
+
+@Composable
+private fun LiveSignalRow(name: String, value: String, isGauge: Boolean, isAlert: Boolean, onGauge: () -> Unit, onAlert: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(name, fontSize = 15.sp, color = colors.onSurface, maxLines = 1,
+            overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+        Spacer(Modifier.width(8.dp))
+        Text(value, fontSize = 15.sp, fontFamily = FontFamily.Monospace, color = colors.onSurfaceVariant,
+            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.width(96.dp))
+        Spacer(Modifier.width(8.dp))
+        Box(Modifier.size(34.dp).clickable(enabled = !isGauge) { onGauge() }, contentAlignment = Alignment.Center) {
+            Text(if (isGauge) "✓" else "+", fontSize = 20.sp, fontWeight = FontWeight.Bold,
+                color = if (isGauge) colors.primary else colors.onSurface)
+        }
+        Box(Modifier.size(34.dp).clickable(enabled = !isAlert) { onAlert() }, contentAlignment = Alignment.Center) {
+            Text("!", fontSize = 20.sp, fontWeight = FontWeight.Bold,
+                color = if (isAlert) colors.error else colors.onSurfaceVariant)
         }
     }
 }

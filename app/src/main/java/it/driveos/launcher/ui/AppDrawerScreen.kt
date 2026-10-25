@@ -12,9 +12,17 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -42,6 +50,7 @@ fun AppDrawerScreen(
     favorites: List<String>,
     onLaunch: (AppKey) -> Unit,
     onToggleFavorite: (AppKey) -> Unit,
+    onOpenSettings: () -> Unit,
     onBack: () -> Unit,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
@@ -90,6 +99,11 @@ fun AppDrawerScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
             ) {
+                if (query.isBlank()) {
+                    item(key = "h_driveos", span = { GridItemSpan(maxLineSpan) }) { SectionLabel("DriveOS") }
+                    item(key = "t_settings") { SettingsTile(onClick = onOpenSettings) }
+                    item(key = "h_apps0", span = { GridItemSpan(maxLineSpan) }) { Spacer(Modifier.height(4.dp)) }
+                }
                 if (favoriteEntries.isNotEmpty()) {
                     item(key = "h_fav", span = { GridItemSpan(maxLineSpan) }) { SectionLabel("Preferiti") }
                     items(favoriteEntries, key = { "f_" + it.key.encode() }) { entry ->
@@ -112,6 +126,24 @@ fun AppDrawerScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SettingsTile(onClick: () -> Unit) {
+    Column(
+        Modifier.clip(RoundedCornerShape(16.dp)).clickable(onClick = onClick).padding(vertical = 10.dp, horizontal = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            Modifier.size(64.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Filled.Settings, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.size(34.dp))
+        }
+        Spacer(Modifier.height(6.dp))
+        Text("Impostazioni", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
     }
 }
 

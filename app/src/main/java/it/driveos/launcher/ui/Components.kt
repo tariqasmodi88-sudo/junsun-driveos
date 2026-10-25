@@ -103,10 +103,10 @@ fun BottomBar(
     current: Screen,
     onHome: () -> Unit,
     onNav: () -> Unit,
+    onRadio: () -> Unit,
     onMusic: () -> Unit,
     onPhone: () -> Unit,
     onApps: () -> Unit,
-    onSettings: () -> Unit,
 ) {
     Row(
         Modifier.fillMaxWidth().height(92.dp).padding(horizontal = 10.dp, vertical = 8.dp),
@@ -115,13 +115,10 @@ fun BottomBar(
         val m = Modifier.weight(1f).fillMaxHeight()
         BigButton("Home", Icons.Filled.Home, onHome, m, selected = current == Screen.DASHBOARD)
         BigButton("Naviga", Icons.Filled.Place, onNav, m)
-        BigButton("Musica", Icons.Filled.PlayArrow, onMusic, m)
+        BigButton("Radio", it.driveos.launcher.ui.icons.RadioIcon, onRadio, m, selected = current == Screen.RADIO)
+        BigButton("Musica", Icons.Filled.PlayArrow, onMusic, m, selected = current == Screen.MUSIC)
         BigButton("Telefono", Icons.Filled.Phone, onPhone, m)
         BigButton("App", Icons.Filled.Menu, onApps, m, selected = current == Screen.APPS)
-        BigButton(
-            "Impostazioni", Icons.Filled.Settings, onSettings, m,
-            selected = current == Screen.SETTINGS || current == Screen.DEVICE_INFO,
-        )
     }
 }
 
