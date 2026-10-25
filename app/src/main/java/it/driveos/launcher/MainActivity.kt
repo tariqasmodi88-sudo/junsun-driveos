@@ -319,7 +319,9 @@ class MainActivity : ComponentActivity() {
         // Stato dei fari (collegamento esplicito o segnale noto automatico) e tema automatico.
         val lightsResolved = VehicleStatus.lightsOn(s.lightsBinding, vehicleSignals)
         val vehicleGauges = remember(s.signalBindings, vehicleSignals) { VehicleStatus.gauges(s.signalBindings, vehicleSignals) }
-        val vehicleAlerts = remember(s.signalBindings, vehicleSignals) { VehicleStatus.activeAlerts(s.signalBindings, vehicleSignals) }
+        val vehicleAlerts = remember(s.signalBindings, vehicleSignals) {
+            VehicleStatus.knownActiveAlerts(vehicleSignals) + VehicleStatus.activeAlerts(s.signalBindings, vehicleSignals)
+        }
         var autoTick by remember { mutableStateOf(0) }
         LaunchedEffect(Unit) {
             while (true) { kotlinx.coroutines.delay(60_000); autoTick++ }

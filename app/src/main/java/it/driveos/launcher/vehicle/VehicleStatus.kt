@@ -37,6 +37,16 @@ object KnownVehicleSignals {
     /** Package del navigatore impostato nel sistema, se presente. */
     fun systemNavPackage(signals: Map<String, String>): String? =
         signals[SYSTEM_NAV_PROP]?.takeIf { it.isNotBlank() && it.contains('.') }
+
+    /** Retromarcia reale su ForFan: broadcast com.forfan.operator_reversing, extra "operate". */
+    const val REVERSE_ID = "bc:com.forfan.operator_reversing|operate"
+
+    /** true = in retromarcia, false = no, null = segnale mai visto. */
+    fun reverseOn(signals: Map<String, String>): Boolean? = when (signals[REVERSE_ID]) {
+        null -> null
+        "1" -> true
+        else -> false
+    }
 }
 
 /** Un valore sempre visibile sul cruscotto (es. carburante, temperatura). */
@@ -72,6 +82,16 @@ object VehicleStatus {
             }
             if (active) ActiveAlert(b.label) else null
         }
+
+    /**
+     * Spie/eventi riconosciuti automaticamente su questo firmware (oltre a quelle mappate a mano).
+     * Solo stati reali e attivi ADESSO: niente falsi allarmi.
+     */
+    fun knownActiveAlerts(signals: Map<String, String>): List<ActiveAlert> {
+        val out = ArrayList<ActiveAlert>()
+        if (KnownVehicleSignals.reverseOn(signals) == true) out.add(ActiveAlert("Retromarcia"))
+        return out
+    }
 
     /** Stato fari: dal collegamento esplicito, altrimenti dai segnali noti automatici. */
     fun lightsOn(lightsBinding: SignalBinding?, signals: Map<String, String>): Boolean? {

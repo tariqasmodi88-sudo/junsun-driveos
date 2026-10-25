@@ -183,6 +183,7 @@ class VehicleRepository(context: Context) {
             "com.ts.can.excd",
             "com.ts.can.BROADCAST_CAMERA_KEY",
             // Eventi veicolo
+            "com.forfan.operator_reversing", // retromarcia reale (extra "operate": 1=inserita)
             "comm.power.ENTER_REVERSE",
             "comm.power.QUIT_REVERSE",
             "com.cusc.action.ACC_OFF",
