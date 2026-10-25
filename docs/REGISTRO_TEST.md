@@ -25,3 +25,15 @@ Ambiente: workspace cloud, nessun dispositivo Android, nessun accesso ai reposit
 
 Per ogni riga "Da verificare": esegui il test e annota esito, data e cosa hai visto
 (una foto dello schermo è sufficiente in caso di errore).
+
+## 2026-10-25 — v0.2.0
+
+| Test | Esito | Note |
+|---|---|---|
+| 34 test unitari della logica (layout, agenda, cronologia, avanzamento brano, ricerca, navigazione) | **Superati** | Eseguiti in locale e su GitHub Actions |
+| Compilazione APK v0.2 | **Superato** | GitHub Actions, build 8 (le build 3–7 fallite per un file danneggiato da una sostituzione automatica, poi ripristinato) |
+| Layout e schede sulla Junsun (6 layout) | Da verificare | |
+| Accesso notifiche: brano in riproduzione e comandi | Da verificare | Dipende dalle app che espongono una MediaSession |
+| Indicazioni di guida dalla notifica di Maps/Waze | Da verificare | |
+| Agenda Google Calendar | Da verificare | Richiede account Google sincronizzato sulla radio |
+| Dettatura destinazione | Da verificare | Richiede l'app Google |
