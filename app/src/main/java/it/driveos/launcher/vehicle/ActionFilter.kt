@@ -61,7 +61,8 @@ object ActionFilter {
         if (underscore) return true
         // parole chiave dell'auto in minuscolo (es. "com.xxx.can.door")
         val carWords = listOf("can", "canbus", "mcu", "radio", "fm", "ill", "light", "lamp", "reverse",
-            "door", "fuel", "tpms", "tire", "tyre", "warning", "carinfo", "vehicle", "acc", "brake")
+            "door", "fuel", "tpms", "tire", "tyre", "warning", "carinfo", "vehicle", "acc", "brake",
+            "toppal", "txz", "junsun", "forfan", "obd", "cluster", "rpm", "speed", "coolant", "oil", "temp")
         return parts.drop(1).any { it.lowercase() in carWords } && last.all { it.isLowerCase() || it.isDigit() || it == '_' }
     }
 }

@@ -355,8 +355,9 @@ class MainActivity : ComponentActivity() {
                 scanning = false
                 if (result == null) { scanResult = "Scansione non riuscita."; return@launch }
                 driveApp.settingsRepository.setDiscoveredActions(result.actions)
-                scanResult = "Trovate ${result.actions.size} azioni in ${result.scannedApps.size} app. " +
-                    "Ora muovi il veicolo: i valori compariranno nell'elenco."
+                val veh = result.vehicleApps.joinToString(", ").ifBlank { "nessuna app veicolo riconosciuta" }
+                scanResult = "Trovate ${result.actions.size} azioni in ${result.scannedApps.size} app " +
+                    "(approfondite: $veh). Attiva la registrazione continua e muovi il veicolo."
             }
         }
 
