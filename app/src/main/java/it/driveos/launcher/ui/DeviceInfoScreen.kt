@@ -1,7 +1,5 @@
 package it.driveos.launcher.ui
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,6 +21,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -30,57 +29,66 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import it.driveos.launcher.device.DeviceInfoCollector
+import it.driveos.launcher.system.CrashLog
+import it.driveos.launcher.system.Exporter
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
+/**
+ * Riepilogo hardware + esportazione. L'export NON usa più il selettore di file di sistema
+ * (che sul firmware Junsun mancava e causava il crash): salva direttamente in
+ * Download/DriveOS e nella cartella dell'app su ogni memoria/chiavetta.
+ */
 @Composable
-fun DeviceInfoScreen(onBack: () -> Unit) {
+fun DeviceInfoScreen(
+    extraSections: suspend () -> JSONObject = { JSONObject() },
+    onBack: () -> Unit,
+) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var info by remember { mutableStateOf<JSONObject?>(null) }
     var status by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         info = withContext(Dispatchers.Default) {
-            runCatching { DeviceInfoCollector.collect(context.applicationContext) }
-                .getOrElse { JSONObject().put("errore", it.toString()) }
+            runCatching {
+                DeviceInfoCollector.collect(context.applicationContext).apply {
+                    put("veicolo", runCatching { extraSections() }.getOrElse { JSONObject().put("errore", it.toString()) })
+                    CrashLog.read(context)?.let { put("ultimoCrash", it) }
+                }
+            }.getOrElse { JSONObject().put("errore", it.toString()) }
         }
     }
 
-    // Esportazione tramite il selettore di file di sistema: nessun permesso di archiviazione.
-    val exporter = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
-        val data = info
-        if (uri == null || data == null) return@rememberLauncherForActivityResult
-        status = runCatching {
-            context.contentResolver.openOutputStream(uri)?.use { it.write(data.toString(2).toByteArray()) }
-                ?: error("impossibile aprire il file")
-            "File esportato correttamente."
-        }.getOrElse { "Esportazione non riuscita: ${it.message}" }
+    fun export() {
+        val data = info ?: return
+        scope.launch {
+            val stamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmm"))
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    Exporter.save(context, "driveos_info_$stamp.json", "application/json",
+                        data.toString(2).toByteArray())
+                }.getOrElse { Exporter.Result(emptyList(), listOf(it.message ?: "errore")) }
+            }
+            status = if (result.ok) "Salvato in:\n• " + result.saved.joinToString("\n• ")
+            else "Esportazione non riuscita. " + result.errors.firstOrNull().orEmpty()
+        }
     }
 
     Column(Modifier.fillMaxSize()) {
         ScreenHeader("Info dispositivo", onBack) {
-            ActionButton(
-                "Esporta JSON",
-                Icons.Filled.Share,
-                onClick = {
-                    val stamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmm"))
-                    exporter.launch("driveos_info_$stamp.json")
-                },
-                modifier = Modifier.widthIn(max = 260.dp),
-                highlighted = true,
-            )
+            ActionButton("Esporta JSON", Icons.Filled.Share, onClick = { export() },
+                modifier = Modifier.widthIn(max = 260.dp), highlighted = true)
         }
         Column(
-            Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 8.dp),
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 8.dp),
         ) {
             status?.let {
-                Text(it, fontSize = 17.sp, color = MaterialTheme.colorScheme.primary)
+                Text(it, fontSize = 16.sp, color = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.height(12.dp))
             }
             val data = info
@@ -91,13 +99,8 @@ fun DeviceInfoScreen(onBack: () -> Unit) {
                     Column {
                         DeviceInfoCollector.summary(data).forEach { (label, value) ->
                             Row(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                                Text(
-                                    label,
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.width(220.dp),
-                                )
+                                Text(label, fontSize = 16.sp, fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(220.dp))
                                 Text(value, fontSize = 16.sp, color = MaterialTheme.colorScheme.onBackground)
                             }
                         }
@@ -105,11 +108,17 @@ fun DeviceInfoScreen(onBack: () -> Unit) {
                 }
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    "Il file esportato contiene l'elenco completo di app, launcher, servizi vocali, " +
-                        "sensori e dispositivi di input. Salvalo su chiavetta USB e invialo per l'analisi.",
-                    fontSize = 15.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    "Il file esportato contiene app, launcher, servizi vocali, sensori, dispositivi di input, " +
+                        "i segnali del veicolo letti e l'eventuale ultimo errore. Viene salvato in Download/DriveOS " +
+                        "e sulla chiavetta USB (cartella Android/data/it.driveos.launcher/files).",
+                    fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                data.optString("ultimoCrash").takeIf { it.isNotBlank() }?.let {
+                    Spacer(Modifier.height(16.dp))
+                    Text("Ultimo errore registrato", fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.error)
+                    Text(it.take(600), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
                 Spacer(Modifier.height(24.dp))
             }
         }

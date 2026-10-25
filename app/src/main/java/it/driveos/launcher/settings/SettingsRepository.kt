@@ -12,6 +12,11 @@ import it.driveos.launcher.apps.AppKey
 import it.driveos.launcher.apps.FavoritesCodec
 import it.driveos.launcher.dashboard.DashboardLayout
 import it.driveos.launcher.nav.DestinationHistory
+import it.driveos.launcher.radio.RadioPreset
+import it.driveos.launcher.radio.RadioPresetCodec
+import it.driveos.launcher.vehicle.BindingCodec
+import it.driveos.launcher.vehicle.SignalBinding
+import it.driveos.launcher.vehicle.SignalRole
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -19,12 +24,13 @@ import java.io.IOException
 
 private val Context.driveDataStore: DataStore<Preferences> by preferencesDataStore(name = "driveos_settings")
 
-enum class ThemeMode { DARK, LIGHT, SYSTEM }
+enum class ThemeMode { DARK, LIGHT, SYSTEM, AUTO }
 
 data class DriveSettings(
     val navApp: AppKey? = null,
     val musicApp: AppKey? = null,
     val phoneApp: AppKey? = null,
+    val radioApp: AppKey? = null,
     val homeAddress: String = "",
     val workAddress: String = "",
     val recentDestinations: List<String> = emptyList(),
@@ -32,7 +38,18 @@ data class DriveSettings(
     val favorites: List<String> = emptyList(),
     val themeMode: ThemeMode = ThemeMode.DARK,
     val accentIndex: Int = 0,
-)
+    // Segnali del veicolo collegati dall'utente (fari per il tema, valori per il cruscotto).
+    val signalBindings: List<SignalBinding> = emptyList(),
+    // Azioni broadcast scoperte nelle app Junsun, da ascoltare (persistite dopo la scansione).
+    val discoveredActions: List<String> = emptyList(),
+    // Posizione per il calcolo alba/tramonto (gradi), 0,0 = non impostata → usa Roma di default.
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
+    val radioPresets: List<RadioPreset> = emptyList(),
+) {
+    val lightsBinding: SignalBinding? get() = signalBindings.firstOrNull { it.role == SignalRole.LIGHTS }
+    val gaugeBindings: List<SignalBinding> get() = signalBindings.filter { it.role == SignalRole.GAUGE }
+}
 
 /** Preferenze persistenti (DataStore): sopravvivono a riavvii e aggiornamenti dell'app. */
 class SettingsRepository(context: Context) {
@@ -42,6 +59,7 @@ class SettingsRepository(context: Context) {
         val NAV = stringPreferencesKey("nav_app")
         val MUSIC = stringPreferencesKey("music_app")
         val PHONE = stringPreferencesKey("phone_app")
+        val RADIO = stringPreferencesKey("radio_app")
         val HOME = stringPreferencesKey("home_address")
         val WORK = stringPreferencesKey("work_address")
         val RECENT = stringPreferencesKey("recent_destinations")
@@ -49,6 +67,11 @@ class SettingsRepository(context: Context) {
         val FAVORITES = stringPreferencesKey("favorites")
         val THEME = stringPreferencesKey("theme_mode")
         val ACCENT = intPreferencesKey("accent_index")
+        val SIGNALS = stringPreferencesKey("signal_bindings")
+        val ACTIONS = stringPreferencesKey("discovered_actions")
+        val LAT = stringPreferencesKey("latitude")
+        val LON = stringPreferencesKey("longitude")
+        val PRESETS = stringPreferencesKey("radio_presets")
     }
 
     val settings: Flow<DriveSettings> = store.data
@@ -58,6 +81,7 @@ class SettingsRepository(context: Context) {
                 navApp = AppKey.decode(p[Keys.NAV]),
                 musicApp = AppKey.decode(p[Keys.MUSIC]),
                 phoneApp = AppKey.decode(p[Keys.PHONE]),
+                radioApp = AppKey.decode(p[Keys.RADIO]),
                 homeAddress = p[Keys.HOME].orEmpty(),
                 workAddress = p[Keys.WORK].orEmpty(),
                 recentDestinations = DestinationHistory.decode(p[Keys.RECENT]),
@@ -67,12 +91,44 @@ class SettingsRepository(context: Context) {
                     ?.let { name -> ThemeMode.entries.firstOrNull { it.name == name } }
                     ?: ThemeMode.DARK,
                 accentIndex = p[Keys.ACCENT] ?: 0,
+                signalBindings = BindingCodec.decode(p[Keys.SIGNALS]),
+                discoveredActions = p[Keys.ACTIONS]?.split('\n')?.filter { it.isNotBlank() } ?: emptyList(),
+                latitude = p[Keys.LAT]?.toDoubleOrNull() ?: 0.0,
+                longitude = p[Keys.LON]?.toDoubleOrNull() ?: 0.0,
+                radioPresets = RadioPresetCodec.decode(p[Keys.PRESETS]),
             )
         }
 
     suspend fun setNavApp(key: AppKey?) = setApp(Keys.NAV, key)
     suspend fun setMusicApp(key: AppKey?) = setApp(Keys.MUSIC, key)
     suspend fun setPhoneApp(key: AppKey?) = setApp(Keys.PHONE, key)
+    suspend fun setRadioApp(key: AppKey?) = setApp(Keys.RADIO, key)
+
+    suspend fun setThemeModeByName(mode: ThemeMode) = setThemeMode(mode)
+
+    suspend fun upsertBinding(binding: SignalBinding) {
+        store.edit {
+            it[Keys.SIGNALS] = BindingCodec.encode(BindingCodec.upsert(BindingCodec.decode(it[Keys.SIGNALS]), binding))
+        }
+    }
+
+    suspend fun removeBinding(id: String, role: SignalRole) {
+        store.edit {
+            it[Keys.SIGNALS] = BindingCodec.encode(BindingCodec.remove(BindingCodec.decode(it[Keys.SIGNALS]), id, role))
+        }
+    }
+
+    suspend fun setDiscoveredActions(actions: List<String>) {
+        store.edit { it[Keys.ACTIONS] = actions.joinToString("\n") }
+    }
+
+    suspend fun setLocation(lat: Double, lon: Double) {
+        store.edit { it[Keys.LAT] = lat.toString(); it[Keys.LON] = lon.toString() }
+    }
+
+    suspend fun setRadioPresets(presets: List<RadioPreset>) {
+        store.edit { it[Keys.PRESETS] = RadioPresetCodec.encode(presets) }
+    }
 
     suspend fun setHomeAddress(address: String) {
         store.edit { it[Keys.HOME] = address.trim() }

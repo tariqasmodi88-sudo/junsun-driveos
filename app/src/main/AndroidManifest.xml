@@ -1,8 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Unico permesso: lettura del calendario, chiesto solo quando tocchi "Collega calendario". -->
+    <!-- Lettura del calendario, chiesto solo quando tocchi "Collega calendario". -->
     <uses-permission android:name="android.permission.READ_CALENDAR" />
+
+    <!-- Luminosità di sistema: permesso speciale, chiesto solo se attivi "Luminosità di sistema".
+         Senza di esso DriveOS regola solo la luminosità della propria finestra. -->
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" tools:ignore="ProtectedPermissions" />
+
+    <!-- Elenco delle app per trovare i canali dati CAN/radio (schermata Veicolo).
+         Sul dispositivo (Android 10) non ha effetto; serve se il firmware fosse aggiornato a 11+. -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" tools:ignore="QueryAllPackagesPermission" />
 
     <!-- Visibilita' dei pacchetti (rilevante da Android 11; su Android 10 non ha effetto). -->
     <queries>

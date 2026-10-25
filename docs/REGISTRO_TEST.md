@@ -37,3 +37,20 @@ Per ogni riga "Da verificare": esegui il test e annota esito, data e cosa hai vi
 | Indicazioni di guida dalla notifica di Maps/Waze | Da verificare | |
 | Agenda Google Calendar | Da verificare | Richiede account Google sincronizzato sulla radio |
 | Dettatura destinazione | Da verificare | Richiede l'app Google |
+
+## 2026-10-25 — v0.3.0
+
+Nuove funzioni: correzione crash export, tema automatico (fari/alba-tramonto), sonda
+veicolo (CAN), pannello controlli (volume/luminosità), radio con memorizzazione canali.
+
+| Test | Esito | Note |
+|---|---|---|
+| 20 nuovi test unitari (StringScanner, ActionFilter, segnali, candidati, alba/tramonto, radio, controlli) | **20/20 superati** | Compilatore Kotlin standalone 2.0.20 |
+| Compilazione APK v0.3 (Compose) | Da verificare | GitHub Actions |
+| Export JSON senza crash (salva in Download/DriveOS e su chiavetta) | Da verificare | Sostituito il selettore di sistema che causava il crash |
+| Tema automatico da alba/tramonto | Da verificare | Posizione predefinita Italia centrale, impostabile |
+| Scansione app veicolo + lettura segnali CAN | **Da verificare sul veicolo** | Dipende da cosa il firmware Junsun pubblica |
+| Calibrazione fari (registra acceso/spento → candidato) | **Da verificare sul veicolo** | Serve per il tema automatico dai fari |
+| Pannello controlli: volume reale | Da verificare | AudioManager, nessun permesso |
+| Pannello controlli: luminosità finestra / sistema | Da verificare | Sistema solo con permesso WRITE_SETTINGS |
+| Radio: salvataggio e apertura canali | Da verificare | La sintonizzazione diretta dipende da un comando dell'app radio, da scoprire |

@@ -20,11 +20,18 @@ val AccentNames = listOf("Azzurro", "Verde", "Ambra", "Rosso", "Viola")
 private fun darker(c: Color) = Color(red = c.red * 0.55f, green = c.green * 0.55f, blue = c.blue * 0.55f, alpha = 1f)
 
 @Composable
-fun DriveOSTheme(themeMode: ThemeMode, accentIndex: Int, content: @Composable () -> Unit) {
+fun DriveOSTheme(
+    themeMode: ThemeMode,
+    accentIndex: Int,
+    autoDark: Boolean? = null,
+    content: @Composable () -> Unit,
+) {
     val dark = when (themeMode) {
         ThemeMode.DARK -> true
         ThemeMode.LIGHT -> false
         ThemeMode.SYSTEM -> isSystemInDarkTheme()
+        // AUTO: deciso da fari/alba/tramonto (calcolato altrove); se non disponibile, segue il sistema.
+        ThemeMode.AUTO -> autoDark ?: isSystemInDarkTheme()
     }
     val accent = AccentColors.getOrElse(accentIndex) { AccentColors[0] }
     val colors = if (dark) {

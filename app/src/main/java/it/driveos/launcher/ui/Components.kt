@@ -293,6 +293,45 @@ private fun PickerRow(icon: ImageBitmap?, label: String, selected: Boolean, onCl
 }
 
 @Composable
+fun RadioPresetDialog(
+    onConfirm: (frequency: String, name: String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var freq by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
+    DriveDialog(onDismiss) {
+        Text("Aggiungi canale", fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
+        Spacer(Modifier.height(16.dp))
+        OutlinedTextField(
+            value = freq,
+            onValueChange = { freq = it },
+            singleLine = true,
+            label = { Text("Frequenza FM (es. 101.5)") },
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+        )
+        Spacer(Modifier.height(10.dp))
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            singleLine = true,
+            label = { Text("Nome (es. Radio Deejay)") },
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { if (freq.isNotBlank()) onConfirm(freq, name) }),
+        )
+        Spacer(Modifier.height(20.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            TextButton(onClick = onDismiss) { Text("Annulla", fontSize = 17.sp) }
+            Spacer(Modifier.width(8.dp))
+            Button(onClick = { onConfirm(freq, name) }, enabled = freq.isNotBlank()) {
+                Text("Salva", fontSize = 17.sp)
+            }
+        }
+    }
+}
+
+@Composable
 fun TextInputDialog(
     title: String,
     initial: String,

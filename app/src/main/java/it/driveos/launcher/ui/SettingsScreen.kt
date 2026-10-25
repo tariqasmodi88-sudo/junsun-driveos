@@ -56,8 +56,13 @@ fun SettingsScreen(
     onCalendarAccess: () -> Unit,
     onPickMusic: () -> Unit,
     onPickPhone: () -> Unit,
+    onPickRadio: () -> Unit,
     onThemeMode: (ThemeMode) -> Unit,
     onAccent: (Int) -> Unit,
+    autoThemeSource: String?,
+    onOpenVehicle: () -> Unit,
+    onOpenRadio: () -> Unit,
+    onEditLocation: () -> Unit,
     onHomeSettings: () -> Unit,
     onAndroidSettings: () -> Unit,
     onDeviceInfo: () -> Unit,
@@ -85,6 +90,11 @@ fun SettingsScreen(
                 }
             }
 
+            SectionTitle("Veicolo e radio")
+            SettingRow("Veicolo (CAN)", "Fari, carburante, pneumatici, spie e tema automatico", onOpenVehicle)
+            SettingRow("Radio", "Canali memorizzati" + (if (settings.radioPresets.isNotEmpty()) " (${settings.radioPresets.size})" else ""), onOpenRadio)
+            SettingRow("App radio", describe(settings.radioApp), onPickRadio)
+
             SectionTitle("App")
             SettingRow("Navigazione", describe(settings.navApp), onPickNav)
             SettingRow("Indirizzo di casa", settings.homeAddress.ifBlank { "Non impostato" }, onEditHome)
@@ -93,18 +103,31 @@ fun SettingsScreen(
             SettingRow("Telefono", describe(settings.phoneApp), onPickPhone)
 
             SectionTitle("Aspetto")
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 ThemeMode.entries.forEach { mode ->
                     Chip(
                         label = when (mode) {
                             ThemeMode.DARK -> "Scuro"
                             ThemeMode.LIGHT -> "Chiaro"
                             ThemeMode.SYSTEM -> "Come il sistema"
+                            ThemeMode.AUTO -> "Automatico"
                         },
                         selected = settings.themeMode == mode,
                         onClick = { onThemeMode(mode) },
                     )
                 }
+            }
+            if (settings.themeMode == ThemeMode.AUTO) {
+                Text(
+                    "Automatico: scuro di notte, chiaro di giorno. " +
+                        (autoThemeSource?.let { "Ora decide da: $it. " } ?: "") +
+                        if (settings.lightsBinding == null) "Collega i fari in Veicolo per usarli." else "",
+                    fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                SettingRow("Posizione (alba/tramonto)",
+                    if (settings.latitude != 0.0 || settings.longitude != 0.0)
+                        "%.3f, %.3f".format(settings.latitude, settings.longitude)
+                    else "Predefinita (Italia centrale)", onEditLocation)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 AccentColors.forEachIndexed { index, color ->
