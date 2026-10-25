@@ -44,10 +44,10 @@ class DriveNotificationListener : NotificationListenerService() {
         if (!isNavigation && !isOngoing) return
 
         val e = n.extras
-        val title = e.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty().trim()
-        val text = (e.getCharSequence(Notification.EXTRA_TEXT) ?: e.getCharSequence(Notification.EXTRA_BIG_TEXT))
-            ?.toString().orEmpty().trim()
-        val sub = e.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString().orEmpty().trim()
+        fun read(key: String): String = e.getCharSequence(key)?.toString()?.trim().orEmpty()
+        val title = read(Notification.EXTRA_TITLE)
+        val text = read(Notification.EXTRA_TEXT).ifEmpty { read(Notification.EXTRA_BIG_TEXT) }
+        val sub = read(Notification.EXTRA_SUB_TEXT)
         if (title.isEmpty() && text.isEmpty()) return
 
         val icon = runCatching {

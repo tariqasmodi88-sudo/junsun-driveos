@@ -130,17 +130,21 @@ class MediaRepository(context: Context) {
         }
         val md = c.metadata
         val st = c.playbackState
-        val title = md?.getString(MediaMetadata.METADATA_KEY_TITLE)
-            ?: md?.getString(MediaMetadata.METADATA_KEY_DISPLAY_TITLE)
-            ?: ""
-        val artist = md?.getString(MediaMetadata.METADATA_KEY_ARTIST)
-            ?: md?.getString(MediaMetadata.METADATA_KEY_DISPLAY_SUBTITLE)
-            ?: md?.getString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST)
-            ?: ""
-        val album = md?.getString(MediaMetadata.METADATA_KEY_ALBUM) ?: ""
-        val artSource = md?.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART)
-            ?: md?.getBitmap(MediaMetadata.METADATA_KEY_ART)
-            ?: md?.getBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON)
+        val title = firstText(
+            md?.getString(MediaMetadata.METADATA_KEY_TITLE),
+            md?.getString(MediaMetadata.METADATA_KEY_DISPLAY_TITLE),
+        )
+        val artist = firstText(
+            md?.getString(MediaMetadata.METADATA_KEY_ARTIST),
+            md?.getString(MediaMetadata.METADATA_KEY_DISPLAY_SUBTITLE),
+            md?.getString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST),
+        )
+        val album = firstText(md?.getString(MediaMetadata.METADATA_KEY_ALBUM))
+        val artSource: Bitmap? = listOf(
+            MediaMetadata.METADATA_KEY_ALBUM_ART,
+            MediaMetadata.METADATA_KEY_ART,
+            MediaMetadata.METADATA_KEY_DISPLAY_ICON,
+        ).firstNotNullOfOrNull { key -> md?.getBitmap(key) }
         if (artSource !== lastArtSource) {
             lastArtSource = artSource
             lastArt = artSource?.let { runCatching { downscale(it).asImageBitmap() }.getOrNull() }
@@ -165,6 +169,9 @@ class MediaRepository(context: Context) {
         val ratio = max.toFloat() / maxOf(b.width, b.height)
         return Bitmap.createScaledBitmap(b, (b.width * ratio).toInt(), (b.height * ratio).toInt(), true)
     }
+
+    private fun firstText(vararg values: String?): String =
+        values.firstOrNull { !it.isNullOrBlank() }.orEmpty()
 
     fun playPause() {
         val c = controller ?: return
