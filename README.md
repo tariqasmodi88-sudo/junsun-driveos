@@ -4,25 +4,57 @@ Launcher (schermata Home) per l'autoradio **Junsun FF_866X** ("V1 Pro") montata 
 **VW Tiguan 2016**. È una normale app Android: **non modifica firmware, partizioni,
 impostazioni di fabbrica né l'MCU** e non richiede root né permessi speciali.
 
-Versione attuale: **0.1.0**: prototipo reale (Fase 3 + avvio della navigazione, Fase 4/A).
+Versione attuale: **0.2.0**
 
-## Cosa fa la v0.1
+## Cosa fa
 
-| Funzione | Stato |
-|---|---|
-| Schermata Home con orologio, scheda navigazione e preferiti | Implementata |
-| Elenco app con ricerca (ignora accenti e maiuscole) | Implementata |
-| Preferiti: tieni premuta un'app nell'elenco | Implementata |
-| Barra inferiore: Home, Naviga, Musica, Telefono, App, Impostazioni | Implementata |
-| Scelta dell'app di navigazione, musica e telefono (salvata) | Implementata |
-| "Portami a casa" e "Cerca destinazione" (Google Maps, Waze, altre app via `geo:`) | Implementata |
-| Tema scuro/chiaro/sistema + 5 colori d'accento | Implementata |
-| Info dispositivo + esportazione JSON (sostituisce l'ADB) | Implementata |
-| Aggiornamento automatico se installi o rimuovi app | Implementata |
-| Radio FM, Bluetooth, CAN, DSP, retrocamera | **Restano le app Junsun**: DriveOS le apre e basta |
-| Brano in riproduzione, comandi vocali, OBD-II, stato GPS/BT | Fasi successive (non presenti, non simulate) |
+**Home a quattro schede**, che si adattano allo spazio disponibile:
 
-Nessuna funzione mostra dati inventati: se qualcosa non è configurato, lo dice.
+| Scheda | Contenuto | Tocco sulla scheda |
+|---|---|---|
+| Navigazione | Casa, Lavoro, Cerca, destinazioni recenti; durante la guida mostra la prossima manovra e l'orario di arrivo | Vista a tutto schermo con ricerca, dettatura vocale e recenti |
+| Musica | Copertina, titolo, artista, avanzamento, comandi ⏮ ⏯ ⏭ | Vista a tutto schermo con comandi grandi ed elenco sorgenti |
+| Ora e data | Orologio grande | Orologio a tutto schermo con il prossimo impegno |
+| Agenda | Prossimi impegni di Google Calendar | Agenda di 14 giorni, con "Naviga" verso il luogo dell'evento |
+
+**6 layout** selezionabili in *Impostazioni → Schermata Home*, con anteprima:
+Navigazione in primo piano (predefinito), Griglia, Musica in primo piano, Cruscotto, Colonne, Essenziale.
+
+Le dimensioni seguono le linee guida Google per le auto: aree di tocco fino a 76 dp,
+testo principale grande, contrasto elevato, tema scuro di notte.
+
+Altre funzioni: elenco app con ricerca e preferiti in testa, scelta delle app di
+navigazione/musica/telefono, tema scuro/chiaro/sistema con 5 colori, Info dispositivo
+con esportazione JSON.
+
+Radio FM, Bluetooth/vivavoce, CAN, DSP e retrocamera **restano le app Junsun**:
+DriveOS le apre e basta. Nessuna funzione mostra dati inventati.
+
+### Cosa serve attivare (una volta)
+
+| Funzione | Permesso | Dove |
+|---|---|---|
+| Brano in riproduzione e indicazioni del navigatore | Accesso alle notifiche | Scheda Musica → *Attiva*, oppure *Impostazioni → Permessi* |
+| Agenda | Lettura calendario | Scheda Agenda → *Collega* |
+| Dettatura destinazione | Nessuno (usa l'app Google) | Pulsante microfono nella vista Navigazione |
+
+L'accesso alle notifiche viene usato **solo** per il lettore multimediale attivo e per la
+notifica di guida dell'app di navigazione; tutte le altre notifiche vengono ignorate e
+nulla viene salvato. Se il firmware nasconde la pagina delle impostazioni, si può
+concedere via ADB:
+
+```
+adb shell cmd notification allow_listener it.driveos.launcher/it.driveos.launcher.notifications.DriveNotificationListener
+```
+
+**Agenda:** funziona se sulla radio c'è un account Google con la sincronizzazione del
+Calendario attiva. Se manca, installa Google Calendar dal Play Store.
+
+**Durante la guida:** avvii il percorso da DriveOS, si apre Maps/Waze; con il tasto Home
+torni a DriveOS e la scheda Navigazione continua a mostrare la prossima manovra
+(letta dalla notifica del navigatore). "Torna alla guida" riapre la mappa.
+Una mappa interattiva dentro DriveOS non è possibile: Google Maps e Waze non
+permettono di incorporare la loro guida in altre app.
 
 ## 0. Scaricare l'APK già compilato (consigliato)
 
@@ -86,8 +118,9 @@ DriveOS non cancella né disattiva nulla del sistema originale.
 2. *Impostazioni → Indirizzo di casa*.
 3. *Impostazioni → Musica* (es. YouTube, Spotify o "Music" Junsun) e *Telefono*
    (l'app "Bluetooth" Junsun, che gestisce il vivavoce).
-4. Elenco *App*: tieni premute le app da avere in Home (es. Radio, Car Info, DSP).
-5. *Impostazioni → Info dispositivo → Esporta JSON* su chiavetta e invia il file:
+4. Elenco *App*: tieni premute le app da avere in testa ai Preferiti (es. Radio, Car Info, DSP).
+5. Attiva l'accesso alle notifiche (scheda Musica → *Attiva*) e collega l'agenda (scheda Agenda → *Collega*).
+6. *Impostazioni → Info dispositivo → Esporta JSON* su chiavetta e invia il file:
    serve per progettare le fasi successive con dati reali.
 
 ## Struttura
@@ -112,9 +145,9 @@ DataStore 1.1.1, AGP 8.5.2, Gradle 8.9, minSdk 29 (Android 10), targetSdk 34.
 
 ## Permessi
 
-**Nessuno.** Le funzioni future che ne richiederanno (microfono per i comandi vocali,
-accesso alle notifiche per il brano in riproduzione, Bluetooth per l'OBD) li chiederanno
-solo quando le attivi, con una spiegazione.
+Solo `READ_CALENDAR` (chiesto quando colleghi l'agenda) e l'accesso alle notifiche
+(concesso da te nelle impostazioni di Android). Nessun permesso di posizione, microfono
+o rete viene richiesto da DriveOS.
 
 ## Firma release
 
