@@ -169,5 +169,42 @@ class VehicleRepository(context: Context) {
             "/sys/devices/platform/reverse/state",
             "/proc/mtk_mcu/illumination",
         )
+
+        /** Tutte le azioni broadcast sensate da ascoltare (sistema + scoperte + servizio CAN TS). */
+        fun allListenActions(discovered: Collection<String>): Set<String> =
+            (ActionFilter.systemActions + discovered + listOf(
+                "com.ts.car.client.ACTION_CHANGED_LOG_STATE",
+                "com.ts.car.client.ACTION_REMOTE_SLEEP",
+                "com.ts.car.client.ACTION_REMOTE_WAKEUP",
+                "com.ts.car.client.ACTION_RESPONSE_AVM_PICTURE",
+            )).toSet()
+
+        /**
+         * Legge, in modo indipendente dall'istanza, proprietà + impostazioni + file di sistema.
+         * Usata dal servizio di registrazione continua.
+         */
+        fun readStatic(context: Context): Map<String, String> {
+            val out = LinkedHashMap<String, String>()
+            SystemProps.all().forEach { (k, v) -> out[SignalIds.prop(k)] = v }
+            val cr = context.applicationContext.contentResolver
+            INTERESTING_SETTINGS.forEach { (table, key) ->
+                val value = runCatching {
+                    when (table) {
+                        "system" -> Settings.System.getString(cr, key)
+                        "global" -> Settings.Global.getString(cr, key)
+                        "secure" -> Settings.Secure.getString(cr, key)
+                        else -> null
+                    }
+                }.getOrNull()
+                if (value != null) out[SignalIds.setting(table, key)] = value
+            }
+            INTERESTING_FILES.forEach { path ->
+                runCatching {
+                    val f = File(path)
+                    if (f.canRead() && f.length() in 1..200) out[SignalIds.file(path)] = f.readText().trim()
+                }
+            }
+            return out
+        }
     }
 }

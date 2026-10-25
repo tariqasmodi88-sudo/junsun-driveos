@@ -53,6 +53,7 @@ data class DriveSettings(
     val smartStartAndroidAuto: Boolean = false,
     val onlineMusicApp: AppKey? = null,
     val offlineMusicApp: AppKey? = null,
+    val vehicleLogging: Boolean = false,
 ) {
     val lightsBinding: SignalBinding? get() = signalBindings.firstOrNull { it.role == SignalRole.LIGHTS }
     val gaugeBindings: List<SignalBinding> get() = signalBindings.filter { it.role == SignalRole.GAUGE }
@@ -85,6 +86,7 @@ class SettingsRepository(context: Context) {
         val SS_AA = stringPreferencesKey("ss_aa")
         val ONLINE_MUSIC = stringPreferencesKey("online_music_app")
         val OFFLINE_MUSIC = stringPreferencesKey("offline_music_app")
+        val VEH_LOG = stringPreferencesKey("vehicle_logging")
     }
 
     val settings: Flow<DriveSettings> = store.data
@@ -115,6 +117,7 @@ class SettingsRepository(context: Context) {
                 smartStartAndroidAuto = p[Keys.SS_AA] == "1",
                 onlineMusicApp = AppKey.decode(p[Keys.ONLINE_MUSIC]),
                 offlineMusicApp = AppKey.decode(p[Keys.OFFLINE_MUSIC]),
+                vehicleLogging = p[Keys.VEH_LOG] == "1",
             )
         }
 
@@ -135,6 +138,15 @@ class SettingsRepository(context: Context) {
         store.edit {
             it[Keys.SIGNALS] = BindingCodec.encode(BindingCodec.remove(BindingCodec.decode(it[Keys.SIGNALS]), id, role))
         }
+    }
+
+    /** Azzera tutti i collegamenti (fari/gauge/spie) scelti a mano. */
+    suspend fun clearAllBindings() {
+        store.edit { it[Keys.SIGNALS] = "" }
+    }
+
+    suspend fun setVehicleLogging(on: Boolean) {
+        store.edit { it[Keys.VEH_LOG] = if (on) "1" else "0" }
     }
 
     suspend fun setDiscoveredActions(actions: List<String>) {

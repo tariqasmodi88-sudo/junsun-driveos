@@ -73,6 +73,8 @@ import it.driveos.launcher.vehicle.KnownVehicleSignals
 import it.driveos.launcher.vehicle.SignalBinding
 import it.driveos.launcher.vehicle.SignalIds
 import it.driveos.launcher.vehicle.SignalRole
+import it.driveos.launcher.vehicle.VehicleLog
+import it.driveos.launcher.vehicle.VehicleLogService
 import it.driveos.launcher.vehicle.VehicleStatus
 import it.driveos.launcher.ui.cards.CalendarCard
 import it.driveos.launcher.ui.cards.ClockCard
@@ -188,6 +190,8 @@ class MainActivity : ComponentActivity() {
         val online by driveApp.connectivityWatcher.online.collectAsStateWithLifecycle()
         val radioState by driveApp.radioController.state.collectAsStateWithLifecycle()
         val radioDetected by driveApp.radioController.detected.collectAsStateWithLifecycle()
+        val loggingOn by VehicleLog.running.collectAsStateWithLifecycle()
+        val loggedChanges by VehicleLog.changes.collectAsStateWithLifecycle()
         val scope = rememberCoroutineScope()
         val snackbar = remember { SnackbarHostState() }
         var picker by remember { mutableStateOf<PickerTarget?>(null) }
@@ -256,6 +260,12 @@ class MainActivity : ComponentActivity() {
                 val l = it.lowercase(); "radio" in l || ".fm" in l || "fm_" in l || "tuner" in l
             }.toSet()
             driveApp.radioController.start(radioActions)
+        }
+
+        // Registrazione continua: avvia/ferma il servizio in base all'impostazione.
+        LaunchedEffect(s.vehicleLogging, s.discoveredActions) {
+            if (s.vehicleLogging) VehicleLogService.start(context, s.discoveredActions)
+            else VehicleLogService.stop(context)
         }
 
         val projectionPkg = PROJECTION_PKGS.firstOrNull { pm.getLaunchIntentForPackage(it) != null }
@@ -641,6 +651,28 @@ class MainActivity : ComponentActivity() {
                                     message("Spia creata: attiva quando il valore è «$activeValue».")
                                 },
                                 onRemoveBinding = { b -> scope.launch { driveApp.settingsRepository.removeBinding(b.id, b.role) } },
+                                loggingOn = loggingOn,
+                                loggedChanges = loggedChanges,
+                                onToggleLogging = { on -> scope.launch { driveApp.settingsRepository.setVehicleLogging(on) } },
+                                onExportLog = {
+                                    scope.launch {
+                                        val stamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmm"))
+                                        val bytes = withContext(kotlinx.coroutines.Dispatchers.IO) { VehicleLog.readAll(context) }
+                                        val r = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                            it.driveos.launcher.system.Exporter.save(context, "driveos_registro_$stamp.csv", "text/csv", bytes)
+                                        }
+                                        vehicleExportStatus = if (r.ok) "Registro ($loggedChanges variazioni) salvato in: " + r.saved.joinToString(" · ")
+                                        else "Export registro non riuscito. " + r.errors.firstOrNull().orEmpty()
+                                    }
+                                },
+                                onClearLog = {
+                                    scope.launch { withContext(kotlinx.coroutines.Dispatchers.IO) { VehicleLog.clear(context) } }
+                                    vehicleExportStatus = "Registro azzerato."
+                                },
+                                onClearFlags = {
+                                    scope.launch { driveApp.settingsRepository.clearAllBindings() }
+                                    message("Flag azzerati.")
+                                },
                                 exportStatus = vehicleExportStatus,
                                 onExport = {
                                     scope.launch {

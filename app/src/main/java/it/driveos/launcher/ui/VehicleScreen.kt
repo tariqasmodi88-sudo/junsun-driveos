@@ -69,6 +69,12 @@ fun VehicleScreen(
     onAddGauge: (String) -> Unit,
     onAddAlert: (String, String) -> Unit,
     onRemoveBinding: (SignalBinding) -> Unit,
+    loggingOn: Boolean,
+    loggedChanges: Int,
+    onToggleLogging: (Boolean) -> Unit,
+    onExportLog: () -> Unit,
+    onClearLog: () -> Unit,
+    onClearFlags: () -> Unit,
     exportStatus: String?,
     onExport: () -> Unit,
     onBack: () -> Unit,
@@ -99,6 +105,34 @@ fun VehicleScreen(
             }
             Banner("$lightsText · ${signals.size} segnali letti" +
                 (if (settings.gaugeBindings.isNotEmpty()) " · ${settings.gaugeBindings.size} sul cruscotto" else ""))
+
+            // --- Registrazione continua (la via consigliata per trovare tutto) ---
+            Surface(shape = RoundedCornerShape(16.dp),
+                color = if (loggingOn) colors.primary.copy(alpha = 0.14f) else colors.surface,
+                modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Registrazione continua", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
+                            Text(
+                                if (loggingOn) "Attiva · $loggedChanges variazioni registrate (anche a schermo spento)"
+                                else "Registra TUTTE le variazioni per giorni, poi esporti un file solo",
+                                fontSize = 14.sp, color = colors.onSurfaceVariant,
+                            )
+                        }
+                        androidx.compose.material3.Switch(checked = loggingOn, onCheckedChange = onToggleLogging)
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Text("Non serve flaggare niente: la registrazione prende da sola tutti i 1264 segnali. " +
+                        "Lasciala attiva, guida come al solito (e apri la radio Junsun qualche volta), poi esporta.",
+                        fontSize = 13.sp, color = colors.onSurfaceVariant)
+                    Spacer(Modifier.height(10.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Secondary("Esporta registro", Modifier.weight(1f)) { onExportLog() }
+                        Secondary("Azzera registro", Modifier.weight(1f)) { onClearLog() }
+                    }
+                }
+            }
 
             Label("1 · Scopri i segnali delle app Junsun")
             Hint("Legge gli APK delle app CAN/radio/MCU per trovare i canali dati. Fallo a motore acceso, " +
@@ -154,6 +188,12 @@ fun VehicleScreen(
             }
 
             Label("Segnali letti ora (${signals.size})")
+            Hint("I flag sono facoltativi: «+» fissa un valore sulla Home, «!» lo usa come spia. " +
+                "Per l'analisi non serve: basta la registrazione continua qui sopra.")
+            if (settings.signalBindings.isNotEmpty()) {
+                Text("Azzera tutti i flag (fari/valori/spie)", fontSize = 15.sp, color = colors.error,
+                    modifier = Modifier.clickable { onClearFlags() }.padding(vertical = 4.dp))
+            }
             if (signals.isEmpty()) {
                 Hint("Nessun segnale ancora. Avvia la scansione e muovi il veicolo.")
             } else {

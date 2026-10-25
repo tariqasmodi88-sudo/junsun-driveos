@@ -4,7 +4,14 @@ Launcher (schermata Home) per l'autoradio **Junsun FF_866X** ("V1 Pro") montata 
 **VW Tiguan 2016**. È una normale app Android: **non modifica firmware, partizioni,
 impostazioni di fabbrica né l'MCU** e non richiede root né permessi speciali.
 
-Versione attuale: **0.5.0**
+Versione attuale: **0.6.0**
+
+### Novità 0.6.0
+
+- **Registrazione continua** dei dati del veicolo: gira in background (anche a schermo spento),
+  salva **solo le variazioni** per giorni, poi esporti un unico file `driveos_registro_*.csv`.
+  Non serve flaggare niente a mano: prende da sola tutti i segnali. In *Veicolo → Registrazione continua*.
+- **Azzera flag**: un tocco per togliere gauge/spie messi per sbaglio.
 
 ### Novità 0.5.0
 

@@ -18,6 +18,10 @@
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
+    <!-- Registrazione continua dei dati del veicolo in background (servizio in primo piano). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+
     <!-- Visibilita' dei pacchetti (rilevante da Android 11; su Android 10 non ha effetto). -->
     <queries>
         <intent>
@@ -78,6 +82,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Registrazione continua dei dati del veicolo (foreground service). -->
+        <service
+            android:name=".vehicle.VehicleLogService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
 
         <!-- Accesso alle notifiche (concesso dall'utente nelle impostazioni di Android):
              brano in riproduzione e indicazioni dell'app di navigazione. -->
