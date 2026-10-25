@@ -39,7 +39,7 @@ class DriveNotificationListener : NotificationListenerService() {
     private fun handle(sbn: StatusBarNotification) {
         if (sbn.packageName !in NavGuidanceStore.watchedPackages) return
         val n = sbn.notification ?: return
-        val isNavigation = n.category == Notification.CATEGORY_NAVIGATION
+        val isNavigation = n.category == "navigation" // Notification.CATEGORY_NAVIGATION
         val isOngoing = (n.flags and Notification.FLAG_ONGOING_EVENT) != 0
         if (!isNavigation && !isOngoing) return
 
