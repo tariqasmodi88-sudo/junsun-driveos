@@ -23,10 +23,24 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Test unitari
-        run: ./gradlew --no-daemon testDebugUnitTest
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon testDebugUnitTest 2>&1 | tee build.log
 
       - name: Compila APK debug
-        run: ./gradlew --no-daemon assembleDebug
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon assembleDebug 2>&1 | tee -a build.log
+
+      - name: Riepilogo errori
+        if: failure()
+        run: |
+          MSG=$(grep -E "^e: |error:|FAILED|AssertionError|expected:<|What went wrong" -A2 build.log | head -60 | sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g')
+          echo "::error title=Errori di build::$MSG"
+          find app/build/test-results -name "*.xml" -exec grep -l "<failure" {} \; 2>/dev/null | head -5 | while read f; do
+            F=$(grep -A3 "<failure" "$f" | head -12 | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')
+            echo "::error title=Test fallito $(basename $f)::$F"
+          done
 
       - name: Carica APK come artefatto
         uses: actions/upload-artifact@v4
