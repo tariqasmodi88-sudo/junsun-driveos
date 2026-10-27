@@ -34,6 +34,8 @@
 
     <!-- Visibilita' dei pacchetti (rilevante da Android 11; su Android 10 non ha effetto). -->
     <queries>
+        <package android:name="com.ts.MainUI" />
+        <package android:name="com.ts.car.client" />
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />

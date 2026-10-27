@@ -737,6 +737,7 @@ class MainActivity : ComponentActivity() {
                                         val components = withContext(kotlinx.coroutines.Dispatchers.IO) {
                                             runCatching { ActionDiscovery.vendorComponents(context) }.getOrDefault(emptyList())
                                         }
+                                        val probe = runCatching { it.driveos.launcher.vehicle.ServiceProbe.probeAll(context) }.getOrDefault(emptyList())
                                         val json = org.json.JSONObject().apply {
                                             put("generato", java.time.ZonedDateTime.now().toString())
                                             put("segnali", org.json.JSONObject().also { o -> vehicleSignals.forEach { (k, v) -> o.put(k, v) } })
@@ -748,6 +749,7 @@ class MainActivity : ComponentActivity() {
                                             })
                                             // servizi/provider delle app TS-ForFan-TXZ: da dove l'interfaccia Junsun legge portiere e radio
                                             put("componentiFirmware", org.json.JSONArray(components))
+                                            put("sondaServizi", org.json.JSONArray(probe.map { "${it.component} | connesso=${it.connected} | ${it.descriptor ?: "-"} | ${it.note}" }))
                                         }
                                         val stamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmm"))
                                         val r = withContext(kotlinx.coroutines.Dispatchers.IO) {
