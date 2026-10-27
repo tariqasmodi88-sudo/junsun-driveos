@@ -60,6 +60,7 @@ data class VehicleOverviewState(
     val speedKmh: Double?,
     val alerts: List<ActiveAlert>,
     val logsGranted: Boolean,
+    val gpsPermission: Boolean = true,
 )
 
 private val Amber = Color(0xFFFFB020)
@@ -84,8 +85,8 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onHome: () -> Unit, onDeb
                 StatusRow("Portiere", state.doorOpen?.let { if (it) "aperta" else "chiuse" }, state.doorOpen == true, Warn,
                     missing = if (!state.logsGranted) "permesso" else null)
                 StatusRow("Retromarcia", state.reverse?.let { if (it) "inserita" else "no" }, state.reverse == true, Color.White)
-                StatusRow("Sensori", state.parking?.let { if (it) "attivi" else "no" }, state.parking == true, Amber,
-                    missing = if (!state.logsGranted) "permesso" else null)
+                StatusRow("Sensori post.", if (rearSensors(state)) "attivi" else (state.parking?.let { "no" }),
+                    rearSensors(state), Amber, missing = if (!state.logsGranted) "con retro" else null)
                 StatusRow("Telefono", state.phone?.let { if (it) "collegato" else "scollegato" }, state.phone == true, Ok)
                 StatusRow("CarPlay/AA", if (state.projection) "attivo" else "no", state.projection, Ok)
                 StatusRow("Radio", state.radioKhz?.let { "%.1f MHz".format(it / 1000.0) }, false, c.primary)
@@ -97,7 +98,7 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onHome: () -> Unit, onDeb
                 Column(Modifier.align(Alignment.TopCenter), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(state.speedKmh?.let { "${it.toInt()} km/h" } ?: "— km/h",
                         fontSize = 30.sp, fontWeight = FontWeight.Bold, color = c.onBackground)
-                    Text(if ((state.speedKmh ?: 0.0) < 2.0) "Veicolo fermo" else "In marcia",
+                    Text(when { state.speedKmh == null -> if (state.gpsPermission) "In attesa del GPS" else "Serve il permesso posizione"; state.speedKmh < 2.0 -> "Veicolo fermo"; else -> "In marcia" },
                         fontSize = 14.sp, color = c.onSurfaceVariant)
                 }
             }
@@ -158,6 +159,9 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onHome: () -> Unit, onDeb
         }
     }
 }
+
+/** Sensori posteriori: dal log radar se disponibile, altrimenti attivi con la retromarcia inserita. */
+private fun rearSensors(s: VehicleOverviewState) = s.parking == true || s.reverse == true
 
 @Composable
 private fun SectionTitle(text: String) {
@@ -224,7 +228,7 @@ private fun CarTopView(state: VehicleOverviewState, modifier: Modifier) {
         }
 
         // Sensori di parcheggio: archi dietro
-        if (state.parking == true) {
+        if (rearSensors(state)) {
             for (i in 1..3) {
                 val r = w * (0.35f + i * 0.16f)
                 drawArc(Amber.copy(alpha = (0.9f - i * 0.22f) * pulse), 20f, 140f, false,

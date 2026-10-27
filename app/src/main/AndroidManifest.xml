@@ -36,6 +36,7 @@
     <queries>
         <package android:name="com.ts.MainUI" />
         <package android:name="com.ts.car.client" />
+        <package android:name="com.ts.dvdplayer" />
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />

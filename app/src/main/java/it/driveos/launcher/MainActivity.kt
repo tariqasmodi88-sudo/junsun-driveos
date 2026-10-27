@@ -288,6 +288,29 @@ class MainActivity : ComponentActivity() {
         val phoneLinked = btConnected || KnownVehicleSignals.phoneConnected(vehicleSignals) == true
         val projectionOn = KnownVehicleSignals.projectionActive(vehicleSignals)
 
+        // Lettore musica locale della radio Junsun (USB/SD): non ha sessione media, si apre l'attività.
+        val junsunLocalPlayer = remember {
+            runCatching { pm.getPackageInfo("com.ts.dvdplayer", 0); true }.getOrDefault(false)
+        }
+        fun hasLocalMusic() = s.offlineMusicApp != null || junsunLocalPlayer
+        fun playLocalMusic() {
+            val app = s.offlineMusicApp
+            if (app != null) { driveApp.mediaRepository.resumeOrPlay(app.packageName); return }
+            if (!junsunLocalPlayer) return
+            runCatching {
+                context.startActivity(Intent().setClassName("com.ts.dvdplayer", "com.ts.dvdplayer.audio.AudioPreviewActivity")
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            }
+            // Il lettore resta a suonare in secondo piano; si torna subito alla Home DriveOS.
+            scope.launch {
+                kotlinx.coroutines.delay(2500)
+                runCatching {
+                    context.startActivity(Intent(context, MainActivity::class.java)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP))
+                }
+            }
+        }
+
         fun runSmartStart() {
             val config = SmartStartConfig(
                 enabled = s.smartStartEnabled,
@@ -295,7 +318,7 @@ class MainActivity : ComponentActivity() {
                 startNav = s.smartStartNav,
                 launchAndroidAuto = s.smartStartAndroidAuto && projectionPkg != null,
                 hasOnlineMusic = s.onlineMusicApp != null,
-                hasOfflineMusic = (s.offlineMusicApp ?: s.musicApp) != null,
+                hasOfflineMusic = hasLocalMusic(),
                 hasNav = s.navApp != null,
                 projectionActive = projectionOn,
             )
@@ -308,7 +331,7 @@ class MainActivity : ComponentActivity() {
             plan.forEach { action ->
                 when (action) {
                     SmartAction.PLAY_ONLINE -> driveApp.mediaRepository.resumeOrPlay(s.onlineMusicApp?.packageName)
-                    SmartAction.PLAY_OFFLINE -> driveApp.mediaRepository.resumeOrPlay((s.offlineMusicApp ?: s.musicApp)?.packageName)
+                    SmartAction.PLAY_OFFLINE -> playLocalMusic()
                     SmartAction.START_NAV -> s.navApp?.let { nav -> Launcher.launchApp(context, nav) }
                     SmartAction.LAUNCH_ANDROID_AUTO ->
                         projectionPkg?.let { pkg ->
@@ -329,6 +352,14 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        // Posizione (velocità GPS per "auto ferma"): la chiede da sola una volta se manca.
+        LaunchedEffect(s.autoOverview) {
+            if (s.autoOverview && !driveApp.speedWatcher.hasPermission()) {
+                kotlinx.coroutines.delay(3000)
+                locationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            }
+        }
+
         // Nessun telefono dopo l'accensione: parte da sola la musica locale della radio.
         val phoneLinkedNow by androidx.compose.runtime.rememberUpdatedState(phoneLinked)
         val playingNow by androidx.compose.runtime.rememberUpdatedState(media?.isPlaying == true)
@@ -338,15 +369,12 @@ class MainActivity : ComponentActivity() {
             kotlinx.coroutines.delay(25_000) // tempo a Bluetooth/vivavoce per agganciarsi
             if (!phoneLinkedNow) {
                 val cur = settingsNow
-                val localApp = cur.offlineMusicApp ?: cur.musicApp
                 val config = SmartStartConfig(
                     enabled = cur.smartStartEnabled, playMusic = cur.smartStartMusic,
-                    hasOfflineMusic = localApp != null,
+                    hasOfflineMusic = cur.offlineMusicApp != null || junsunLocalPlayer,
                     projectionActive = projectionNow,
                 )
-                if (SmartStart.planWithoutPhone(config, playingNow).isNotEmpty()) {
-                    driveApp.mediaRepository.resumeOrPlay(localApp?.packageName)
-                }
+                if (SmartStart.planWithoutPhone(config, playingNow).isNotEmpty()) playLocalMusic()
             }
         }
 
@@ -726,6 +754,7 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onRemoveBinding = { b -> scope.launch { driveApp.settingsRepository.removeBinding(b.id, b.role) } },
                                 logsGranted = driveApp.logcatReader.available(),
+                                    gpsPermission = driveApp.speedWatcher.hasPermission(),
                                 loggingOn = loggingOn,
                                 loggedChanges = loggedChanges,
                                 onToggleLogging = { on -> scope.launch { driveApp.settingsRepository.setVehicleLogging(on) } },
