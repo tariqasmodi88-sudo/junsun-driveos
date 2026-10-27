@@ -85,6 +85,41 @@ object ActionDiscovery {
         return out
     }
 
+    /** Prefissi dei pacchetti del firmware di questa radio (TS, ForFan, TXZ, SpeedPlay…). */
+    private val vendorPrefixes = listOf(
+        "com.ts.", "com.forfan", "com.txz", "com.txznet", "com.suding", "com.toppal",
+        "com.junsun", "com.cusc", "com.globalconstant", "com.autoai", "com.hazens",
+    )
+
+    /**
+     * Inventario dei componenti delle app del firmware (solo metadati, API pubblica PackageManager):
+     * servizi, provider, receiver e activity, con "esportato" e permesso richiesto.
+     * Serve a capire da quale servizio/provider l'interfaccia Junsun legge portiere e radio,
+     * e se DriveOS può leggerli allo stesso modo. Una riga per componente:
+     *   tipo | pacchetto/classe | esportato | permesso | authority (solo provider)
+     */
+    fun vendorComponents(context: Context): List<String> {
+        val pm = context.packageManager
+        val flags = android.content.pm.PackageManager.GET_SERVICES or
+            android.content.pm.PackageManager.GET_PROVIDERS or
+            android.content.pm.PackageManager.GET_RECEIVERS or
+            android.content.pm.PackageManager.GET_ACTIVITIES
+        val out = ArrayList<String>()
+        val apps = pm.getInstalledApplications(0)
+            .map { it.packageName }
+            .filter { p -> vendorPrefixes.any { p.startsWith(it) } }
+            .sorted()
+        for (pkg in apps) {
+            @Suppress("DEPRECATION")
+            val info = runCatching { pm.getPackageInfo(pkg, flags) }.getOrNull() ?: continue
+            info.services?.forEach { out.add("servizio | $pkg/${it.name} | ${it.exported} | ${it.permission ?: "-"} | -") }
+            info.providers?.forEach { out.add("provider | $pkg/${it.name} | ${it.exported} | ${it.readPermission ?: "-"} | ${it.authority ?: "-"}") }
+            info.receivers?.forEach { out.add("receiver | $pkg/${it.name} | ${it.exported} | ${it.permission ?: "-"} | -") }
+            info.activities?.forEach { if (it.exported) out.add("activity | $pkg/${it.name} | true | ${it.permission ?: "-"} | -") }
+        }
+        return out
+    }
+
     /** Alimenta lo scanner e restituisce i byte letti. */
     private fun feedAll(input: java.io.InputStream, scanner: StringScanner, max: Long): Long {
         val buffer = ByteArray(64 * 1024)

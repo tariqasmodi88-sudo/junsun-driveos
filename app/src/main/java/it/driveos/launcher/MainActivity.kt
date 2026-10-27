@@ -690,11 +690,16 @@ class MainActivity : ComponentActivity() {
                                 exportStatus = vehicleExportStatus,
                                 onExport = {
                                     scope.launch {
+                                        val components = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                            runCatching { ActionDiscovery.vendorComponents(context) }.getOrDefault(emptyList())
+                                        }
                                         val json = org.json.JSONObject().apply {
                                             put("generato", java.time.ZonedDateTime.now().toString())
                                             put("segnali", org.json.JSONObject().also { o -> vehicleSignals.forEach { (k, v) -> o.put(k, v) } })
                                             put("azioniScoperte", org.json.JSONArray(s.discoveredActions))
                                             put("collegamenti", org.json.JSONArray(s.signalBindings.map { "${it.role}:${it.id}=${it.onValue}/${it.offValue}" }))
+                                            // servizi/provider delle app TS-ForFan-TXZ: da dove l'interfaccia Junsun legge portiere e radio
+                                            put("componentiFirmware", org.json.JSONArray(components))
                                         }
                                         val stamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmm"))
                                         val r = withContext(kotlinx.coroutines.Dispatchers.IO) {

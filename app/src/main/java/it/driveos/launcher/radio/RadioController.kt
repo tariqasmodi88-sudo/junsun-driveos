@@ -79,11 +79,29 @@ class RadioController(context: Context) {
     // --- Comandi (best-effort) ---
 
     fun tune(khz: Int) = broadcastControl("TUNE", khz)
-    fun seekUp() = broadcastControl("SEEK_UP", null)
-    fun seekDown() = broadcastControl("SEEK_DOWN", null)
+
+    /**
+     * Ricerca e play/pausa passano ANCHE dai tasti multimediali di sistema: sono gli stessi
+     * che inviano i comandi al volante, e la radio Junsun li gestisce quando è la sorgente
+     * audio attiva (avanti/indietro = stazione successiva/precedente).
+     */
+    fun seekUp() { mediaKey(android.view.KeyEvent.KEYCODE_MEDIA_NEXT); broadcastControl("SEEK_UP", null) }
+    fun seekDown() { mediaKey(android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS); broadcastControl("SEEK_DOWN", null) }
     fun stepUp() = broadcastControl("STEP_UP", null)
     fun stepDown() = broadcastControl("STEP_DOWN", null)
-    fun power(on: Boolean) = broadcastControl(if (on) "POWER_ON" else "POWER_OFF", null)
+    fun power(on: Boolean) {
+        mediaKey(android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE)
+        broadcastControl(if (on) "POWER_ON" else "POWER_OFF", null)
+    }
+
+    /** Tasto multimediale alla sorgente audio attiva (API pubblica, nessun permesso). */
+    private fun mediaKey(code: Int) {
+        val audio = app.getSystemService(android.media.AudioManager::class.java) ?: return
+        runCatching {
+            audio.dispatchMediaKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, code))
+            audio.dispatchMediaKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, code))
+        }
+    }
 
     /**
      * Invia il comando con ogni profilo noto. Ogni profilo definisce il nome dell'azione e,
