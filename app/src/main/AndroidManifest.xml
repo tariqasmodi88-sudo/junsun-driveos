@@ -113,5 +113,20 @@
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
+
+        <!-- Accessibilità (la attivi tu in Impostazioni): sa quale finestra si apre (portiere,
+             radar, retromarcia, CarPlay) e riporta la Home DriveOS davanti. Non legge i contenuti. -->
+        <service
+            android:name=".vehicle.DriveAccessibilityService"
+            android:exported="false"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service" />
+        </service>
     </application>
 </manifest>

@@ -56,6 +56,8 @@ data class DriveSettings(
     val vehicleLogging: Boolean = false,
     /** Schermata veicolo automatica quando l'auto è ferma (o si apre una portiera). */
     val autoOverview: Boolean = true,
+    /** Le finestre Junsun (portiere, radar, retro) e CarPlay non prendono lo schermo: si resta su DriveOS. */
+    val keepHome: Boolean = true,
 ) {
     val lightsBinding: SignalBinding? get() = signalBindings.firstOrNull { it.role == SignalRole.LIGHTS }
     val gaugeBindings: List<SignalBinding> get() = signalBindings.filter { it.role == SignalRole.GAUGE }
@@ -91,6 +93,7 @@ class SettingsRepository(context: Context) {
         val VEH_LOG = stringPreferencesKey("vehicle_logging")
         val THEME_V2 = stringPreferencesKey("theme_auto_default")
         val AUTO_OVERVIEW = stringPreferencesKey("auto_overview")
+        val KEEP_HOME = stringPreferencesKey("keep_home")
     }
 
     val settings: Flow<DriveSettings> = store.data
@@ -125,6 +128,7 @@ class SettingsRepository(context: Context) {
                 offlineMusicApp = AppKey.decode(p[Keys.OFFLINE_MUSIC]),
                 vehicleLogging = p[Keys.VEH_LOG] == "1",
                 autoOverview = p[Keys.AUTO_OVERVIEW] != "0",
+                keepHome = p[Keys.KEEP_HOME] != "0",
             )
         }
 
@@ -154,6 +158,10 @@ class SettingsRepository(context: Context) {
 
     suspend fun setAutoOverview(on: Boolean) {
         store.edit { it[Keys.AUTO_OVERVIEW] = if (on) "1" else "0" }
+    }
+
+    suspend fun setKeepHome(on: Boolean) {
+        store.edit { it[Keys.KEEP_HOME] = if (on) "1" else "0" }
     }
 
     suspend fun setVehicleLogging(on: Boolean) {

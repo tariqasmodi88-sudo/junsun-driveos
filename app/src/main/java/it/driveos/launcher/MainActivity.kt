@@ -78,6 +78,8 @@ import it.driveos.launcher.vehicle.SignalRole
 import it.driveos.launcher.vehicle.VehicleLog
 import it.driveos.launcher.vehicle.VehicleLogService
 import it.driveos.launcher.vehicle.VehicleStatus
+import it.driveos.launcher.vehicle.WindowRules
+import it.driveos.launcher.vehicle.WindowWatcher
 import it.driveos.launcher.ui.cards.CalendarCard
 import it.driveos.launcher.ui.cards.ClockCard
 import it.driveos.launcher.ui.cards.MusicCard
@@ -295,6 +297,7 @@ class MainActivity : ComponentActivity() {
         fun hasLocalMusic() = s.offlineMusicApp != null || junsunLocalPlayer
         // Riporta DriveOS davanti (CarPlay/Android Auto o il lettore restano attivi in secondo piano).
         fun bringHomeToFront() {
+            if (WindowWatcher.goHome()) return
             runCatching {
                 context.getSystemService(android.app.ActivityManager::class.java)
                     ?.appTasks?.firstOrNull()?.moveToFront()
@@ -304,15 +307,22 @@ class MainActivity : ComponentActivity() {
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP))
             }
         }
+        var projectionBounceUntil by remember { mutableStateOf(0L) }
         val projectionLive by androidx.compose.runtime.rememberUpdatedState(projectionOn)
         fun playLocalMusic() {
             val app = s.offlineMusicApp
             if (app != null) { driveApp.mediaRepository.resumeOrPlay(app.packageName); return }
             if (!junsunLocalPlayer) return
-            runCatching {
-                context.startActivity(Intent().setClassName("com.ts.dvdplayer", "com.ts.dvdplayer.audio.AudioPreviewActivity")
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            // Schermata musica USB del firmware (quella che apre il tasto Musica Junsun).
+            val opened = listOf(
+                "com.ts.MainUI" to "com.ts.main.Media.USBMainActivity",
+                "com.ts.dvdplayer" to "com.ts.dvdplayer.USBActivity",
+            ).any { (pkg, cls) ->
+                runCatching {
+                    context.startActivity(Intent().setClassName(pkg, cls).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                }.isSuccess
             }
+            if (!opened) message("Non riesco ad aprire il lettore musica della radio.")
             // Il lettore resta a suonare in secondo piano; si torna subito alla Home DriveOS.
             scope.launch { kotlinx.coroutines.delay(2500); bringHomeToFront() }
         }
@@ -345,6 +355,7 @@ class MainActivity : ComponentActivity() {
                                 runCatching { context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
                             }
                             // Lascia collegare CarPlay/AA e torna subito alla Home DriveOS.
+                            projectionBounceUntil = System.currentTimeMillis() + 30_000
                             scope.launch {
                                 var waited = 0
                                 while (!projectionLive && waited < 20_000) { kotlinx.coroutines.delay(500); waited += 500 }
@@ -371,6 +382,36 @@ class MainActivity : ComponentActivity() {
             if (projectionOn && s.smartStartEnabled && s.smartStartAndroidAuto) {
                 kotlinx.coroutines.delay(1500)
                 bringHomeToFront()
+            }
+        }
+
+        // Finestre Junsun che prendono lo schermo (portiere, radar, retro) e SpeedPlay: si torna alla
+        // Home DriveOS (serve il servizio di accessibilità, attivato in Impostazioni).
+        val screenNow by androidx.compose.runtime.rememberUpdatedState(screen)
+        val settingsLive by androidx.compose.runtime.rememberUpdatedState(s)
+        LaunchedEffect(Unit) {
+            WindowWatcher.events.collect { e ->
+                val cur = settingsLive
+                if (!cur.keepHome) return@collect
+                val includeProj = System.currentTimeMillis() < projectionBounceUntil
+                if (WindowRules.bounceHome(e.kind, includeProj)) {
+                    kotlinx.coroutines.delay(250)
+                    WindowWatcher.goHome()
+                    if (e.kind != it.driveos.launcher.vehicle.WindowKind.PROJECTION && screenNow != Screen.VEHICLE) {
+                        overviewAuto = true; screen = Screen.OVERVIEW
+                    }
+                }
+            }
+        }
+        var a11yOn by remember { mutableStateOf(WindowWatcher.enabled()) }
+        LaunchedEffect(Unit) { while (true) { a11yOn = WindowWatcher.enabled(); kotlinx.coroutines.delay(2000) } }
+
+        // Retromarcia: si resta/si va sulla schermata Veicolo (la telecamera non è installata).
+        val reverseNow = KnownVehicleSignals.reverseOn(vehicleSignals) == true
+        LaunchedEffect(reverseNow) {
+            if (reverseNow && screen != Screen.OVERVIEW && screen != Screen.VEHICLE) {
+                overviewAuto = true; screen = Screen.OVERVIEW
+                if (settingsLive.keepHome) { kotlinx.coroutines.delay(300); WindowWatcher.goHome() }
             }
         }
 
@@ -417,11 +458,11 @@ class MainActivity : ComponentActivity() {
         // solo partendo dalla Home (non interrompe navigazione, radio, impostazioni);
         // si richiude da sola quando riparti, se era stata aperta in automatico.
         val doorOpenNow = vehicleSignals[LogcatParser.DOOR] == "aperta"
-        LaunchedEffect(parked, doorOpenNow, s.autoOverview) {
+        LaunchedEffect(parked, doorOpenNow, reverseNow, s.autoOverview) {
             if (!s.autoOverview) return@LaunchedEffect
-            if ((parked || doorOpenNow) && screen == Screen.DASHBOARD) {
+            if ((parked || doorOpenNow || reverseNow) && screen == Screen.DASHBOARD) {
                 screen = Screen.OVERVIEW; overviewAuto = true
-            } else if (!parked && !doorOpenNow && overviewAuto && screen == Screen.OVERVIEW) {
+            } else if (!parked && !doorOpenNow && !reverseNow && overviewAuto && screen == Screen.OVERVIEW) {
                 screen = Screen.DASHBOARD; overviewAuto = false
             }
         }
@@ -718,6 +759,10 @@ class MainActivity : ComponentActivity() {
                                     }
                                 },
                                 onOpenOverview = { overviewAuto = false; screen = Screen.OVERVIEW },
+                                keepHome = s.keepHome,
+                                accessibilityOn = a11yOn,
+                                onAccessibility = { report(Launcher.openSystemSettings(context, Settings.ACTION_ACCESSIBILITY_SETTINGS)) },
+                                onToggleKeepHome = { scope.launch { repo.setKeepHome(!s.keepHome) } },
                                 onEditLocation = { textDialog = TextTarget.LOCATION },
                                 onHomeSettings = { report(Launcher.openSystemSettings(context, Settings.ACTION_HOME_SETTINGS)) },
                                 onAndroidSettings = { report(Launcher.openSystemSettings(context, Settings.ACTION_SETTINGS)) },

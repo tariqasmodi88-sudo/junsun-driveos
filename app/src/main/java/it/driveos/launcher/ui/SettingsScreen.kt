@@ -68,6 +68,10 @@ fun SettingsScreen(
     autoOverviewHasGps: Boolean,
     onToggleAutoOverview: () -> Unit,
     onOpenOverview: () -> Unit,
+    keepHome: Boolean,
+    accessibilityOn: Boolean,
+    onAccessibility: () -> Unit,
+    onToggleKeepHome: () -> Unit,
     onEditLocation: () -> Unit,
     onHomeSettings: () -> Unit,
     onAndroidSettings: () -> Unit,
@@ -104,6 +108,12 @@ fun SettingsScreen(
                     autoOverviewHasGps -> "Attiva: si apre quando l'auto è ferma o apri una portiera"
                     else -> "Attiva solo con le portiere. Tocca e consenti la posizione per usarla da fermo"
                 }, onToggleAutoOverview)
+            SettingRow("Accessibilità DriveOS",
+                if (accessibilityOn) "Attiva: DriveOS vede le finestre Junsun e riporta la Home davanti"
+                else "Spenta: tocca, scegli DriveOS e attivala (serve per portiere, retro e CarPlay)", onAccessibility)
+            SettingRow("Resta sulla Home DriveOS",
+                if (keepHome) "Sì: portiere, radar, retromarcia e CarPlay non coprono lo schermo"
+                else "No: le finestre Junsun restano sopra. Tocca per attivare", onToggleKeepHome)
             SettingRow("Veicolo (dati tecnici)", "Segnali, registrazione continua, export", onOpenVehicle)
             SettingRow("Radio integrata", "Sintonizzatore e canali memorizzati" + (if (settings.radioPresets.isNotEmpty()) " (${settings.radioPresets.size})" else ""), onOpenRadio)
             SettingRow("Avvio intelligente (Bluetooth)",

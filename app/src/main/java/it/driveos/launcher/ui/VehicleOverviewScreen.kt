@@ -61,6 +61,8 @@ data class VehicleOverviewState(
     val alerts: List<ActiveAlert>,
     val logsGranted: Boolean,
     val gpsPermission: Boolean = true,
+    /** Livello di vicinanza 0..3 dei 4 sensori posteriori (sinistra→destra); null = dato non disponibile. */
+    val rearLevels: List<Int>? = null,
 )
 
 private val Amber = Color(0xFFFFB020)
@@ -161,7 +163,7 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onHome: () -> Unit, onDeb
 }
 
 /** Sensori posteriori: dal log radar se disponibile, altrimenti attivi con la retromarcia inserita. */
-private fun rearSensors(s: VehicleOverviewState) = s.parking == true || s.reverse == true
+private fun rearSensors(s: VehicleOverviewState) = s.reverse == true
 
 @Composable
 private fun SectionTitle(text: String) {
@@ -227,13 +229,31 @@ private fun CarTopView(state: VehicleOverviewState, modifier: Modifier) {
             }
         }
 
-        // Sensori di parcheggio: archi dietro
+        // Sensori di parcheggio posteriori: 4 settori ad anelli (come l'originale). Più l'ostacolo è
+        // vicino, più anelli si accendono e il colore passa da giallo a rosso. Senza dato di
+        // distanza i 4 settori "respirano" in giallo: sensori attivi.
         if (rearSensors(state)) {
-            for (i in 1..3) {
-                val r = w * (0.35f + i * 0.16f)
-                drawArc(Amber.copy(alpha = (0.9f - i * 0.22f) * pulse), 20f, 140f, false,
-                    topLeft = Offset(left + w / 2 - r, top + h - r * 0.55f - 10f),
-                    size = Size(r * 2, r * 1.1f), style = Stroke(width = 6f, cap = StrokeCap.Round))
+            val levels = state.rearLevels
+            val cx = left + w / 2
+            val cy = top + h - 6f
+            val span = 150f
+            val seg = span / 4f
+            for (i in 0 until 4) {
+                val level = levels?.getOrNull(i)?.coerceIn(0, 3)
+                for (ring in 1..3) {
+                    val lit = if (level == null) ring == 1 else ring <= level
+                    val color = when {
+                        level == null -> Amber
+                        level >= 3 -> Warn
+                        level == 2 -> Color(0xFFFF9A3D)
+                        else -> Amber
+                    }
+                    val alpha = if (lit) (if (level == null) 0.35f + 0.4f * pulse else if (level >= 3) 0.6f + 0.4f * pulse else 0.95f) else 0.12f
+                    val r = w * (0.32f + ring * 0.17f)
+                    drawArc(color.copy(alpha = alpha), 15f + seg * i + 2f, seg - 4f, false,
+                        topLeft = Offset(cx - r, cy - r * 0.55f), size = Size(r * 2, r * 1.1f),
+                        style = Stroke(width = 11f, cap = StrokeCap.Round))
+                }
             }
         }
 
