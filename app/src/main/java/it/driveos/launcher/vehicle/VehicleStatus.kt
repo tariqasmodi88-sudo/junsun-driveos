@@ -111,22 +111,23 @@ object VehicleStatus {
      * Spie/eventi riconosciuti automaticamente su questo firmware (oltre a quelle mappate a mano).
      * Solo stati reali e attivi ADESSO: niente falsi allarmi.
      */
-    fun knownActiveAlerts(signals: Map<String, String>): List<ActiveAlert> {
-        val out = ArrayList<ActiveAlert>()
-        if (KnownVehicleSignals.reverseOn(signals) == true) out.add(ActiveAlert("Retromarcia"))
-        // Dal registro di sistema (se READ_LOGS concesso): portiere e sensori di parcheggio.
-        if (signals[LogcatParser.DOOR] == "aperta") out.add(ActiveAlert("Portiera aperta"))
-        if (signals[LogcatParser.PARKING] == "1") out.add(ActiveAlert("Sensori parcheggio"))
-        return out
-    }
+    fun knownActiveAlerts(signals: Map<String, String>): List<ActiveAlert> =
+        KnownCatalog.entries
+            .filter { it.role == KnownRole.ALERT && it.onHome && signals[it.id] == it.onValue }
+            .map { ActiveAlert(it.label) }
 
-    /** Stati sempre utili riconosciuti su questo firmware (telefono, CarPlay/AA). */
-    fun knownStatus(signals: Map<String, String>): List<Gauge> {
-        val out = ArrayList<Gauge>()
-        KnownVehicleSignals.phoneConnected(signals)?.let { out.add(Gauge("Telefono", if (it) "collegato" else "scollegato", "")) }
-        if (KnownVehicleSignals.projectionActive(signals)) out.add(Gauge("CarPlay/AA", "attivo", ""))
-        return out
-    }
+    /** Stati e valori identificati su questo firmware, mostrati di default sulla Home. */
+    fun knownStatus(signals: Map<String, String>): List<Gauge> =
+        KnownCatalog.entries
+            .filter { it.onHome && it.role != KnownRole.ALERT && signals[it.id] != null }
+            .map { k ->
+                val v = signals[k.id]!!
+                val text = when (k.role) {
+                    KnownRole.STATUS -> if (v == k.onValue) k.yesText else k.noText
+                    else -> v
+                }
+                Gauge(k.label, text, if (k.role == KnownRole.VALUE) k.unit else "")
+            }
 
     /** Stato fari: dal collegamento esplicito, altrimenti dai segnali noti automatici. */
     fun lightsOn(lightsBinding: SignalBinding?, signals: Map<String, String>): Boolean? {
@@ -149,4 +150,57 @@ object AlertCatalog {
         "Avaria motore", "Batteria", "ABS", "Airbag", "Cintura non allacciata",
         "Porta aperta", "Liquido lavavetri", "Freno a mano",
     )
+}
+
+/** Come va interpretato un segnale identificato. */
+enum class KnownRole { STATUS, ALERT, VALUE }
+
+data class Known(
+    val label: String,
+    val id: String,
+    val role: KnownRole,
+    /** per ALERT: valore che indica "attivo"; per STATUS booleano: valore che indica "sì". */
+    val onValue: String? = null,
+    val yesText: String = "sì",
+    val noText: String = "no",
+    val unit: String = "",
+    /** se mostrarlo sulla striscia Home (alcuni sono solo diagnostici, utili nell'export). */
+    val onHome: Boolean = true,
+)
+
+/**
+ * Tutti i segnali del veicolo che DriveOS ha identificato su QUESTA radio (ForFan/TS),
+ * dai tuoi export e dal registro di sistema. Attivi di default: compaiono da soli,
+ * senza bisogno di flag. Un solo elenco alimenta Home, cruscotto ed export.
+ */
+object KnownCatalog {
+    val entries = listOf(
+        // Fari li mostra già la pill dedicata nella striscia: qui solo per l'export (onHome=false).
+        Known("Fari", KnownVehicleSignals.lights.first().id, KnownRole.STATUS, onValue = "on", yesText = "accesi", noText = "spenti", onHome = false),
+        Known("Retromarcia", KnownVehicleSignals.REVERSE_ID, KnownRole.ALERT, onValue = "1"),
+        Known("Retrocamera", KnownVehicleSignals.REARVIEW_ID, KnownRole.STATUS, onValue = "1", yesText = "attiva", noText = "no"),
+        Known("Portiera", LogcatParser.DOOR, KnownRole.ALERT, onValue = "aperta"),
+        Known("Sensori parcheggio", LogcatParser.PARKING, KnownRole.ALERT, onValue = "1"),
+        Known("Luci (ADAS)", LogcatParser.LIGHTS, KnownRole.STATUS, onValue = "on", yesText = "accese", noText = "spente", onHome = false),
+        Known("Telefono", KnownVehicleSignals.PHONE_HFP_ID, KnownRole.STATUS, onValue = "1", yesText = "collegato", noText = "scollegato"),
+        Known("CarPlay/AA", KnownVehicleSignals.PROJECTION_ID, KnownRole.STATUS, onValue = "1", yesText = "attivo", noText = "no"),
+        Known("Radio FM", LogcatParser.RADIO_FREQ, KnownRole.VALUE, unit = "kHz"),
+        Known("Navigatore di sistema", KnownVehicleSignals.SYSTEM_NAV_PROP, KnownRole.VALUE, onHome = false),
+        Known("App in primo piano", "prop:forfan.want2start", KnownRole.VALUE, onHome = false),
+    )
+
+    /** Valore grezzo corrente del segnale, se presente. */
+    fun rawValue(k: Known, signals: Map<String, String>): String? = signals[k.id]
+
+    /** Elenco (etichetta, valore leggibile o "—") per TUTTI gli identificati: per l'export e la vista completa. */
+    fun identified(signals: Map<String, String>): List<Pair<String, String>> = entries.map { k ->
+        val v = signals[k.id]
+        val text = when {
+            v == null -> "—"
+            k.role == KnownRole.STATUS -> if (v == k.onValue) k.yesText else k.noText
+            k.role == KnownRole.VALUE -> v + (if (k.unit.isNotBlank()) " ${k.unit}" else "")
+            else -> v
+        }
+        k.label to text
+    }
 }

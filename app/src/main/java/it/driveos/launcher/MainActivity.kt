@@ -701,6 +701,10 @@ class MainActivity : ComponentActivity() {
                                             put("segnali", org.json.JSONObject().also { o -> vehicleSignals.forEach { (k, v) -> o.put(k, v) } })
                                             put("azioniScoperte", org.json.JSONArray(s.discoveredActions))
                                             put("collegamenti", org.json.JSONArray(s.signalBindings.map { "${it.role}:${it.id}=${it.onValue}/${it.offValue}" }))
+                                            // segnali identificati su questa radio, con valore attuale (etichetta leggibile)
+                                            put("identificati", org.json.JSONObject().also { o ->
+                                                it.driveos.launcher.vehicle.KnownCatalog.identified(vehicleSignals).forEach { (label, value) -> o.put(label, value) }
+                                            })
                                             // servizi/provider delle app TS-ForFan-TXZ: da dove l'interfaccia Junsun legge portiere e radio
                                             put("componentiFirmware", org.json.JSONArray(components))
                                         }

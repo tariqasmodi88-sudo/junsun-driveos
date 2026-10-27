@@ -1,6 +1,8 @@
 package it.driveos.launcher
 
+import it.driveos.launcher.vehicle.KnownCatalog
 import it.driveos.launcher.vehicle.KnownVehicleSignals
+import it.driveos.launcher.vehicle.LogcatParser
 import it.driveos.launcher.vehicle.SignalBinding
 import it.driveos.launcher.vehicle.SignalRole
 import it.driveos.launcher.vehicle.VehicleStatus
@@ -71,5 +73,26 @@ class VehicleStatusTest {
         assertTrue(KnownVehicleSignals.projectionActive(sig))
         assertEquals(false, KnownVehicleSignals.phoneConnected(mapOf(KnownVehicleSignals.PHONE_HFP_ID to "0")))
         assertEquals(listOf("Telefono", "CarPlay/AA"), VehicleStatus.knownStatus(sig).map { it.label })
+    }
+
+    @Test fun catalogIdentifiedAndDefaults() {
+        val sig = mapOf(
+            "prop:forfan_light_state" to "on",
+            KnownVehicleSignals.REVERSE_ID to "1",
+            LogcatParser.DOOR to "aperta",
+            KnownVehicleSignals.PHONE_HFP_ID to "0",
+            LogcatParser.RADIO_FREQ to "101500",
+        )
+        // export: tutti gli identificati, con valore o "—"
+        val ident = KnownCatalog.identified(sig).toMap()
+        assertEquals("accesi", ident["Fari"])
+        assertEquals("aperta", ident["Portiera"])
+        assertEquals("scollegato", ident["Telefono"])
+        assertEquals("101500 kHz", ident["Radio FM"])
+        assertEquals("—", ident["CarPlay/AA"])
+        // Home: alert attivi di default (retromarcia + portiera), senza flag
+        val alerts = VehicleStatus.knownActiveAlerts(sig).map { it.label }
+        assertTrue(alerts.contains("Retromarcia"))
+        assertTrue(alerts.contains("Portiera"))
     }
 }
