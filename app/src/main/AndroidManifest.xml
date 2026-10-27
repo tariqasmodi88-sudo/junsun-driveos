@@ -22,6 +22,11 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
+    <!-- Lettura del registro di sistema per ricavare portiere/sensori/radio dall'app Junsun.
+         Permesso riservato: si concede una volta via ADB (nessun root):
+         adb shell pm grant it.driveos.launcher android.permission.READ_LOGS -->
+    <uses-permission android:name="android.permission.READ_LOGS" tools:ignore="ProtectedPermissions" />
+
     <!-- Visibilita' dei pacchetti (rilevante da Android 11; su Android 10 non ha effetto). -->
     <queries>
         <intent>

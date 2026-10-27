@@ -139,12 +139,14 @@ class MainActivity : ComponentActivity() {
         driveApp.systemControls.refresh()
         driveApp.bluetoothWatcher.start()
         driveApp.connectivityWatcher.start()
+        driveApp.logcatReader.start() // legge portiere/sensori/radio dal log se READ_LOGS è concesso
     }
 
     override fun onPause() {
         super.onPause()
         driveApp.vehicleRepository.stop()
         driveApp.bluetoothWatcher.stop()
+        driveApp.logcatReader.stop()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -665,6 +667,7 @@ class MainActivity : ComponentActivity() {
                                     message("Spia creata: attiva quando il valore è «$activeValue».")
                                 },
                                 onRemoveBinding = { b -> scope.launch { driveApp.settingsRepository.removeBinding(b.id, b.role) } },
+                                logsGranted = driveApp.logcatReader.available(),
                                 loggingOn = loggingOn,
                                 loggedChanges = loggedChanges,
                                 onToggleLogging = { on -> scope.launch { driveApp.settingsRepository.setVehicleLogging(on) } },

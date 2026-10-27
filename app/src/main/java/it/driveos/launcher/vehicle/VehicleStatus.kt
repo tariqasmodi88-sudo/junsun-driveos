@@ -114,6 +114,9 @@ object VehicleStatus {
     fun knownActiveAlerts(signals: Map<String, String>): List<ActiveAlert> {
         val out = ArrayList<ActiveAlert>()
         if (KnownVehicleSignals.reverseOn(signals) == true) out.add(ActiveAlert("Retromarcia"))
+        // Dal registro di sistema (se READ_LOGS concesso): portiere e sensori di parcheggio.
+        if (signals[LogcatParser.DOOR] == "aperta") out.add(ActiveAlert("Portiera aperta"))
+        if (signals[LogcatParser.PARKING] == "1") out.add(ActiveAlert("Sensori parcheggio"))
         return out
     }
 

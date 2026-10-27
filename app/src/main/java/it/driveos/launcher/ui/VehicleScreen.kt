@@ -69,6 +69,7 @@ fun VehicleScreen(
     onAddGauge: (String) -> Unit,
     onAddAlert: (String, String) -> Unit,
     onRemoveBinding: (SignalBinding) -> Unit,
+    logsGranted: Boolean,
     loggingOn: Boolean,
     loggedChanges: Int,
     onToggleLogging: (Boolean) -> Unit,
@@ -130,6 +131,38 @@ fun VehicleScreen(
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Secondary("Esporta registro", Modifier.weight(1f)) { onExportLog() }
                         Secondary("Azzera registro", Modifier.weight(1f)) { onClearLog() }
+                    }
+                }
+            }
+
+            // --- Lettura del registro di sistema (portiere, sensori, radio) ---
+            Surface(shape = RoundedCornerShape(16.dp),
+                color = if (logsGranted) colors.primary.copy(alpha = 0.14f) else colors.surface,
+                modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp)) {
+                    Text(if (logsGranted) "Lettura dati Junsun: ATTIVA ✓" else "Lettura dati Junsun: non attiva",
+                        fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
+                    Spacer(Modifier.height(6.dp))
+                    if (logsGranted) {
+                        Text("DriveOS legge portiere, sensori di parcheggio, luci e radio dal registro " +
+                            "dell'app Junsun. Compaiono sulla Home quando accadono.",
+                            fontSize = 14.sp, color = colors.onSurfaceVariant)
+                    } else {
+                        Text("Portiere, sensori e radio su questa radio stanno dentro l'app Junsun e non " +
+                            "escono come segnali normali. DriveOS può leggerli dal registro di sistema se gli " +
+                            "concedi UNA volta questo permesso via ADB (niente root):",
+                            fontSize = 14.sp, color = colors.onSurfaceVariant)
+                        Spacer(Modifier.height(8.dp))
+                        androidx.compose.foundation.text.selection.SelectionContainer {
+                            Surface(shape = RoundedCornerShape(10.dp), color = colors.surfaceVariant, modifier = Modifier.fillMaxWidth()) {
+                                Text("adb shell pm grant it.driveos.launcher android.permission.READ_LOGS",
+                                    fontSize = 13.sp, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                    color = colors.onSurface, modifier = Modifier.padding(12.dp))
+                            }
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        Text("Poi riapri DriveOS. Lo puoi dare anche via ADB wireless (es. Bugjaeger).",
+                            fontSize = 13.sp, color = colors.onSurfaceVariant)
                     }
                 }
             }

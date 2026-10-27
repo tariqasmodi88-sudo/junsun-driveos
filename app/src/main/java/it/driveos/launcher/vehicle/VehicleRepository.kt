@@ -92,6 +92,9 @@ class VehicleRepository(context: Context) {
         return _signals.value
     }
 
+    /** Inietta segnali provenienti dal registro di sistema (LogcatReader). */
+    fun ingest(updates: Map<String, String>) = merge(updates)
+
     private fun readSettings(out: MutableMap<String, String>) {
         val cr = app.contentResolver
         INTERESTING_SETTINGS.forEach { (table, key) ->
