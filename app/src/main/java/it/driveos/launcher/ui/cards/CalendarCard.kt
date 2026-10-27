@@ -96,11 +96,11 @@ private fun ColumnScope.Info(size: CardSize, text: String, button: String?, onCl
 }
 
 @Composable
-private fun EventList(events: List<CalendarEvent>, size: CardSize, zone: ZoneId, today: LocalDate) {
+private fun ColumnScope.EventList(events: List<CalendarEvent>, size: CardSize, zone: ZoneId, today: LocalDate) {
     val colors = MaterialTheme.colorScheme
-    BoxWithConstraints(Modifier.fillMaxSize()) {
+    BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
         val rowHeight = if (size == CardSize.COMPACT) 50.dp else 60.dp
-        val rows = (maxHeight / rowHeight).toInt().coerceAtLeast(1)
+        val rows = (maxHeight / rowHeight).toInt().coerceAtLeast(1) // lo spazio è quello rimasto sotto il titolo
         Column {
             events.take(rows).forEach { e ->
                 Row(Modifier.fillMaxWidth().height(rowHeight).padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {

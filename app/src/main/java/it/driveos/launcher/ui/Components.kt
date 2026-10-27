@@ -6,6 +6,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -102,6 +104,7 @@ fun BigButton(
 fun BottomBar(
     current: Screen,
     onHome: () -> Unit,
+    onVehicle: () -> Unit,
     onNav: () -> Unit,
     onRadio: () -> Unit,
     onMusic: () -> Unit,
@@ -112,13 +115,21 @@ fun BottomBar(
         Modifier.fillMaxWidth().height(92.dp).padding(horizontal = 10.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        val m = Modifier.weight(1f).fillMaxHeight()
-        BigButton("Home", Icons.Filled.Home, onHome, m, selected = current == Screen.DASHBOARD)
-        BigButton("Naviga", Icons.Filled.Place, onNav, m)
-        BigButton("Radio", it.driveos.launcher.ui.icons.RadioIcon, onRadio, m, selected = current == Screen.RADIO)
-        BigButton("Musica", Icons.Filled.PlayArrow, onMusic, m, selected = current == Screen.MUSIC)
-        BigButton("Telefono", Icons.Filled.Phone, onPhone, m)
-        BigButton("App", Icons.Filled.Menu, onApps, m, selected = current == Screen.APPS)
+        // Home e Veicolo restano fermi; gli altri scorrono se non c'è spazio.
+        val fixed = Modifier.width(116.dp).fillMaxHeight()
+        BigButton("Home", Icons.Filled.Home, onHome, fixed, selected = current == Screen.DASHBOARD)
+        BigButton("Veicolo", it.driveos.launcher.ui.icons.CarIcon, onVehicle, fixed, selected = current == Screen.OVERVIEW)
+        Row(
+            Modifier.weight(1f).fillMaxHeight().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            val m = Modifier.width(128.dp).fillMaxHeight()
+            BigButton("Naviga", Icons.Filled.Place, onNav, m)
+            BigButton("Radio", it.driveos.launcher.ui.icons.RadioIcon, onRadio, m, selected = current == Screen.RADIO)
+            BigButton("Musica", Icons.Filled.PlayArrow, onMusic, m, selected = current == Screen.MUSIC)
+            BigButton("Telefono", Icons.Filled.Phone, onPhone, m)
+            BigButton("App", Icons.Filled.Menu, onApps, m, selected = current == Screen.APPS)
+        }
     }
 }
 

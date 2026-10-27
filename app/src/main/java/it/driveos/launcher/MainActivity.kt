@@ -615,12 +615,9 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                     if (screen == Screen.DASHBOARD) {
-                        VehicleStatusStrip(
-                            lightsOn = lightsResolved,
-                            gauges = vehicleGauges,
+                        // Sulla Home solo le spie attive; il resto è nella schermata Veicolo.
+                        if (vehicleAlerts.isNotEmpty()) VehicleStatusStrip(
                             alerts = vehicleAlerts,
-                            volumePercent = volumeState.percent,
-                            onControls = { controlsOpen = !controlsOpen },
                             onOpenVehicle = { overviewAuto = false; screen = Screen.OVERVIEW },
                         )
                     }
@@ -935,6 +932,7 @@ class MainActivity : ComponentActivity() {
                     if (screen != Screen.OVERVIEW) BottomBar(
                         current = screen,
                         onHome = { screen = Screen.DASHBOARD },
+                        onVehicle = { overviewAuto = false; screen = Screen.OVERVIEW },
                         onNav = { openOrPick(s.navApp, PickerTarget.NAV) },
                         onRadio = { screen = Screen.RADIO },
                         onMusic = { openOrPick(s.musicApp, PickerTarget.MUSIC) },

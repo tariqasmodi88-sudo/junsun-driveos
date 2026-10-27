@@ -32,15 +32,10 @@ import it.driveos.launcher.vehicle.Gauge
  */
 @Composable
 fun VehicleStatusStrip(
-    lightsOn: Boolean?,
-    gauges: List<Gauge>,
     alerts: List<ActiveAlert>,
-    volumePercent: Int,
-    onControls: () -> Unit,
     onOpenVehicle: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
-    val nothing = lightsOn == null && gauges.isEmpty() && alerts.isEmpty()
 
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
@@ -58,26 +53,7 @@ fun VehicleStatusStrip(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                if (nothing) {
-                    Text("Veicolo: in attesa dei dati", fontSize = 14.sp, color = colors.onSurfaceVariant, maxLines = 1)
-                } else {
-                    lightsOn?.let { Pill("Fari", if (it) "accesi" else "spenti", colors.onSurface) }
-                    gauges.forEach { g ->
-                        Pill(g.label, g.value + (if (g.unit.isNotBlank()) " ${g.unit}" else ""), colors.onSurface)
-                    }
-                    alerts.forEach { a -> Pill("⚠", a.label, colors.error, warning = true) }
-                }
-            }
-        }
-        Surface(
-            onClick = onControls,
-            shape = RoundedCornerShape(14.dp),
-            color = colors.surfaceVariant,
-            contentColor = colors.onSurface,
-            modifier = Modifier.height(46.dp),
-        ) {
-            Box(Modifier.padding(horizontal = 18.dp), contentAlignment = Alignment.Center) {
-                Text("Volume $volumePercent%", fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+                alerts.forEach { a -> Pill("⚠", a.label, colors.error, warning = true) }
             }
         }
     }
