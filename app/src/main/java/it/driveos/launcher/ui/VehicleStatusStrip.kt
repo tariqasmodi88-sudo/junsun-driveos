@@ -35,31 +35,49 @@ fun VehicleStatusStrip(
     lightsOn: Boolean?,
     gauges: List<Gauge>,
     alerts: List<ActiveAlert>,
+    volumePercent: Int,
+    onControls: () -> Unit,
     onOpenVehicle: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
     val nothing = lightsOn == null && gauges.isEmpty() && alerts.isEmpty()
 
-    Surface(
-        onClick = onOpenVehicle,
-        shape = RoundedCornerShape(14.dp),
-        color = colors.surface,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 2.dp),
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Row(
-            Modifier.fillMaxWidth().height(46.dp).padding(horizontal = 14.dp).horizontalScroll(rememberScrollState()),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        Surface(
+            onClick = onOpenVehicle,
+            shape = RoundedCornerShape(14.dp),
+            color = colors.surface,
+            modifier = Modifier.weight(1f).height(46.dp),
         ) {
-            if (nothing) {
-                Text("Stato veicolo: in attesa dei dati del veicolo — tocca per configurare",
-                    fontSize = 14.sp, color = colors.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            } else {
-                lightsOn?.let { Pill("Fari", if (it) "accesi" else "spenti", colors.onSurface) }
-                gauges.forEach { g ->
-                    Pill(g.label, g.value + (if (g.unit.isNotBlank()) " ${g.unit}" else ""), colors.onSurface)
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 12.dp).horizontalScroll(rememberScrollState()),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                if (nothing) {
+                    Text("Veicolo: in attesa dei dati", fontSize = 14.sp, color = colors.onSurfaceVariant, maxLines = 1)
+                } else {
+                    lightsOn?.let { Pill("Fari", if (it) "accesi" else "spenti", colors.onSurface) }
+                    gauges.forEach { g ->
+                        Pill(g.label, g.value + (if (g.unit.isNotBlank()) " ${g.unit}" else ""), colors.onSurface)
+                    }
+                    alerts.forEach { a -> Pill("⚠", a.label, colors.error, warning = true) }
                 }
-                alerts.forEach { a -> Pill("⚠", a.label, colors.error, warning = true) }
+            }
+        }
+        Surface(
+            onClick = onControls,
+            shape = RoundedCornerShape(14.dp),
+            color = colors.surfaceVariant,
+            contentColor = colors.onSurface,
+            modifier = Modifier.height(46.dp),
+        ) {
+            Box(Modifier.padding(horizontal = 18.dp), contentAlignment = Alignment.Center) {
+                Text("Volume $volumePercent%", fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 1)
             }
         }
     }

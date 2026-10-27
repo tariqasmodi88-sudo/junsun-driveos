@@ -54,7 +54,6 @@ import it.driveos.launcher.ui.BottomBar
 import it.driveos.launcher.ui.ControlsPanel
 import it.driveos.launcher.ui.DashboardScreen
 import it.driveos.launcher.ui.DeviceInfoScreen
-import it.driveos.launcher.ui.QuickBar
 import it.driveos.launcher.ui.RadioPresetDialog
 import it.driveos.launcher.ui.RadioScreen
 import it.driveos.launcher.ui.SettingsScreen
@@ -201,6 +200,7 @@ class MainActivity : ComponentActivity() {
         val loggedChanges by VehicleLog.changes.collectAsStateWithLifecycle()
         val speedKmh by driveApp.speedWatcher.speedKmh.collectAsStateWithLifecycle()
         val parked by driveApp.speedWatcher.parked.collectAsStateWithLifecycle()
+        var debugFromOverview by remember { mutableStateOf(false) }
         var overviewAuto by remember { mutableStateOf(false) } // aperta in automatico (si richiude da sola)
         val scope = rememberCoroutineScope()
         val snackbar = remember { SnackbarHostState() }
@@ -355,10 +355,10 @@ class MainActivity : ComponentActivity() {
             }
         }
         val vehicleGauges = remember(s.signalBindings, vehicleSignals) {
-            VehicleStatus.knownStatus(vehicleSignals) + VehicleStatus.gauges(s.signalBindings, vehicleSignals)
+            VehicleStatus.knownStatus(vehicleSignals)
         }
         val vehicleAlerts = remember(s.signalBindings, vehicleSignals) {
-            VehicleStatus.knownActiveAlerts(vehicleSignals) + VehicleStatus.activeAlerts(s.signalBindings, vehicleSignals)
+            VehicleStatus.knownActiveAlerts(vehicleSignals)
         }
         var autoTick by remember { mutableStateOf(0) }
         LaunchedEffect(Unit) {
@@ -472,7 +472,8 @@ class MainActivity : ComponentActivity() {
         BackHandler(enabled = true) {
             if (controlsOpen) { controlsOpen = false } else screen = when (screen) {
                 Screen.DEVICE_INFO -> Screen.SETTINGS
-                Screen.VEHICLE, Screen.RADIO, Screen.SMART_START -> Screen.SETTINGS
+                Screen.VEHICLE -> if (debugFromOverview) { debugFromOverview = false; Screen.OVERVIEW } else Screen.SETTINGS
+                Screen.RADIO, Screen.SMART_START -> Screen.SETTINGS
                 Screen.OVERVIEW -> { overviewAuto = false; Screen.DASHBOARD }
                 else -> Screen.DASHBOARD
             }
@@ -502,17 +503,12 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                     if (screen == Screen.DASHBOARD) {
-                        QuickBar(
-                            volumePercent = volumeState.percent,
-                            autoThemeLabel = autoResult?.source?.label,
-                            onControls = { controlsOpen = !controlsOpen },
-                            onVehicle = { overviewAuto = false; screen = Screen.OVERVIEW },
-                            onRadio = { screen = Screen.RADIO },
-                        )
                         VehicleStatusStrip(
                             lightsOn = lightsResolved,
                             gauges = vehicleGauges,
                             alerts = vehicleAlerts,
+                            volumePercent = volumeState.percent,
+                            onControls = { controlsOpen = !controlsOpen },
                             onOpenVehicle = { overviewAuto = false; screen = Screen.OVERVIEW },
                         )
                     }
@@ -759,7 +755,7 @@ class MainActivity : ComponentActivity() {
                                         else "Export non riuscito. " + r.errors.firstOrNull().orEmpty()
                                     }
                                 },
-                                onBack = { screen = Screen.SETTINGS },
+                                onBack = { if (debugFromOverview) { debugFromOverview = false; screen = Screen.OVERVIEW } else screen = Screen.SETTINGS },
                             )
 
                             Screen.RADIO -> RadioScreen(
@@ -799,6 +795,7 @@ class MainActivity : ComponentActivity() {
                                     logsGranted = driveApp.logcatReader.available(),
                                 ),
                                 onHome = { overviewAuto = false; screen = Screen.DASHBOARD },
+                                onDebug = { overviewAuto = false; debugFromOverview = true; screen = Screen.VEHICLE },
                             )
 
                             Screen.SMART_START -> SmartStartScreen(

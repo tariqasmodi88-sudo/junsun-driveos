@@ -72,27 +72,27 @@ private val Beam = Color(0xFFFFE9A8)
  * sensori; stato a sinistra, spie a destra. Unico comando: Home.
  */
 @Composable
-fun VehicleOverviewScreen(state: VehicleOverviewState, onHome: () -> Unit) {
+fun VehicleOverviewScreen(state: VehicleOverviewState, onHome: () -> Unit, onDebug: () -> Unit) {
     val c = MaterialTheme.colorScheme
     Column(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 14.dp)) {
         Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
             // --- Sinistra: stato ---
-            Column(Modifier.weight(0.3f).fillMaxHeight().verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(Modifier.weight(0.36f).fillMaxHeight().verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 SectionTitle("Stato")
                 StatusRow("Fari", state.lightsOn?.let { if (it) "accesi" else "spenti" }, state.lightsOn == true, Amber)
                 StatusRow("Portiere", state.doorOpen?.let { if (it) "aperta" else "chiuse" }, state.doorOpen == true, Warn,
-                    missing = if (!state.logsGranted) "serve READ_LOGS" else null)
+                    missing = if (!state.logsGranted) "permesso" else null)
                 StatusRow("Retromarcia", state.reverse?.let { if (it) "inserita" else "no" }, state.reverse == true, Color.White)
                 StatusRow("Sensori", state.parking?.let { if (it) "attivi" else "no" }, state.parking == true, Amber,
-                    missing = if (!state.logsGranted) "serve READ_LOGS" else null)
+                    missing = if (!state.logsGranted) "permesso" else null)
                 StatusRow("Telefono", state.phone?.let { if (it) "collegato" else "scollegato" }, state.phone == true, Ok)
                 StatusRow("CarPlay/AA", if (state.projection) "attivo" else "no", state.projection, Ok)
                 StatusRow("Radio", state.radioKhz?.let { "%.1f MHz".format(it / 1000.0) }, false, c.primary)
             }
 
             // --- Centro: l'auto ---
-            Box(Modifier.weight(0.4f).fillMaxHeight(), contentAlignment = Alignment.Center) {
+            Box(Modifier.weight(0.3f).fillMaxHeight(), contentAlignment = Alignment.Center) {
                 CarTopView(state, Modifier.fillMaxSize())
                 Column(Modifier.align(Alignment.TopCenter), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(state.speedKmh?.let { "${it.toInt()} km/h" } ?: "— km/h",
@@ -103,8 +103,8 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onHome: () -> Unit) {
             }
 
             // --- Destra: spie e motore ---
-            Column(Modifier.weight(0.3f).fillMaxHeight().verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(Modifier.weight(0.34f).fillMaxHeight().verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 SectionTitle("Spie")
                 if (state.alerts.isEmpty()) {
                     Surface(shape = RoundedCornerShape(16.dp), color = Ok.copy(alpha = 0.14f), modifier = Modifier.fillMaxWidth()) {
@@ -140,13 +140,20 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onHome: () -> Unit) {
             }
         }
 
-        // --- Unico comando: Home ---
-        Surface(onClick = onHome, shape = RoundedCornerShape(20.dp), color = c.primary, contentColor = c.onPrimary,
-            modifier = Modifier.fillMaxWidth().height(76.dp).padding(top = 10.dp)) {
-            Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Home, contentDescription = null, modifier = Modifier.size(32.dp))
-                Spacer(Modifier.width(12.dp))
-                Text("Home", fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
+        Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Surface(onClick = onHome, shape = RoundedCornerShape(20.dp), color = c.primary, contentColor = c.onPrimary,
+                modifier = Modifier.weight(1f).height(68.dp)) {
+                Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Home, contentDescription = null, modifier = Modifier.size(30.dp))
+                    Spacer(Modifier.width(12.dp))
+                    Text("Home", fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
+                }
+            }
+            Surface(onClick = onDebug, shape = RoundedCornerShape(20.dp), color = c.surfaceVariant, contentColor = c.onSurface,
+                modifier = Modifier.width(140.dp).height(68.dp)) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Debug", fontSize = 18.sp, fontWeight = FontWeight.Medium)
+                }
             }
         }
     }
@@ -163,10 +170,10 @@ private fun StatusRow(label: String, value: String?, active: Boolean, activeColo
     val c = MaterialTheme.colorScheme
     Surface(shape = RoundedCornerShape(14.dp), color = if (active) activeColor.copy(alpha = 0.16f) else c.surface,
         modifier = Modifier.fillMaxWidth()) {
-        Row(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(horizontal = 12.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(10.dp).background(if (active) activeColor else c.outline, CircleShape))
             Spacer(Modifier.width(10.dp))
-            Text(label, fontSize = 16.sp, color = c.onSurfaceVariant, modifier = Modifier.weight(1f))
+            Text(label, fontSize = 15.sp, color = c.onSurfaceVariant, maxLines = 1, modifier = Modifier.weight(1f))
             Text(value ?: (missing ?: "—"), fontSize = if (value != null) 17.sp else 13.sp,
                 fontWeight = if (value != null) FontWeight.SemiBold else FontWeight.Normal,
                 color = if (value != null) c.onSurface else c.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
