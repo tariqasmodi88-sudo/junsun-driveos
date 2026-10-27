@@ -23,6 +23,8 @@ data class SmartStartConfig(
     val hasOnlineMusic: Boolean = false,
     val hasOfflineMusic: Boolean = false,
     val hasNav: Boolean = false,
+    /** CarPlay/Android Auto (SpeedPlay) già attivo: gestisce lui musica e navigazione. */
+    val projectionActive: Boolean = false,
 )
 
 object SmartStart {
@@ -33,6 +35,8 @@ object SmartStart {
      */
     fun plan(config: SmartStartConfig, online: Boolean): List<SmartAction> {
         if (!config.enabled) return emptyList()
+        // Se la proiezione è già attiva non avviamo nulla sopra (eviteremmo due sorgenti audio).
+        if (config.projectionActive) return emptyList()
         val actions = ArrayList<SmartAction>()
         if (config.launchAndroidAuto) actions.add(SmartAction.LAUNCH_ANDROID_AUTO)
         if (config.playMusic) {

@@ -184,6 +184,9 @@ class VehicleRepository(context: Context) {
             "com.ts.can.BROADCAST_CAMERA_KEY",
             // Eventi veicolo
             "com.forfan.operator_reversing", // retromarcia reale (extra "operate": 1=inserita)
+            "com.ts.rearview_state",         // retrocamera (extra show_state)
+            "com.globalconstant.BROADCAST_RESPONSE_HFPSTATUS", // telefono vivavoce (hfpStatus, name, number)
+            "com.ts.bt.CONNECT_STATE_CHANGE",
             "comm.power.ENTER_REVERSE",
             "comm.power.QUIT_REVERSE",
             "com.cusc.action.ACC_OFF",
@@ -197,14 +200,27 @@ class VehicleRepository(context: Context) {
             "com.ts.main.radio",
         )
 
-        /** Tutte le azioni broadcast sensate da ascoltare (sistema + note + scoperte). */
+        /**
+         * Canali che arrivano di continuo ma non dicono nulla sull'auto (battito della voce TXZ,
+         * modem cellulare). Nel primo registro erano 660 righe su 2050: esclusi per un file pulito.
+         */
+        val noisyActions = setOf(
+            "com.txznet.txz.heartbeat",
+            "com.android.ims.IMS_SERVICE_UP",
+            "com.mediatek.ims.MTK_IMS_SERVICE_UP",
+            "com.mediatek.intent.action.RADIO_STATE_CHANGED",
+            "com.mediatek.intent.action.LOCATED_PLMN_CHANGED",
+            "com.mediatek.intent.action.ACTION_NETWORK_REJECT_CAUSE",
+        )
+
+        /** Tutte le azioni broadcast sensate da ascoltare (sistema + note + scoperte), senza rumore. */
         fun allListenActions(discovered: Collection<String>): Set<String> =
             (ActionFilter.systemActions + knownVehicleActions + discovered + listOf(
                 "com.ts.car.client.ACTION_CHANGED_LOG_STATE",
                 "com.ts.car.client.ACTION_REMOTE_SLEEP",
                 "com.ts.car.client.ACTION_REMOTE_WAKEUP",
                 "com.ts.car.client.ACTION_RESPONSE_AVM_PICTURE",
-            )).toSet()
+            )).toSet() - noisyActions
 
         /**
          * Legge, in modo indipendente dall'istanza, proprietà + impostazioni + file di sistema.

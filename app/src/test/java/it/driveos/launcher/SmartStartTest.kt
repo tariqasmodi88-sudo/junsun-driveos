@@ -47,6 +47,10 @@ class SmartStartTest {
         assertEquals(listOf(SmartAction.LAUNCH_ANDROID_AUTO, SmartAction.PLAY_ONLINE), SmartStart.plan(aa, online = true))
     }
 
+    @Test fun nothingWhenProjectionActive() {
+        assertTrue(SmartStart.plan(full.copy(projectionActive = true), online = true).isEmpty())
+    }
+
     @Test fun triggerFiresOnlyOnRisingEdge() {
         val t = ConnectionTrigger()
         assertFalse(t.onState(false))

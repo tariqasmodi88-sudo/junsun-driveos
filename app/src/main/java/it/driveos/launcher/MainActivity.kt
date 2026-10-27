@@ -269,6 +269,10 @@ class MainActivity : ComponentActivity() {
         }
 
         val projectionPkg = PROJECTION_PKGS.firstOrNull { pm.getLaunchIntentForPackage(it) != null }
+        // Telefono collegato: Bluetooth Android OPPURE vivavoce della radio (stack TS, hfpStatus).
+        // Nel registro reale il collegamento del telefono arriva dal vivavoce TS.
+        val phoneLinked = btConnected || KnownVehicleSignals.phoneConnected(vehicleSignals) == true
+        val projectionOn = KnownVehicleSignals.projectionActive(vehicleSignals)
 
         fun runSmartStart() {
             val config = SmartStartConfig(
@@ -279,9 +283,14 @@ class MainActivity : ComponentActivity() {
                 hasOnlineMusic = s.onlineMusicApp != null,
                 hasOfflineMusic = s.offlineMusicApp != null,
                 hasNav = s.navApp != null,
+                projectionActive = projectionOn,
             )
             val plan = SmartStart.plan(config, online)
-            if (plan.isEmpty()) { message("Avvio intelligente: niente da fare (controlla le app scelte)."); return }
+            if (plan.isEmpty()) {
+                message(if (projectionOn) "CarPlay/Android Auto è già attivo: l'avvio intelligente non fa nulla per non sovrapporsi."
+                    else "Avvio intelligente: niente da fare (controlla le app scelte).")
+                return
+            }
             plan.forEach { action ->
                 when (action) {
                     SmartAction.PLAY_ONLINE -> driveApp.mediaRepository.resumeOrPlay(s.onlineMusicApp?.packageName)
@@ -297,11 +306,11 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // Scatto automatico: il telefono si collega in Bluetooth → avvio intelligente.
-        LaunchedEffect(btConnected) {
-            if (smartTrigger.onState(btConnected) && s.smartStartEnabled) {
+        // Scatto automatico: il telefono si collega → avvio intelligente.
+        LaunchedEffect(phoneLinked) {
+            if (smartTrigger.onState(phoneLinked) && s.smartStartEnabled) {
                 driveApp.connectivityWatcher.refresh()
-                kotlinx.coroutines.delay(1500) // lascia stabilizzare rete e sessioni audio
+                kotlinx.coroutines.delay(4000) // lascia a SpeedPlay il tempo di agganciarsi, poi decide
                 runSmartStart()
             }
         }
@@ -318,7 +327,9 @@ class MainActivity : ComponentActivity() {
 
         // Stato dei fari (collegamento esplicito o segnale noto automatico) e tema automatico.
         val lightsResolved = VehicleStatus.lightsOn(s.lightsBinding, vehicleSignals)
-        val vehicleGauges = remember(s.signalBindings, vehicleSignals) { VehicleStatus.gauges(s.signalBindings, vehicleSignals) }
+        val vehicleGauges = remember(s.signalBindings, vehicleSignals) {
+            VehicleStatus.knownStatus(vehicleSignals) + VehicleStatus.gauges(s.signalBindings, vehicleSignals)
+        }
         val vehicleAlerts = remember(s.signalBindings, vehicleSignals) {
             VehicleStatus.knownActiveAlerts(vehicleSignals) + VehicleStatus.activeAlerts(s.signalBindings, vehicleSignals)
         }
@@ -721,7 +732,7 @@ class MainActivity : ComponentActivity() {
                             Screen.SMART_START -> SmartStartScreen(
                                 settings = s,
                                 appLabel = { key -> apps.firstOrNull { it.key == key }?.label },
-                                btConnected = btConnected,
+                                btConnected = phoneLinked,
                                 online = online,
                                 androidAutoInstalled = projectionPkg != null,
                                 onToggleEnabled = { on -> scope.launch { repo.setSmartStartEnabled(on) } },

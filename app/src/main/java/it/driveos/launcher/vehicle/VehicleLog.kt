@@ -51,6 +51,8 @@ object VehicleLog {
                     old.delete(); f.renameTo(old)
                     f.writeText(LogFormat.HEADER + "\n")
                 }
+                // file azzerato mentre la registrazione era attiva: rimette l'intestazione
+                if (!f.exists() || f.length() == 0L) f.writeText(LogFormat.HEADER + "\n")
                 f.appendText(lines.joinToString("\n", postfix = "\n"))
             }
             _changes.value += lines.size

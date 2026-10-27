@@ -41,12 +41,36 @@ object KnownVehicleSignals {
     /** Retromarcia reale su ForFan: broadcast com.forfan.operator_reversing, extra "operate". */
     const val REVERSE_ID = "bc:com.forfan.operator_reversing|operate"
 
+    /** Retrocamera (suite TS): bc com.ts.rearview_state, extra show_state. */
+    const val REARVIEW_ID = "bc:com.ts.rearview_state|show_state"
+
     /** true = in retromarcia, false = no, null = segnale mai visto. */
     fun reverseOn(signals: Map<String, String>): Boolean? = when (signals[REVERSE_ID]) {
         null -> null
         "1" -> true
         else -> false
     }
+
+    fun rearviewOn(signals: Map<String, String>): Boolean? = when (signals[REARVIEW_ID]) {
+        null -> null
+        "1" -> true
+        else -> false
+    }
+
+    /** Telefono collegato al vivavoce della radio (stack Bluetooth TS, non quello Android). */
+    const val PHONE_HFP_ID = "bc:com.globalconstant.BROADCAST_RESPONSE_HFPSTATUS|hfpStatus"
+
+    /** Proiezione wireless (CarPlay/Android Auto tramite SpeedPlay) attiva. */
+    const val PROJECTION_ID = "prop:sys.speedplay.connection.state"
+
+    /** true = telefono collegato (hfpStatus diverso da 0), null = mai visto. */
+    fun phoneConnected(signals: Map<String, String>): Boolean? = when (signals[PHONE_HFP_ID]) {
+        null -> null
+        "0" -> false
+        else -> true
+    }
+
+    fun projectionActive(signals: Map<String, String>): Boolean = signals[PROJECTION_ID] == "1"
 }
 
 /** Un valore sempre visibile sul cruscotto (es. carburante, temperatura). */
@@ -90,6 +114,14 @@ object VehicleStatus {
     fun knownActiveAlerts(signals: Map<String, String>): List<ActiveAlert> {
         val out = ArrayList<ActiveAlert>()
         if (KnownVehicleSignals.reverseOn(signals) == true) out.add(ActiveAlert("Retromarcia"))
+        return out
+    }
+
+    /** Stati sempre utili riconosciuti su questo firmware (telefono, CarPlay/AA). */
+    fun knownStatus(signals: Map<String, String>): List<Gauge> {
+        val out = ArrayList<Gauge>()
+        KnownVehicleSignals.phoneConnected(signals)?.let { out.add(Gauge("Telefono", if (it) "collegato" else "scollegato", "")) }
+        if (KnownVehicleSignals.projectionActive(signals)) out.add(Gauge("CarPlay/AA", "attivo", ""))
         return out
     }
 

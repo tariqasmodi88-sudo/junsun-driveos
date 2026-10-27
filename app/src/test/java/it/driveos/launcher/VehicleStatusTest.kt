@@ -64,4 +64,12 @@ class VehicleStatusTest {
         assertEquals(true, VehicleStatus.lightsOn(null, mapOf("prop:forfan_light_state" to "on")))
         assertNull(VehicleStatus.lightsOn(null, emptyMap()))
     }
+
+    @Test fun phoneAndProjectionFromRealLog() {
+        val sig = mapOf(KnownVehicleSignals.PHONE_HFP_ID to "1", KnownVehicleSignals.PROJECTION_ID to "1")
+        assertEquals(true, KnownVehicleSignals.phoneConnected(sig))
+        assertTrue(KnownVehicleSignals.projectionActive(sig))
+        assertEquals(false, KnownVehicleSignals.phoneConnected(mapOf(KnownVehicleSignals.PHONE_HFP_ID to "0")))
+        assertEquals(listOf("Telefono", "CarPlay/AA"), VehicleStatus.knownStatus(sig).map { it.label })
+    }
 }
