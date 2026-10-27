@@ -68,8 +68,8 @@ fun SmartStartScreen(
             SettingRowLite("Musica online (streaming)", describe(settings.onlineMusicApp), onPickOnline)
             SettingRowLite("Musica offline (locale)", describe(settings.offlineMusicApp), onPickOffline)
             ToggleRow("Avvia la navigazione", "Apre l'app di navigazione scelta", settings.smartStartNav, onToggleNav)
-            ToggleRow("Avvia anche Android Auto",
-                if (androidAutoInstalled) "Attenzione: Android Auto prende lo schermo" else "Android Auto non risulta installato",
+            ToggleRow("Collega CarPlay/Android Auto",
+                if (androidAutoInstalled) "Si collega in secondo piano: resti sulla Home DriveOS" else "Android Auto non risulta installato",
                 settings.smartStartAndroidAuto, onToggleAndroidAuto)
 
             Spacer(Modifier.height(8.dp))

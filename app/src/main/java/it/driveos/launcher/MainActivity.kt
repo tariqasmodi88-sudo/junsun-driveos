@@ -293,6 +293,18 @@ class MainActivity : ComponentActivity() {
             runCatching { pm.getPackageInfo("com.ts.dvdplayer", 0); true }.getOrDefault(false)
         }
         fun hasLocalMusic() = s.offlineMusicApp != null || junsunLocalPlayer
+        // Riporta DriveOS davanti (CarPlay/Android Auto o il lettore restano attivi in secondo piano).
+        fun bringHomeToFront() {
+            runCatching {
+                context.getSystemService(android.app.ActivityManager::class.java)
+                    ?.appTasks?.firstOrNull()?.moveToFront()
+            }
+            runCatching {
+                context.startActivity(Intent(context, MainActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP))
+            }
+        }
+        val projectionLive by androidx.compose.runtime.rememberUpdatedState(projectionOn)
         fun playLocalMusic() {
             val app = s.offlineMusicApp
             if (app != null) { driveApp.mediaRepository.resumeOrPlay(app.packageName); return }
@@ -302,13 +314,7 @@ class MainActivity : ComponentActivity() {
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             }
             // Il lettore resta a suonare in secondo piano; si torna subito alla Home DriveOS.
-            scope.launch {
-                kotlinx.coroutines.delay(2500)
-                runCatching {
-                    context.startActivity(Intent(context, MainActivity::class.java)
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP))
-                }
-            }
+            scope.launch { kotlinx.coroutines.delay(2500); bringHomeToFront() }
         }
 
         fun runSmartStart() {
@@ -338,6 +344,13 @@ class MainActivity : ComponentActivity() {
                             pm.getLaunchIntentForPackage(pkg)?.let { intent ->
                                 runCatching { context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
                             }
+                            // Lascia collegare CarPlay/AA e torna subito alla Home DriveOS.
+                            scope.launch {
+                                var waited = 0
+                                while (!projectionLive && waited < 20_000) { kotlinx.coroutines.delay(500); waited += 500 }
+                                kotlinx.coroutines.delay(1500)
+                                bringHomeToFront()
+                            }
                         }
                 }
             }
@@ -349,6 +362,15 @@ class MainActivity : ComponentActivity() {
                 driveApp.connectivityWatcher.refresh()
                 kotlinx.coroutines.delay(4000) // lascia a SpeedPlay il tempo di agganciarsi, poi decide
                 runSmartStart()
+            }
+        }
+
+        // Quando CarPlay/Android Auto si collega (anche da solo) la sua interfaccia non deve
+        // prendere possesso: si resta sulla Home DriveOS, la proiezione continua in secondo piano.
+        LaunchedEffect(projectionOn) {
+            if (projectionOn && s.smartStartEnabled && s.smartStartAndroidAuto) {
+                kotlinx.coroutines.delay(1500)
+                bringHomeToFront()
             }
         }
 
