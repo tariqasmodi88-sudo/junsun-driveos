@@ -27,6 +27,11 @@
          adb shell pm grant it.driveos.launcher android.permission.READ_LOGS -->
     <uses-permission android:name="android.permission.READ_LOGS" tools:ignore="ProtectedPermissions" />
 
+    <!-- Velocità GPS per capire quando l'auto è ferma (schermata veicolo automatica).
+         Chiesto solo quando attivi la funzione; la posizione non viene salvata né inviata. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
     <!-- Visibilita' dei pacchetti (rilevante da Android 11; su Android 10 non ha effetto). -->
     <queries>
         <intent>

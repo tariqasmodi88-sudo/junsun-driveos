@@ -62,6 +62,8 @@ import it.driveos.launcher.ui.SmartStartScreen
 import it.driveos.launcher.ui.TextInputDialog
 import it.driveos.launcher.ui.VehicleScreen
 import it.driveos.launcher.ui.VehicleStatusStrip
+import it.driveos.launcher.ui.VehicleOverviewScreen
+import it.driveos.launcher.ui.VehicleOverviewState
 import it.driveos.launcher.ui.theme.AutoThemeState
 import it.driveos.launcher.radio.RadioBand
 import it.driveos.launcher.radio.RadioPreset
@@ -70,6 +72,7 @@ import it.driveos.launcher.settings.ThemeMode
 import it.driveos.launcher.vehicle.ActionDiscovery
 import it.driveos.launcher.vehicle.CandidateFinder
 import it.driveos.launcher.vehicle.KnownVehicleSignals
+import it.driveos.launcher.vehicle.LogcatParser
 import it.driveos.launcher.vehicle.SignalBinding
 import it.driveos.launcher.vehicle.SignalIds
 import it.driveos.launcher.vehicle.SignalRole
@@ -90,7 +93,7 @@ import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.ZoneId
 
-enum class Screen { DASHBOARD, APPS, SETTINGS, DEVICE_INFO, NAV, MUSIC, CALENDAR, CLOCK, VEHICLE, RADIO, SMART_START }
+enum class Screen { DASHBOARD, APPS, SETTINGS, DEVICE_INFO, NAV, MUSIC, CALENDAR, CLOCK, VEHICLE, RADIO, SMART_START, OVERVIEW }
 
 private enum class PickerTarget(val title: String) {
     NAV("App di navigazione"),
@@ -140,6 +143,7 @@ class MainActivity : ComponentActivity() {
         driveApp.bluetoothWatcher.start()
         driveApp.connectivityWatcher.start()
         driveApp.logcatReader.start() // legge portiere/sensori/radio dal log se READ_LOGS è concesso
+        driveApp.speedWatcher.start()  // velocità GPS per la schermata 'auto ferma' (se c'è il permesso)
     }
 
     override fun onPause() {
@@ -147,6 +151,7 @@ class MainActivity : ComponentActivity() {
         driveApp.vehicleRepository.stop()
         driveApp.bluetoothWatcher.stop()
         driveApp.logcatReader.stop()
+        driveApp.speedWatcher.stop()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -194,6 +199,9 @@ class MainActivity : ComponentActivity() {
         val radioDetected by driveApp.radioController.detected.collectAsStateWithLifecycle()
         val loggingOn by VehicleLog.running.collectAsStateWithLifecycle()
         val loggedChanges by VehicleLog.changes.collectAsStateWithLifecycle()
+        val speedKmh by driveApp.speedWatcher.speedKmh.collectAsStateWithLifecycle()
+        val parked by driveApp.speedWatcher.parked.collectAsStateWithLifecycle()
+        var overviewAuto by remember { mutableStateOf(false) } // aperta in automatico (si richiude da sola)
         val scope = rememberCoroutineScope()
         val snackbar = remember { SnackbarHostState() }
         var picker by remember { mutableStateOf<PickerTarget?>(null) }
@@ -224,6 +232,10 @@ class MainActivity : ComponentActivity() {
             scope.launch { snackbar.showSnackbar(text) }
         }
 
+        val locationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) driveApp.speedWatcher.start()
+            else message("Senza posizione la schermata veicolo si apre solo quando apri una portiera.")
+        }
         val calendarPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             driveApp.calendarRepository.refresh()
             if (!granted) message("Permesso negato. Puoi concederlo in Impostazioni Android → App → DriveOS → Autorizzazioni.")
@@ -329,6 +341,19 @@ class MainActivity : ComponentActivity() {
 
         // Stato dei fari (collegamento esplicito o segnale noto automatico) e tema automatico.
         val lightsResolved = VehicleStatus.lightsOn(s.lightsBinding, vehicleSignals)
+
+        // Schermata veicolo automatica: si apre quando l'auto è ferma (GPS) o si apre una portiera,
+        // solo partendo dalla Home (non interrompe navigazione, radio, impostazioni);
+        // si richiude da sola quando riparti, se era stata aperta in automatico.
+        val doorOpenNow = vehicleSignals[LogcatParser.DOOR] == "aperta"
+        LaunchedEffect(parked, doorOpenNow, s.autoOverview) {
+            if (!s.autoOverview) return@LaunchedEffect
+            if ((parked || doorOpenNow) && screen == Screen.DASHBOARD) {
+                screen = Screen.OVERVIEW; overviewAuto = true
+            } else if (!parked && !doorOpenNow && overviewAuto && screen == Screen.OVERVIEW) {
+                screen = Screen.DASHBOARD; overviewAuto = false
+            }
+        }
         val vehicleGauges = remember(s.signalBindings, vehicleSignals) {
             VehicleStatus.knownStatus(vehicleSignals) + VehicleStatus.gauges(s.signalBindings, vehicleSignals)
         }
@@ -448,6 +473,7 @@ class MainActivity : ComponentActivity() {
             if (controlsOpen) { controlsOpen = false } else screen = when (screen) {
                 Screen.DEVICE_INFO -> Screen.SETTINGS
                 Screen.VEHICLE, Screen.RADIO, Screen.SMART_START -> Screen.SETTINGS
+                Screen.OVERVIEW -> { overviewAuto = false; Screen.DASHBOARD }
                 else -> Screen.DASHBOARD
             }
         }
@@ -480,14 +506,14 @@ class MainActivity : ComponentActivity() {
                             volumePercent = volumeState.percent,
                             autoThemeLabel = autoResult?.source?.label,
                             onControls = { controlsOpen = !controlsOpen },
-                            onVehicle = { screen = Screen.VEHICLE },
+                            onVehicle = { overviewAuto = false; screen = Screen.OVERVIEW },
                             onRadio = { screen = Screen.RADIO },
                         )
                         VehicleStatusStrip(
                             lightsOn = lightsResolved,
                             gauges = vehicleGauges,
                             alerts = vehicleAlerts,
-                            onOpenVehicle = { screen = Screen.VEHICLE },
+                            onOpenVehicle = { overviewAuto = false; screen = Screen.OVERVIEW },
                         )
                     }
                     Box(Modifier.weight(1f).fillMaxWidth()) {
@@ -610,6 +636,21 @@ class MainActivity : ComponentActivity() {
                                 onOpenRadio = { screen = Screen.RADIO },
                                 onOpenSmartStart = { screen = Screen.SMART_START },
                                 smartStartEnabled = s.smartStartEnabled,
+                                autoOverview = s.autoOverview,
+                                autoOverviewHasGps = driveApp.speedWatcher.hasPermission(),
+                                onToggleAutoOverview = {
+                                    val gps = driveApp.speedWatcher.hasPermission()
+                                    when {
+                                        // attiva ma senza GPS: il tocco chiede la posizione (non la spegne)
+                                        s.autoOverview && !gps -> locationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                                        s.autoOverview -> scope.launch { repo.setAutoOverview(false) }
+                                        else -> {
+                                            scope.launch { repo.setAutoOverview(true) }
+                                            if (!gps) locationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                                        }
+                                    }
+                                },
+                                onOpenOverview = { overviewAuto = false; screen = Screen.OVERVIEW },
                                 onEditLocation = { textDialog = TextTarget.LOCATION },
                                 onHomeSettings = { report(Launcher.openSystemSettings(context, Settings.ACTION_HOME_SETTINGS)) },
                                 onAndroidSettings = { report(Launcher.openSystemSettings(context, Settings.ACTION_SETTINGS)) },
@@ -741,6 +782,23 @@ class MainActivity : ComponentActivity() {
                                 onBack = { screen = Screen.SETTINGS },
                             )
 
+                            Screen.OVERVIEW -> VehicleOverviewScreen(
+                                state = VehicleOverviewState(
+                                    lightsOn = lightsResolved,
+                                    reverse = KnownVehicleSignals.reverseOn(vehicleSignals),
+                                    rearview = KnownVehicleSignals.rearviewOn(vehicleSignals),
+                                    doorOpen = vehicleSignals[LogcatParser.DOOR]?.let { v -> v == "aperta" },
+                                    parking = vehicleSignals[LogcatParser.PARKING]?.let { v -> v == "1" },
+                                    phone = KnownVehicleSignals.phoneConnected(vehicleSignals),
+                                    projection = KnownVehicleSignals.projectionActive(vehicleSignals),
+                                    radioKhz = vehicleSignals[LogcatParser.RADIO_FREQ]?.toIntOrNull(),
+                                    speedKmh = speedKmh,
+                                    alerts = vehicleAlerts,
+                                    logsGranted = driveApp.logcatReader.available(),
+                                ),
+                                onHome = { overviewAuto = false; screen = Screen.DASHBOARD },
+                            )
+
                             Screen.SMART_START -> SmartStartScreen(
                                 settings = s,
                                 appLabel = { key -> apps.firstOrNull { it.key == key }?.label },
@@ -758,7 +816,7 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     }
-                    BottomBar(
+                    if (screen != Screen.OVERVIEW) BottomBar(
                         current = screen,
                         onHome = { screen = Screen.DASHBOARD },
                         onNav = { openOrPick(s.navApp, PickerTarget.NAV) },

@@ -11,6 +11,7 @@ import it.driveos.launcher.radio.RadioController
 import it.driveos.launcher.settings.SettingsRepository
 import it.driveos.launcher.system.CrashLog
 import it.driveos.launcher.vehicle.LogcatReader
+import it.driveos.launcher.vehicle.SpeedWatcher
 import it.driveos.launcher.vehicle.VehicleRepository
 
 /** Contenitore delle dipendenze condivise (nessun framework DI: non serve a questa scala). */
@@ -35,6 +36,8 @@ class DriveOSApp : Application() {
         private set
     lateinit var logcatReader: LogcatReader
         private set
+    lateinit var speedWatcher: SpeedWatcher
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -49,5 +52,6 @@ class DriveOSApp : Application() {
         connectivityWatcher = ConnectivityWatcher(this)
         radioController = RadioController(this)
         logcatReader = LogcatReader(this, vehicleRepository)
+        speedWatcher = SpeedWatcher(this)
     }
 }

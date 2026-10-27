@@ -64,6 +64,10 @@ fun SettingsScreen(
     onOpenRadio: () -> Unit,
     onOpenSmartStart: () -> Unit,
     smartStartEnabled: Boolean,
+    autoOverview: Boolean,
+    autoOverviewHasGps: Boolean,
+    onToggleAutoOverview: () -> Unit,
+    onOpenOverview: () -> Unit,
     onEditLocation: () -> Unit,
     onHomeSettings: () -> Unit,
     onAndroidSettings: () -> Unit,
@@ -93,7 +97,14 @@ fun SettingsScreen(
             }
 
             SectionTitle("Veicolo e radio")
-            SettingRow("Veicolo (CAN)", "Fari, carburante, pneumatici, spie e tema automatico", onOpenVehicle)
+            SettingRow("Schermata veicolo", "Auto vista dall'alto: portiere, fari, retro, sensori, spie", onOpenOverview)
+            SettingRow("Schermata veicolo automatica",
+                when {
+                    !autoOverview -> "Spenta: si apre solo a mano. Tocca per attivare"
+                    autoOverviewHasGps -> "Attiva: si apre quando l'auto è ferma o apri una portiera"
+                    else -> "Attiva solo con le portiere. Tocca e consenti la posizione per usarla da fermo"
+                }, onToggleAutoOverview)
+            SettingRow("Veicolo (dati tecnici)", "Segnali, registrazione continua, export", onOpenVehicle)
             SettingRow("Radio integrata", "Sintonizzatore e canali memorizzati" + (if (settings.radioPresets.isNotEmpty()) " (${settings.radioPresets.size})" else ""), onOpenRadio)
             SettingRow("Avvio intelligente (Bluetooth)",
                 if (smartStartEnabled) "Attivo: musica/nav all'arrivo del telefono" else "Spento: avvia musica e nav quando colleghi il telefono", onOpenSmartStart)

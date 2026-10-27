@@ -54,6 +54,8 @@ data class DriveSettings(
     val onlineMusicApp: AppKey? = null,
     val offlineMusicApp: AppKey? = null,
     val vehicleLogging: Boolean = false,
+    /** Schermata veicolo automatica quando l'auto è ferma (o si apre una portiera). */
+    val autoOverview: Boolean = true,
 ) {
     val lightsBinding: SignalBinding? get() = signalBindings.firstOrNull { it.role == SignalRole.LIGHTS }
     val gaugeBindings: List<SignalBinding> get() = signalBindings.filter { it.role == SignalRole.GAUGE }
@@ -87,6 +89,7 @@ class SettingsRepository(context: Context) {
         val ONLINE_MUSIC = stringPreferencesKey("online_music_app")
         val OFFLINE_MUSIC = stringPreferencesKey("offline_music_app")
         val VEH_LOG = stringPreferencesKey("vehicle_logging")
+        val AUTO_OVERVIEW = stringPreferencesKey("auto_overview")
     }
 
     val settings: Flow<DriveSettings> = store.data
@@ -118,6 +121,7 @@ class SettingsRepository(context: Context) {
                 onlineMusicApp = AppKey.decode(p[Keys.ONLINE_MUSIC]),
                 offlineMusicApp = AppKey.decode(p[Keys.OFFLINE_MUSIC]),
                 vehicleLogging = p[Keys.VEH_LOG] == "1",
+                autoOverview = p[Keys.AUTO_OVERVIEW] != "0",
             )
         }
 
@@ -143,6 +147,10 @@ class SettingsRepository(context: Context) {
     /** Azzera tutti i collegamenti (fari/gauge/spie) scelti a mano. */
     suspend fun clearAllBindings() {
         store.edit { it[Keys.SIGNALS] = "" }
+    }
+
+    suspend fun setAutoOverview(on: Boolean) {
+        store.edit { it[Keys.AUTO_OVERVIEW] = if (on) "1" else "0" }
     }
 
     suspend fun setVehicleLogging(on: Boolean) {
