@@ -50,6 +50,15 @@ object SmartStart {
         if (config.startNav && config.hasNav) actions.add(SmartAction.START_NAV)
         return actions
     }
+
+    /**
+     * Nessun telefono collegato dopo l'accensione: parte da solo la musica locale della radio
+     * (se non sta già suonando qualcosa e non c'è CarPlay/Android Auto).
+     */
+    fun planWithoutPhone(config: SmartStartConfig, alreadyPlaying: Boolean): List<SmartAction> {
+        if (!config.enabled || !config.playMusic || config.projectionActive || alreadyPlaying) return emptyList()
+        return if (config.hasOfflineMusic) listOf(SmartAction.PLAY_OFFLINE) else emptyList()
+    }
 }
 
 /**

@@ -84,4 +84,14 @@ class SmartStartTest {
         assertFalse(RadioSignals.looksLikeFrequencyExtra("volume"))
         assertTrue(RadioSignals.looksLikePlayingExtra("is_play"))
     }
+
+    @Test fun noPhonePlaysLocalMusic() {
+        assertEquals(listOf(SmartAction.PLAY_OFFLINE), SmartStart.planWithoutPhone(full, alreadyPlaying = false))
+    }
+
+    @Test fun noPhoneDoesNothingIfAlreadyPlayingOrProjection() {
+        assertTrue(SmartStart.planWithoutPhone(full, alreadyPlaying = true).isEmpty())
+        assertTrue(SmartStart.planWithoutPhone(full.copy(projectionActive = true), alreadyPlaying = false).isEmpty())
+        assertTrue(SmartStart.planWithoutPhone(full.copy(playMusic = false), alreadyPlaying = false).isEmpty())
+    }
 }

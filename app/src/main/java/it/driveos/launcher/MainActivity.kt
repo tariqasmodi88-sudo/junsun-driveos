@@ -295,7 +295,7 @@ class MainActivity : ComponentActivity() {
                 startNav = s.smartStartNav,
                 launchAndroidAuto = s.smartStartAndroidAuto && projectionPkg != null,
                 hasOnlineMusic = s.onlineMusicApp != null,
-                hasOfflineMusic = s.offlineMusicApp != null,
+                hasOfflineMusic = (s.offlineMusicApp ?: s.musicApp) != null,
                 hasNav = s.navApp != null,
                 projectionActive = projectionOn,
             )
@@ -308,7 +308,7 @@ class MainActivity : ComponentActivity() {
             plan.forEach { action ->
                 when (action) {
                     SmartAction.PLAY_ONLINE -> driveApp.mediaRepository.resumeOrPlay(s.onlineMusicApp?.packageName)
-                    SmartAction.PLAY_OFFLINE -> driveApp.mediaRepository.resumeOrPlay(s.offlineMusicApp?.packageName)
+                    SmartAction.PLAY_OFFLINE -> driveApp.mediaRepository.resumeOrPlay((s.offlineMusicApp ?: s.musicApp)?.packageName)
                     SmartAction.START_NAV -> s.navApp?.let { nav -> Launcher.launchApp(context, nav) }
                     SmartAction.LAUNCH_ANDROID_AUTO ->
                         projectionPkg?.let { pkg ->
@@ -326,6 +326,27 @@ class MainActivity : ComponentActivity() {
                 driveApp.connectivityWatcher.refresh()
                 kotlinx.coroutines.delay(4000) // lascia a SpeedPlay il tempo di agganciarsi, poi decide
                 runSmartStart()
+            }
+        }
+
+        // Nessun telefono dopo l'accensione: parte da sola la musica locale della radio.
+        val phoneLinkedNow by androidx.compose.runtime.rememberUpdatedState(phoneLinked)
+        val playingNow by androidx.compose.runtime.rememberUpdatedState(media?.isPlaying == true)
+        val settingsNow by androidx.compose.runtime.rememberUpdatedState(s)
+        val projectionNow by androidx.compose.runtime.rememberUpdatedState(projectionOn)
+        LaunchedEffect(Unit) {
+            kotlinx.coroutines.delay(25_000) // tempo a Bluetooth/vivavoce per agganciarsi
+            if (!phoneLinkedNow) {
+                val cur = settingsNow
+                val localApp = cur.offlineMusicApp ?: cur.musicApp
+                val config = SmartStartConfig(
+                    enabled = cur.smartStartEnabled, playMusic = cur.smartStartMusic,
+                    hasOfflineMusic = localApp != null,
+                    projectionActive = projectionNow,
+                )
+                if (SmartStart.planWithoutPhone(config, playingNow).isNotEmpty()) {
+                    driveApp.mediaRepository.resumeOrPlay(localApp?.packageName)
+                }
             }
         }
 

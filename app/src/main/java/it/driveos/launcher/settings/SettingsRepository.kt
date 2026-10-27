@@ -47,7 +47,7 @@ data class DriveSettings(
     val longitude: Double = 0.0,
     val radioPresets: List<RadioPreset> = emptyList(),
     // Avvio intelligente alla connessione Bluetooth (sostituisce AutoLink).
-    val smartStartEnabled: Boolean = false,
+    val smartStartEnabled: Boolean = true,
     val smartStartMusic: Boolean = true,
     val smartStartNav: Boolean = false,
     val smartStartAndroidAuto: Boolean = false,
@@ -89,6 +89,7 @@ class SettingsRepository(context: Context) {
         val ONLINE_MUSIC = stringPreferencesKey("online_music_app")
         val OFFLINE_MUSIC = stringPreferencesKey("offline_music_app")
         val VEH_LOG = stringPreferencesKey("vehicle_logging")
+        val THEME_V2 = stringPreferencesKey("theme_auto_default")
         val AUTO_OVERVIEW = stringPreferencesKey("auto_overview")
     }
 
@@ -105,16 +106,18 @@ class SettingsRepository(context: Context) {
                 recentDestinations = DestinationHistory.decode(p[Keys.RECENT]),
                 layout = DashboardLayout.fromId(p[Keys.LAYOUT]),
                 favorites = FavoritesCodec.decode(p[Keys.FAVORITES]),
-                themeMode = p[Keys.THEME]
+                // Dalla 0.8.3 il predefinito è "Automatico" (fari → scuro/chiaro); una sola volta
+                // anche per chi aveva un'altra scelta, poi vale quella che sceglie.
+                themeMode = if (p[Keys.THEME_V2] != "1") ThemeMode.AUTO else p[Keys.THEME]
                     ?.let { name -> ThemeMode.entries.firstOrNull { it.name == name } }
-                    ?: ThemeMode.DARK,
+                    ?: ThemeMode.AUTO,
                 accentIndex = p[Keys.ACCENT] ?: 0,
                 signalBindings = BindingCodec.decode(p[Keys.SIGNALS]),
                 discoveredActions = p[Keys.ACTIONS]?.split('\n')?.filter { it.isNotBlank() } ?: emptyList(),
                 latitude = p[Keys.LAT]?.toDoubleOrNull() ?: 0.0,
                 longitude = p[Keys.LON]?.toDoubleOrNull() ?: 0.0,
                 radioPresets = RadioPresetCodec.decode(p[Keys.PRESETS]),
-                smartStartEnabled = p[Keys.SS_ENABLED] == "1",
+                smartStartEnabled = p[Keys.SS_ENABLED] != "0",
                 smartStartMusic = p[Keys.SS_MUSIC] != "0",
                 smartStartNav = p[Keys.SS_NAV] == "1",
                 smartStartAndroidAuto = p[Keys.SS_AA] == "1",
@@ -208,7 +211,7 @@ class SettingsRepository(context: Context) {
     }
 
     suspend fun setThemeMode(mode: ThemeMode) {
-        store.edit { it[Keys.THEME] = mode.name }
+        store.edit { it[Keys.THEME] = mode.name; it[Keys.THEME_V2] = "1" }
     }
 
     suspend fun setAccent(index: Int) {
