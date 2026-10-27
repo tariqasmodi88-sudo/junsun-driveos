@@ -65,3 +65,15 @@ di sintonizzazione radio.
 | Radio FM/RDS, DSP, Car Info, CAN | app Junsun | Solo avvio esterno |
 | Retrocamera | gestita da MCU/sistema | Nessun intervento |
 | OBD-II | ELM327 Bluetooth Classic o USB | Da verificare lo stack Bluetooth Android |
+
+## Logcat via ADB Wi-Fi (27/10/2026, Bugjaeger dal telefono, radio 10.39.13.66:5555)
+
+- ADB di rete funziona: `service.adb.tcp.port=5555`, basta attivare "Debug USB" sulla radio.
+- **Portiere, sensori di parcheggio e CAN sono decodificati DENTRO `com.ts.MainUI`** (app di sistema,
+  uid 1000, processo unico): tag `CanFunc` (GotoWin, mbRadarUIUpdate), `CanDoorMsgbox`
+  (`SetShowFlg = true/false` quando una portiera si apre/chiude), `CanRadarActivity`.
+  I dati non escono dal processo come broadcast: per questo DriveOS non li vede.
+- MainUI legge l'MCU tramite `/proc/forfan_*` (ioctl), accesso riservato alle app di sistema.
+- Retro: `com.ts.MainUI/com.ts.backcar.BackcarMainActivity`. Luci: MainUI riceve `BROADCAST_ADAS_LIGHT_STATE`.
+- La radio è anch'essa dentro `com.ts.MainUI` (azione `com.ts.main.radio`); nel log del 27/10 non era aperta.
+- Prossimo: `dumpsys package com.ts.MainUI` (componenti esportati) e logcat con la radio aperta.
