@@ -75,6 +75,7 @@ fun VehicleScreen(
     onToggleLogging: (Boolean) -> Unit,
     onExportLog: () -> Unit,
     onClearLog: () -> Unit,
+    onExportApks: () -> Unit,
     onClearFlags: () -> Unit,
     exportStatus: String?,
     onExport: () -> Unit,
@@ -132,6 +133,8 @@ fun VehicleScreen(
                         Secondary("Esporta registro", Modifier.weight(1f)) { onExportLog() }
                         Secondary("Azzera registro", Modifier.weight(1f)) { onClearLog() }
                     }
+                    Spacer(Modifier.height(8.dp))
+                    Secondary("Copia APK Junsun/TXZ in Download (per analisi)", Modifier.fillMaxWidth()) { onExportApks() }
                 }
             }
 

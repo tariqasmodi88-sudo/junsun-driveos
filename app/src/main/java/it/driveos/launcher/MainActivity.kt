@@ -832,6 +832,14 @@ class MainActivity : ComponentActivity() {
                                         else "Export registro non riuscito. " + r.errors.firstOrNull().orEmpty()
                                     }
                                 },
+                                onExportApks = {
+                                    vehicleExportStatus = "Copia degli APK in corso… (può richiedere un minuto)"
+                                    scope.launch {
+                                        val r = withContext(kotlinx.coroutines.Dispatchers.IO) { it.driveos.launcher.system.ApkExporter.export(context) }
+                                        vehicleExportStatus = "APK copiati in Download › DriveOS › apk: " + r.copied.joinToString(", ").ifBlank { "nessuno" } +
+                                            (if (r.skipped.isNotEmpty()) " · Non copiati: " + r.skipped.joinToString(", ") else "")
+                                    }
+                                },
                                 onClearLog = {
                                     scope.launch { withContext(kotlinx.coroutines.Dispatchers.IO) { VehicleLog.clear(context) } }
                                     vehicleExportStatus = "Registro azzerato."
