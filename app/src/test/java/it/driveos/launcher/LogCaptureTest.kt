@@ -39,8 +39,8 @@ class LogCaptureTest {
         assertNull(c.accept("V/SomethingNew( 9): mystery before"))
         c.accept("D/CanDoorMsgbox( 1): SetShowFlg = true")
         t = 500
-        assertEquals("doors=5", c.accept("V/SomethingNew( 9): doors=5")?.message)
+        assertEquals("val=5", c.accept("V/SomethingNew( 9): val=5")?.message)
         t = 4000
-        assertNull(c.accept("V/SomethingNew( 9): doors=6"))
+        assertNull(c.accept("V/SomethingNew( 9): val=6"))
     }
 }
