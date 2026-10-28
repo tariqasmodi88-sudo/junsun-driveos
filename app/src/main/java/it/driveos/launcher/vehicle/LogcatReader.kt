@@ -48,7 +48,7 @@ class LogcatReader(context: Context, private val repo: VehicleRepository) {
         // filtra per tag: molto meno rumore e consumo. "*:S" silenzia tutto il resto.
         // Tutto il log da livello Debug in su: poi si tiene solo ciò che riguarda il veicolo
         // (LogcatParser per i segnali noti, LogCapture per capire il resto: finisce nel registro CSV).
-        val cmd = mutableListOf("logcat", "-v", "brief", "*:D")
+        val cmd = mutableListOf("logcat", "-v", "brief", "*:D", "CanFunc:V", "CanDoorMsgbox:V", "CanRadarActivity:V", "CanBase:V", "CanDoor:V")
         runCatching {
             val p = ProcessBuilder(cmd).redirectErrorStream(true).start()
             process = p

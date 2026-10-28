@@ -950,7 +950,14 @@ class MainActivity : ComponentActivity() {
                                 onRemove = { p -> scope.launch {
                                     driveApp.settingsRepository.setRadioPresets(RadioPresetLogic.remove(s.radioPresets, p.band, p.khz))
                                 } },
-                                onOpenExternal = { openOrPick(s.radioApp, PickerTarget.RADIO) },
+                                onOpenExternal = {
+                                    // Radio Junsun (com.ts.MainUI) se non hai scelto un'altra app radio
+                                    val ok = s.radioApp == null && runCatching {
+                                        context.startActivity(Intent().setClassName("com.ts.MainUI", "com.ts.main.radio.RadioMainActivity")
+                                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                                    }.isSuccess
+                                    if (!ok) openOrPick(s.radioApp, PickerTarget.RADIO)
+                                },
                                 onBack = { screen = Screen.SETTINGS },
                             )
 

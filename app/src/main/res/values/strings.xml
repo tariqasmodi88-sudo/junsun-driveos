@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">DriveOS</string>
-    <string name="a11y_description">Permette a DriveOS di accorgersi quando si apre una finestra Junsun (portiere, retromarcia, radar) o CarPlay/Android Auto e di riportare davanti la Home. Non legge i contenuti delle schermate.</string>
+    <string name="a11y_description">Permette a DriveOS di accorgersi quando si apre una finestra Junsun (portiere, retromarcia, radar) o CarPlay/Android Auto e di riportare davanti la Home. Legge solo i nomi dei pezzi dei popup portiere/radar Junsun, per capire quale porta è aperta; nient'altro.</string>
 </resources>
