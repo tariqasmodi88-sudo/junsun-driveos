@@ -1,5 +1,6 @@
 package it.driveos.launcher
 
+import kotlinx.coroutines.flow.first
 import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.BroadcastReceiver
@@ -131,7 +132,61 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         registerPackageReceiver()
         lifecycleScope.launch { driveApp.appRepository.refresh() }
+        startReverseGuard()
         setContent { DriveOSRoot() }
+    }
+
+    /**
+     * Retromarcia: il firmware porta davanti la sua app (forfan.want2start = com.ts.MainUI). Questo
+     * controllo vive nell'Activity (non nella UI Compose, che in secondo piano e' ferma) e riporta
+     * DriveOS davanti durante e dopo la retromarcia.
+     */
+    private fun startReverseGuard() {
+        lifecycleScope.launch {
+            var lastReverse: Boolean? = null
+            var lastReverseMs = 0L
+            var lastFg: String? = null
+            var pendingReturn = false
+            driveApp.vehicleRepository.signals.collect { sig ->
+                val rev = it.driveos.launcher.vehicle.KnownVehicleSignals.reverseOn(sig)
+                val fg = sig["prop:forfan.want2start"]
+                val keep = runCatching { driveApp.settingsRepository.settings.first().keepHome }.getOrDefault(true)
+                if (rev != lastReverse) {
+                    lastReverseMs = System.currentTimeMillis()
+                    if (rev == false && lastReverse == true && pendingReturn) {
+                        launch { kotlinx.coroutines.delay(900); bringHomeFromBackground(); pendingReturn = false }
+                    }
+                    lastReverse = rev
+                }
+                if (fg != lastFg) {
+                    lastFg = fg
+                    if (keep && fg == "com.ts.MainUI" && System.currentTimeMillis() - lastReverseMs < 4000) {
+                        pendingReturn = true
+                        launch { kotlinx.coroutines.delay(500); bringHomeFromBackground() }
+                    }
+                }
+            }
+        }
+        // Finche' DriveOS e' in secondo piano la UI non rilegge i segnali: lo fa questo ciclo.
+        lifecycleScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(2000)
+                if (!lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) {
+                    runCatching { driveApp.vehicleRepository.pollOnce() }
+                }
+            }
+        }
+    }
+
+    private fun bringHomeFromBackground() {
+        if (it.driveos.launcher.vehicle.WindowWatcher.goHome()) return
+        runCatching {
+            getSystemService(android.app.ActivityManager::class.java)?.appTasks?.firstOrNull()?.moveToFront()
+        }
+        runCatching {
+            startActivity(Intent(this, MainActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP))
+        }
     }
 
     override fun onResume() {
@@ -149,7 +204,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onPause() {
         super.onPause()
-        driveApp.vehicleRepository.stop()
+        // vehicleRepository resta attivo anche in secondo piano: serve a riprendere lo schermo dopo la retromarcia
         driveApp.bluetoothWatcher.stop()
         driveApp.speedWatcher.stop()
     }
@@ -409,24 +464,9 @@ class MainActivity : ComponentActivity() {
         // nel registro). La telecamera non c'è: si resta/si torna sulla Home DriveOS.
         val reverseNow = KnownVehicleSignals.reverseOn(vehicleSignals) == true
         val foregroundPkg = vehicleSignals["prop:forfan.want2start"]
-        var lastReverseMs by remember { mutableStateOf(0L) }
-        var pendingReturn by remember { mutableStateOf(false) }
         LaunchedEffect(reverseNow) {
-            lastReverseMs = System.currentTimeMillis()
             if (reverseNow && screen != Screen.OVERVIEW && screen != Screen.VEHICLE) {
                 overviewAuto = true; screen = Screen.OVERVIEW
-            }
-            if (!reverseNow && pendingReturn) {   // retromarcia tolta: si riprende lo schermo
-                kotlinx.coroutines.delay(900)
-                bringHomeToFront(); pendingReturn = false
-            }
-        }
-        LaunchedEffect(foregroundPkg) {
-            // L'app Junsun è passata davanti subito dopo la retromarcia → si torna a DriveOS.
-            if (foregroundPkg == "com.ts.MainUI" && System.currentTimeMillis() - lastReverseMs < 4000 && settingsLive.keepHome) {
-                pendingReturn = true
-                kotlinx.coroutines.delay(500)
-                bringHomeToFront()
             }
         }
         val overlayGranted = remember(a11yOn, screen) { android.provider.Settings.canDrawOverlays(context) }
