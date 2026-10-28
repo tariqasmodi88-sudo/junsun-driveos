@@ -68,6 +68,7 @@ class VehicleLogService : Service() {
         VehicleLog.ensureHeader(this)
         VehicleLog.recount(this)
         registerReceiverSafe()
+        startLogcat()
         job = scope.launch {
             // baseline: registra lo stato iniziale una volta (valori di partenza)
             val first = runCatching { VehicleRepository.readStatic(this@VehicleLogService) }.getOrDefault(emptyMap())
@@ -76,6 +77,31 @@ class VehicleLogService : Service() {
                 delay(POLL_MS)
                 val now = runCatching { VehicleRepository.readStatic(this@VehicleLogService) }.getOrDefault(emptyMap())
                 record(now)
+            }
+        }
+    }
+
+    private var logcatProc: Process? = null
+    private var logcatJob: kotlinx.coroutines.Job? = null
+
+    /** Legge il log di Android (se READ_LOGS e' concesso) e registra le righe utili, anche in background. */
+    private fun startLogcat() {
+        if (logcatJob?.isActive == true) return
+        if (checkSelfPermission(android.Manifest.permission.READ_LOGS) != android.content.pm.PackageManager.PERMISSION_GRANTED) return
+        val capture = LogCapture()
+        logcatJob = scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching {
+                val p = ProcessBuilder("logcat", "-v", "brief", "*:D").redirectErrorStream(true).start()
+                logcatProc = p
+                p.inputStream.bufferedReader().use { r ->
+                    while (isActive) {
+                        val line = r.readLine() ?: break
+                        val upd = LinkedHashMap<String, String>()
+                        LogcatParser.parse(line)?.let { (id, v) -> upd[id] = v }
+                        capture.accept(line)?.let { e -> upd[e.id] = e.message }
+                        if (upd.isNotEmpty()) record(upd)
+                    }
+                }
             }
         }
     }
@@ -118,6 +144,8 @@ class VehicleLogService : Service() {
 
     override fun onDestroy() {
         job?.cancel()
+        logcatJob?.cancel()
+        runCatching { logcatProc?.destroy() }
         receiver?.let { runCatching { unregisterReceiver(it) } }
         VehicleLog.setRunning(false)
         super.onDestroy()

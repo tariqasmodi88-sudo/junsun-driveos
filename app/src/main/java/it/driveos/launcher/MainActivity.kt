@@ -151,7 +151,6 @@ class MainActivity : ComponentActivity() {
         super.onPause()
         driveApp.vehicleRepository.stop()
         driveApp.bluetoothWatcher.stop()
-        driveApp.logcatReader.stop()
         driveApp.speedWatcher.stop()
     }
 
@@ -856,14 +855,6 @@ class MainActivity : ComponentActivity() {
                                         else "Export registro non riuscito. " + r.errors.firstOrNull().orEmpty()
                                     }
                                 },
-                                onExportApks = {
-                                    vehicleExportStatus = "Copia degli APK in corso… (può richiedere un minuto)"
-                                    scope.launch {
-                                        val r = withContext(kotlinx.coroutines.Dispatchers.IO) { it.driveos.launcher.system.ApkExporter.export(context) }
-                                        vehicleExportStatus = "APK copiati in Download › DriveOS › apk: " + r.copied.joinToString(", ").ifBlank { "nessuno" } +
-                                            (if (r.skipped.isNotEmpty()) " · Non copiati: " + r.skipped.joinToString(", ") else "")
-                                    }
-                                },
                                 onClearLog = {
                                     scope.launch { withContext(kotlinx.coroutines.Dispatchers.IO) { VehicleLog.clear(context) } }
                                     vehicleExportStatus = "Registro azzerato."
@@ -878,7 +869,6 @@ class MainActivity : ComponentActivity() {
                                         val components = withContext(kotlinx.coroutines.Dispatchers.IO) {
                                             runCatching { ActionDiscovery.vendorComponents(context) }.getOrDefault(emptyList())
                                         }
-                                        val probe = runCatching { it.driveos.launcher.vehicle.ServiceProbe.probeAll(context) }.getOrDefault(emptyList())
                                         val json = org.json.JSONObject().apply {
                                             put("generato", java.time.ZonedDateTime.now().toString())
                                             put("segnali", org.json.JSONObject().also { o -> vehicleSignals.forEach { (k, v) -> o.put(k, v) } })
@@ -890,7 +880,6 @@ class MainActivity : ComponentActivity() {
                                             })
                                             // servizi/provider delle app TS-ForFan-TXZ: da dove l'interfaccia Junsun legge portiere e radio
                                             put("componentiFirmware", org.json.JSONArray(components))
-                                            put("sondaServizi", org.json.JSONArray(probe.map { "${it.component} | connesso=${it.connected} | ${it.descriptor ?: "-"} | ${it.note}" }))
                                         }
                                         val stamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmm"))
                                         val r = withContext(kotlinx.coroutines.Dispatchers.IO) {
@@ -940,7 +929,6 @@ class MainActivity : ComponentActivity() {
                                     logsGranted = driveApp.logcatReader.available(),
                                     gpsPermission = driveApp.speedWatcher.hasPermission(),
                                 ),
-                                onHome = { overviewAuto = false; screen = Screen.DASHBOARD },
                                 onDebug = { overviewAuto = false; debugFromOverview = true; screen = Screen.VEHICLE },
                             )
 

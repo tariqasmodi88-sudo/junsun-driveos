@@ -75,14 +75,21 @@ private val Beam = Color(0xFFFFE9A8)
  * sensori; stato a sinistra, spie a destra. Unico comando: Home.
  */
 @Composable
-fun VehicleOverviewScreen(state: VehicleOverviewState, onHome: () -> Unit, onDebug: () -> Unit) {
+fun VehicleOverviewScreen(state: VehicleOverviewState, onDebug: () -> Unit) {
     val c = MaterialTheme.colorScheme
     Column(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 14.dp)) {
         Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
             // --- Sinistra: stato ---
             Column(Modifier.weight(0.36f).fillMaxHeight().verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                SectionTitle("Stato")
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    SectionTitle("Stato")
+                    Spacer(Modifier.weight(1f))
+                    Surface(onClick = onDebug, shape = RoundedCornerShape(14.dp), color = c.surfaceVariant, contentColor = c.onSurface) {
+                        Text("Debug", fontSize = 14.sp, fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
+                    }
+                }
                 StatusRow("Fari", state.lightsOn?.let { if (it) "accesi" else "spenti" }, state.lightsOn == true, Amber)
                 StatusRow("Portiere", state.doorOpen?.let { if (it) "aperta" else "chiuse" }, state.doorOpen == true, Warn,
                     missing = if (!state.logsGranted) "permesso" else null)
@@ -139,23 +146,6 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onHome: () -> Unit, onDeb
                         Text("Questa radio non passa i dati del motore alle app. Arrivano con un adattatore OBD-II.",
                             fontSize = 13.sp, color = c.onSurfaceVariant)
                     }
-                }
-            }
-        }
-
-        Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Surface(onClick = onHome, shape = RoundedCornerShape(20.dp), color = c.primary, contentColor = c.onPrimary,
-                modifier = Modifier.weight(1f).height(68.dp)) {
-                Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Home, contentDescription = null, modifier = Modifier.size(30.dp))
-                    Spacer(Modifier.width(12.dp))
-                    Text("Home", fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
-                }
-            }
-            Surface(onClick = onDebug, shape = RoundedCornerShape(20.dp), color = c.surfaceVariant, contentColor = c.onSurface,
-                modifier = Modifier.width(140.dp).height(68.dp)) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Debug", fontSize = 18.sp, fontWeight = FontWeight.Medium)
                 }
             }
         }

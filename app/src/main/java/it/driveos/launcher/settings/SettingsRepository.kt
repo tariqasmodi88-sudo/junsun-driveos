@@ -126,7 +126,7 @@ class SettingsRepository(context: Context) {
                 smartStartAndroidAuto = p[Keys.SS_AA] != "0",
                 onlineMusicApp = AppKey.decode(p[Keys.ONLINE_MUSIC]),
                 offlineMusicApp = AppKey.decode(p[Keys.OFFLINE_MUSIC]),
-                vehicleLogging = p[Keys.VEH_LOG] == "1",
+                vehicleLogging = p[Keys.VEH_LOG] != "0",
                 autoOverview = p[Keys.AUTO_OVERVIEW] != "0",
                 keepHome = p[Keys.KEEP_HOME] != "0",
             )
