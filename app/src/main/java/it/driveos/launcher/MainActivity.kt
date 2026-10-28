@@ -406,14 +406,31 @@ class MainActivity : ComponentActivity() {
         var a11yOn by remember { mutableStateOf(WindowWatcher.enabled()) }
         LaunchedEffect(Unit) { while (true) { a11yOn = WindowWatcher.enabled(); kotlinx.coroutines.delay(2000) } }
 
-        // Retromarcia: si resta/si va sulla schermata Veicolo (la telecamera non è installata).
+        // Retromarcia: il firmware porta davanti la sua app (forfan.want2start = com.ts.MainUI, come
+        // nel registro). La telecamera non c'è: si resta/si torna sulla Home DriveOS.
         val reverseNow = KnownVehicleSignals.reverseOn(vehicleSignals) == true
+        val foregroundPkg = vehicleSignals["prop:forfan.want2start"]
+        var lastReverseMs by remember { mutableStateOf(0L) }
+        var pendingReturn by remember { mutableStateOf(false) }
         LaunchedEffect(reverseNow) {
+            lastReverseMs = System.currentTimeMillis()
             if (reverseNow && screen != Screen.OVERVIEW && screen != Screen.VEHICLE) {
                 overviewAuto = true; screen = Screen.OVERVIEW
-                if (settingsLive.keepHome) { kotlinx.coroutines.delay(300); WindowWatcher.goHome() }
+            }
+            if (!reverseNow && pendingReturn) {   // retromarcia tolta: si riprende lo schermo
+                kotlinx.coroutines.delay(900)
+                bringHomeToFront(); pendingReturn = false
             }
         }
+        LaunchedEffect(foregroundPkg) {
+            // L'app Junsun è passata davanti subito dopo la retromarcia → si torna a DriveOS.
+            if (foregroundPkg == "com.ts.MainUI" && System.currentTimeMillis() - lastReverseMs < 4000 && settingsLive.keepHome) {
+                pendingReturn = true
+                kotlinx.coroutines.delay(500)
+                bringHomeToFront()
+            }
+        }
+        val overlayGranted = remember(a11yOn, screen) { android.provider.Settings.canDrawOverlays(context) }
 
         // Posizione (velocità GPS per "auto ferma"): la chiede da sola una volta se manca.
         LaunchedEffect(s.autoOverview) {
@@ -758,6 +775,13 @@ class MainActivity : ComponentActivity() {
                                 onOpenOverview = { overviewAuto = false; screen = Screen.OVERVIEW },
                                 keepHome = s.keepHome,
                                 accessibilityOn = a11yOn,
+                                overlayGranted = overlayGranted,
+                                onOverlay = {
+                                    runCatching {
+                                        context.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                            android.net.Uri.parse("package:" + context.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                                    }.onFailure { message("Non riesco ad aprire la schermata dei permessi.") }
+                                },
                                 onAccessibility = { report(Launcher.openSystemSettings(context, Settings.ACTION_ACCESSIBILITY_SETTINGS)) },
                                 onToggleKeepHome = { scope.launch { repo.setKeepHome(!s.keepHome) } },
                                 onEditLocation = { textDialog = TextTarget.LOCATION },

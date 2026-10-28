@@ -71,6 +71,8 @@ fun SettingsScreen(
     keepHome: Boolean,
     accessibilityOn: Boolean,
     onAccessibility: () -> Unit,
+    overlayGranted: Boolean,
+    onOverlay: () -> Unit,
     onToggleKeepHome: () -> Unit,
     onEditLocation: () -> Unit,
     onHomeSettings: () -> Unit,
@@ -111,6 +113,9 @@ fun SettingsScreen(
             SettingRow("Accessibilità DriveOS",
                 if (accessibilityOn) "Attiva: DriveOS vede le finestre Junsun e riporta la Home davanti"
                 else "Spenta: tocca, scegli DriveOS e attivala (serve per portiere, retro e CarPlay)", onAccessibility)
+            SettingRow("Mostra sopra altre app",
+                if (overlayGranted) "Consentita: DriveOS può tornare davanti da solo"
+                else "Non consentita: tocca e attivala per DriveOS (serve a riportare la Home davanti)", onOverlay)
             SettingRow("Resta sulla Home DriveOS",
                 if (keepHome) "Sì: portiere, radar, retromarcia e CarPlay non coprono lo schermo"
                 else "No: le finestre Junsun restano sopra. Tocca per attivare", onToggleKeepHome)
