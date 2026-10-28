@@ -27,4 +27,9 @@ class LogCaptureTest {
         val accepted = (1..20).count { c.accept("D/CanFunc( 1): tick $it") != null }
         assertEquals(6, accepted)
     }
+
+    @Test fun ignoresSelinuxNoise() {
+        val c = LogCapture { 1000L }
+        assertNull(c.accept("I/com.ts.MainUI( 5): type=1400 audit(0.0:3085): avc: denied { ioctl } for path=/proc/forfan_touch_ctrl"))
+    }
 }

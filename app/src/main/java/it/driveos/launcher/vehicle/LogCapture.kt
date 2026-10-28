@@ -21,6 +21,8 @@ class LogCapture(private val nowMs: () -> Long = System::currentTimeMillis) {
             "hfp|connected|disconnect|want2start|navi|ACC_OFF|ACC_ON|start u0.*(com\\.ts|suding|txznet)",
         RegexOption.IGNORE_CASE,
     )
+    // rumore del sistema che non serve: negazioni SELinux, ioctl del touch, permessi dei pacchetti
+    private val noise = Regex("avc: *denied|Un-granting permission|audit\\(|forfan_touch_ctrl")
     private val line = Regex("^([VDIWEF])/([^(]+)\\(\\s*\\d+\\):\\s?(.*)$")
     private val longDigits = Regex("\\d{7,}")
 
@@ -33,6 +35,7 @@ class LogCapture(private val nowMs: () -> Long = System::currentTimeMillis) {
         val m = line.find(raw.trim()) ?: return null
         val tag = m.groupValues[2].trim()
         val msg = m.groupValues[3]
+        if (noise.containsMatchIn(msg)) return null
         if (!interestingTag.containsMatchIn(tag) && !interestingText.containsMatchIn(msg)) return null
         val clean = longDigits.replace(msg, "#").take(200)
         val key = "$tag|$clean"
