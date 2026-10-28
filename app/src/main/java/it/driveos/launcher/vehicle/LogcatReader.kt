@@ -27,6 +27,7 @@ class LogcatReader(context: Context, private val repo: VehicleRepository) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var job: Job? = null
     @Volatile private var process: Process? = null
+    private val capture = LogCapture()
 
     /** true se DriveOS ha il permesso di leggere il log di sistema. */
     fun available(): Boolean =
@@ -45,9 +46,9 @@ class LogcatReader(context: Context, private val repo: VehicleRepository) {
 
     private suspend fun readLoop() {
         // filtra per tag: molto meno rumore e consumo. "*:S" silenzia tutto il resto.
-        val cmd = mutableListOf("logcat", "-v", "brief")
-        LogcatParser.tags.forEach { cmd.add("$it:V") }
-        cmd.add("*:S")
+        // Tutto il log da livello Debug in su: poi si tiene solo ciò che riguarda il veicolo
+        // (LogcatParser per i segnali noti, LogCapture per capire il resto: finisce nel registro CSV).
+        val cmd = mutableListOf("logcat", "-v", "brief", "*:D")
         runCatching {
             val p = ProcessBuilder(cmd).redirectErrorStream(true).start()
             process = p
@@ -55,6 +56,7 @@ class LogcatReader(context: Context, private val repo: VehicleRepository) {
                 while (scope.isActive) {
                     val line = reader.readLine() ?: break
                     LogcatParser.parse(line)?.let { (id, value) -> repo.ingest(mapOf(id to value)) }
+                    capture.accept(line)?.let { e -> repo.ingest(mapOf(e.id to e.message)) }
                 }
             }
         }
