@@ -23,6 +23,9 @@ class LogCapture(private val nowMs: () -> Long = System::currentTimeMillis) {
     )
     // rumore del sistema che non serve: negazioni SELinux, ioctl del touch, permessi dei pacchetti
     private val noise = Regex("avc: *denied|Un-granting permission|audit\\(|forfan_touch_ctrl")
+    private val burstTrigger = Regex("CanDoorMsgbox|GotoWin = 128|CanRadarActivity|CanCameraActivity")
+    private val burstSkipTag = Regex("Finsky|Nearby|wifi|Wifi|wpa_|Bluetooth|Gnss|agps|hal2mnl|NetworkController|Surface|BufferQueue|DuraSpeed|PowerHal|WM-|Choreographer|ViewRootImpl|InputMethod|AudioFlinger|System.err|Mirror|aguw|DomainFilter|RecoverableKey|ProximityAuth|MagicTether|GmsCore", RegexOption.IGNORE_CASE)
+    @Volatile private var burstUntil = 0L
     private val line = Regex("^([VDIWEF])/([^(]+)\\(\\s*\\d+\\):\\s?(.*)$")
     private val longDigits = Regex("\\d{7,}")
 
@@ -36,14 +39,19 @@ class LogCapture(private val nowMs: () -> Long = System::currentTimeMillis) {
         val tag = m.groupValues[2].trim()
         val msg = m.groupValues[3]
         if (noise.containsMatchIn(msg)) return null
-        if (!interestingTag.containsMatchIn(tag) && !interestingText.containsMatchIn(msg)) return null
+        val now = nowMs()
+        // Un evento porta/radar apre una "finestra" di 3 s in cui si registra QUALSIASI riga utile:
+        // il dettaglio (quale porta, baule, sensori) potrebbe stare in un tag che non conosciamo.
+        if (burstTrigger.containsMatchIn(tag) || burstTrigger.containsMatchIn(msg)) burstUntil = now + 3000
+        val inBurst = now < burstUntil && !burstSkipTag.containsMatchIn(tag)
+        if (!inBurst && !interestingTag.containsMatchIn(tag) && !interestingText.containsMatchIn(msg)) return null
         val clean = longDigits.replace(msg, "#").take(200)
         val key = "$tag|$clean"
         if (key == lastKey) return null
         lastKey = key
-        val t = nowMs()
+        val t = now
         if (t - windowStart > 1000) { windowStart = t; inWindow = 0 }
-        if (++inWindow > 6) return null
+        if (++inWindow > (if (inBurst) 40 else 6)) return null
         return Entry("logx:" + tag.take(40), clean)
     }
 }

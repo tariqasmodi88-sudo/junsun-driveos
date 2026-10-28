@@ -91,7 +91,7 @@ class VehicleLogService : Service() {
         val capture = LogCapture()
         logcatJob = scope.launch(kotlinx.coroutines.Dispatchers.IO) {
             runCatching {
-                val p = ProcessBuilder("logcat", "-v", "brief", "*:D", "CanFunc:V", "CanDoorMsgbox:V", "CanRadarActivity:V", "CanBase:V", "CanDoor:V").redirectErrorStream(true).start()
+                val p = ProcessBuilder("logcat", "-v", "brief", "*:V").redirectErrorStream(true).start()
                 logcatProc = p
                 p.inputStream.bufferedReader().use { r ->
                     while (isActive) {

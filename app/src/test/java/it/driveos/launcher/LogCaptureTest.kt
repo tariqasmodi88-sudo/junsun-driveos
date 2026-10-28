@@ -32,4 +32,15 @@ class LogCaptureTest {
         val c = LogCapture { 1000L }
         assertNull(c.accept("I/com.ts.MainUI( 5): type=1400 audit(0.0:3085): avc: denied { ioctl } for path=/proc/forfan_touch_ctrl"))
     }
+
+    @Test fun doorEventOpensBurstForUnknownTags() {
+        var t = 0L
+        val c = LogCapture { t }
+        assertNull(c.accept("V/SomethingNew( 9): mystery before"))
+        c.accept("D/CanDoorMsgbox( 1): SetShowFlg = true")
+        t = 500
+        assertEquals("doors=5", c.accept("V/SomethingNew( 9): doors=5")?.message)
+        t = 4000
+        assertNull(c.accept("V/SomethingNew( 9): doors=6"))
+    }
 }
