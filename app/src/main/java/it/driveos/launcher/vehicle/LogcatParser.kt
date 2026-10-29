@@ -32,10 +32,13 @@ object LogcatParser {
     // frequenza radio: cerca "101.5", "101,5" o "10150"/"101500" vicino a FM/radio/freq
     // Solo contesti davvero radio: "freq" da solo no (cpu/gpu freq riempiono il log).
     private val freqCtx = Regex("(\\bfm\\b|radio|tuner|station)", RegexOption.IGNORE_CASE)
+    private val windowName = Regex("CarClient/Service\\W+onReceive: name = (\\S+)")
     private val freqNum = Regex("(\\d{2,3}[.,]\\d)|(\\b\\d{5,6}\\b)")
 
     /** Interpreta una riga. Restituisce (id, valore) oppure null se non rilevante. */
     fun parse(line: String): Pair<String, String>? {
+        // Il servizio CarClient scrive ogni cambio di finestra: funziona anche senza Accessibilità.
+        windowName.find(line)?.let { return "win:last" to it.groupValues[1] }
         when {
             doorOn.containsMatchIn(line) -> return DOOR to "aperta"
             doorOff.containsMatchIn(line) -> return DOOR to "chiuse"

@@ -146,6 +146,7 @@ class MainActivity : ComponentActivity() {
             var lastReverse: Boolean? = null
             var lastReverseMs = 0L
             var lastFg: String? = null
+            var lastWin: String? = null
             var pendingReturn = false
             driveApp.vehicleRepository.signals.collect { sig ->
                 val rev = it.driveos.launcher.vehicle.KnownVehicleSignals.reverseOn(sig)
@@ -157,6 +158,14 @@ class MainActivity : ComponentActivity() {
                         launch { kotlinx.coroutines.delay(900); bringHomeFromBackground(); pendingReturn = false }
                     }
                     lastReverse = rev
+                }
+                val win = sig["win:last"]
+                if (win != lastWin) {
+                    lastWin = win
+                    val kind = it.driveos.launcher.vehicle.WindowRules.classify(null, win)
+                    if (keep && (kind == it.driveos.launcher.vehicle.WindowKind.RADAR || kind == it.driveos.launcher.vehicle.WindowKind.REVERSE)) {
+                        launch { kotlinx.coroutines.delay(700); bringHomeFromBackground() }
+                    }
                 }
                 if (fg != lastFg) {
                     lastFg = fg
