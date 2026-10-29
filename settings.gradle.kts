@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "JunsunDriveOS"
 include(":app")
+include(":sniffer")

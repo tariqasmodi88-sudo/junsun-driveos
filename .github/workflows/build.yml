@@ -30,7 +30,7 @@ jobs:
       - name: Compila APK debug
         run: |
           set -o pipefail
-          ./gradlew --no-daemon assembleDebug 2>&1 | tee -a build.log
+          ./gradlew --no-daemon assembleDebug :sniffer:assembleDebug 2>&1 | tee -a build.log
 
       - name: Riepilogo errori
         if: failure()
@@ -46,15 +46,18 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: DriveOS-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            sniffer/build/outputs/apk/debug/sniffer-debug.apk
 
       - name: Pubblica release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           cp app/build/outputs/apk/debug/app-debug.apk DriveOS.apk
+          cp sniffer/build/outputs/apk/debug/sniffer-debug.apk Sniffer.apk
           TAG="build-${{ github.run_number }}"
-          gh release create "$TAG" DriveOS.apk \
+          gh release create "$TAG" DriveOS.apk Sniffer.apk \
             --title "DriveOS build ${{ github.run_number }}" \
             --notes "Compilazione automatica del commit ${{ github.sha }}. APK debug per uso personale." \
             --latest
