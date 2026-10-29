@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.io.BufferedReader
@@ -44,6 +45,17 @@ class LogcatReader(context: Context, private val repo: VehicleRepository) {
         process = null
     }
 
+    private var parkingClear: Job? = null
+
+    /** Il log dice solo "sensori attivi": se tace per [LogcatParser.PARKING_TIMEOUT_MS], li segna spenti. */
+    private fun armParkingClear() {
+        parkingClear?.cancel()
+        parkingClear = scope.launch {
+            delay(LogcatParser.PARKING_TIMEOUT_MS)
+            repo.ingest(mapOf(LogcatParser.PARKING to "0"))
+        }
+    }
+
     private suspend fun readLoop() {
         // filtra per tag: molto meno rumore e consumo. "*:S" silenzia tutto il resto.
         // Tutto il log da livello Debug in su: poi si tiene solo ciò che riguarda il veicolo
@@ -55,7 +67,10 @@ class LogcatReader(context: Context, private val repo: VehicleRepository) {
             BufferedReader(InputStreamReader(p.inputStream)).use { reader ->
                 while (scope.isActive) {
                     val line = reader.readLine() ?: break
-                    LogcatParser.parse(line)?.let { (id, value) -> repo.ingest(mapOf(id to value)) }
+                    LogcatParser.parse(line)?.let { (id, value) ->
+                        repo.ingest(mapOf(id to value))
+                        if (id == LogcatParser.PARKING && value == "1") armParkingClear()
+                    }
                     capture.accept(line)?.let { e -> repo.ingest(mapOf(e.id to e.message)) }
                 }
             }

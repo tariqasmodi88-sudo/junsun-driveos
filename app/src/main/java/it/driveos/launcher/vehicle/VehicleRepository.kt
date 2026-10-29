@@ -196,6 +196,10 @@ class VehicleRepository(context: Context) {
             "forfan.adas.turnlight_state",
             "com.autoai.iot.tpms",
             "vendor.hazens.vehicle.info.vin",
+            // Inviati da com.ts.MainUI (registro 29/10): contenuto ancora da decodificare
+            "broadcast_send_carinfo",            // AmapAuto.SendCarInfordata, a ogni cambio fari
+            "AUTONAVI_STANDARD_BROADCAST_RECV",  // protocollo navigatori Amap: fari, stato retro, posizione
+            "android.intent.action.SHOW_MYBRIGHTNESS",
             // Avvisi di sistema MTK
             "mediatek.intent.action.BATTERY_WARNING",
             "mediatek.intent.action.THERMAL_WARNING",

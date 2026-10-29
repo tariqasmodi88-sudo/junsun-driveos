@@ -29,6 +29,9 @@ object LogcatParser {
     private val light = Regex("BROADCAST_ADAS_LIGHT_STATE\\s+(on|off)", RegexOption.IGNORE_CASE)
     private val radar = Regex("mbRadarUIUpdate\\s*=\\s*(true|false)", RegexOption.IGNORE_CASE)
     private val backcarIn = Regex("BackcarMainActivity")
+    // Registro 29/10: il servizio MTK scrive sia l'inserimento sia l'uscita dalla retromarcia.
+    //   SmartPlatformService/CarEventHandler: parseMsg(), car status: reverse | normal
+    private val carStatus = Regex("CarEventHandler.*car status:\\s*(reverse|normal)", RegexOption.IGNORE_CASE)
     // frequenza radio: cerca "101.5", "101,5" o "10150"/"101500" vicino a FM/radio/freq
     // Solo contesti davvero radio: "freq" da solo no (cpu/gpu freq riempiono il log).
     private val freqCtx = Regex("(\\bfm\\b|radio|tuner|station)", RegexOption.IGNORE_CASE)
@@ -45,6 +48,7 @@ object LogcatParser {
         }
         light.find(line)?.let { return LIGHTS to if (it.groupValues[1].equals("on", true)) "on" else "off" }
         radar.find(line)?.let { return PARKING to if (it.groupValues[1].equals("true", true)) "1" else "0" }
+        carStatus.find(line)?.let { return REVERSE to if (it.groupValues[1].equals("reverse", true)) "1" else "0" }
         if (backcarIn.containsMatchIn(line)) return REVERSE to "1"
         // Radio: solo se il contesto parla di FM/radio, per non prendere numeri a caso
         if (freqCtx.containsMatchIn(line)) {
@@ -57,7 +61,14 @@ object LogcatParser {
     }
 
     /** I tag da passare a logcat per leggere solo ciò che serve (meno rumore, meno batteria). */
-    val tags = listOf("CanDoorMsgbox", "CanFunc", "MainUI", "com.ts.MainUI", "ActivityTaskManager")
+    val tags = listOf("CanDoorMsgbox", "CanFunc", "MainUI", "com.ts.MainUI", "ActivityTaskManager",
+        "SmartPlatformService/CarEventHandler")
+
+    /**
+     * Il firmware scrive solo `mbRadarUIUpdate = true` (mai false: registro 29/10, 19 righe tutte true)
+     * mentre i sensori lavorano. Se non arrivano aggiornamenti per questo tempo, i sensori sono spenti.
+     */
+    const val PARKING_TIMEOUT_MS = 10_000L
 }
 
 /** Normalizza una frequenza FM scritta in vari modi a kHz (87.5–108 MHz). */

@@ -19,9 +19,21 @@ Questi dati sono anche nel file di export (schermata Veicolo → Esporta), sezio
 | Segnale | Riga di log (app `com.ts.MainUI`) | Valori |
 |---|---|---|
 | Portiera aperta | `CanDoorMsgbox: SetShowFlg = true/false` | aperta / chiuse |
-| Sensori di parcheggio | `CanFunc: mbRadarUIUpdate = true/false` | attivi / no |
+| Retromarcia (inserita e tolta) | `SmartPlatformService/CarEventHandler: car status: reverse/normal` | 1 / 0 |
+| Sensori di parcheggio | `CanFunc: mbRadarUIUpdate = true` (il firmware non scrive mai false) | attivi; spenti dopo 10 s senza aggiornamenti |
 | Luci (ADAS) | `MainUI: BROADCAST_ADAS_LIGHT_STATE on/off` | accese / spente |
 | Radio FM (stazione) | riga con contesto FM/radio e frequenza | kHz, se compare |
+
+## Da decodificare (registro 29/10, auto ferma)
+`com.ts.MainUI` invia questi broadcast leggibili da qualsiasi app; il contenuto non è ancora noto.
+Lo Sniffer 1.1 e DriveOS 0.9.11 li registrano con tutti gli extra.
+| Broadcast | Quando parte | Mittente nel codice |
+|---|---|---|
+| `broadcast_send_carinfo` | a ogni cambio fari | `AmapAuto.SendCarInfordata` |
+| `AUTONAVI_STANDARD_BROADCAST_RECV` | cambio fari, retromarcia, posizione GPS | `AmapAuto.SetHeadLight`, `SetBackStateToWeNavi`, `SearchNawAdd` |
+| `android.intent.action.SHOW_MYBRIGHTNESS` | a ogni cambio fari | `MainSet.ShowBrightnessBtn` |
+
+Altre righe utili: `CanFunc: GotoWin = 128` quando si apre il popup portiere, `= 1` per i sensori.
 
 ## NON disponibili (confermato: logcat 27/10 + analisi GitHub)
 - Carburante, temperatura liquido, olio, pressione pneumatici: gestiti dentro `com.ts.MainUI`

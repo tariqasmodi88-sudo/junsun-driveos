@@ -28,6 +28,14 @@ class LogcatParserTest {
             LogcatParser.parse("START u0 {cmp=com.ts.MainUI/com.ts.backcar.BackcarMainActivity}"))
     }
 
+    @Test fun reverseOnAndOffFromCarEventHandler() {
+        // righe reali dal registro del 29/10/2026
+        assertEquals(LogcatParser.REVERSE to "1", LogcatParser.parse(
+            "10-29 20:41:04.446   542   871 I SmartPlatformService/CarEventHandler: parseMsg(), car status: reverse"))
+        assertEquals(LogcatParser.REVERSE to "0", LogcatParser.parse(
+            "10-29 20:41:06.899   542   871 I SmartPlatformService/CarEventHandler: parseMsg(), car status: normal"))
+    }
+
     @Test fun ignoresNoise() {
         assertNull(LogcatParser.parse("10-27 19:50:01 D MPE_MA : mnl2mpe_hdlr: mpe recv"))
         assertNull(LogcatParser.parse("libPowerHal: cpu_ctrl set freq: 1700000"))  // freq ma senza contesto radio
