@@ -12,6 +12,7 @@ import it.driveos.launcher.DriveOSApp
 class DriveAccessibilityService : AccessibilityService() {
 
     private var lastKey = ""
+    private var lastTree = ""
     private val handler = android.os.Handler(android.os.Looper.getMainLooper())
     private val clearDoor = Runnable { (application as? DriveOSApp)?.vehicleRepository?.ingest(mapOf(LogcatParser.DOOR to "chiuse")) }
     private val clearRadar = Runnable { (application as? DriveOSApp)?.vehicleRepository?.ingest(mapOf(LogcatParser.PARKING to "0")) }
@@ -33,13 +34,14 @@ class DriveAccessibilityService : AccessibilityService() {
         val repo = (application as? DriveOSApp)?.vehicleRepository
         // Il nome dell'ultima finestra finisce nel registro/export (utile a capire il firmware).
         repo?.ingest(mapOf("win:last" to key))
+        runCatching { VehicleLog.append(this, listOf(LogFormat.line(System.currentTimeMillis(), VehicleLog.nowIso(), "win:last", null, key))) }
         when (kind) {
             // La finestra non dice quando si chiude: la portiera resta "aperta" 15 s dall'ultimo avviso.
             WindowKind.DOOR -> { repo?.ingest(mapOf(LogcatParser.DOOR to "aperta")); handler.removeCallbacks(clearDoor); handler.postDelayed(clearDoor, 15_000) }
             WindowKind.RADAR -> { repo?.ingest(mapOf(LogcatParser.PARKING to "1")); handler.removeCallbacks(clearRadar); handler.postDelayed(clearRadar, 15_000) }
             else -> {}
         }
-        if (kind == WindowKind.DOOR || kind == WindowKind.RADAR) {
+        if (kind == WindowKind.DOOR || kind == WindowKind.RADAR || pkg == "com.ts.MainUI") {
             // Cosa c'e' dentro la finestra (nomi dei pezzi): serve a capire QUALE porta/sensore.
             handler.postDelayed({ dumpTree(key) }, 400)
         }
@@ -62,7 +64,14 @@ class DriveAccessibilityService : AccessibilityService() {
         }
         walk(root, 0)
         if (parts.isNotEmpty()) {
-            (application as? DriveOSApp)?.vehicleRepository?.ingest(mapOf("win:tree" to (key + " | " + parts.joinToString(" ; ")).take(600)))
+            val text = (key + " | " + parts.joinToString(" ; ")).take(900)
+            (application as? DriveOSApp)?.vehicleRepository?.ingest(mapOf("win:tree" to text))
+            // finisce anche nel registro CSV (il servizio di registrazione non vede i segnali di questa app)
+            if (text != lastTree) {
+                lastTree = text
+                val now = System.currentTimeMillis()
+                runCatching { VehicleLog.append(this, listOf(LogFormat.line(now, VehicleLog.nowIso(), "win:tree", null, text))) }
+            }
         }
     }
 
