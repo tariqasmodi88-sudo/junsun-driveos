@@ -20,7 +20,8 @@ jobs:
       - name: Genera le immagini
         env:
           DRIVEOS_SHOTS: "1"
-        run: ./gradlew --no-daemon :app:testDebugUnitTest --tests '*ScreenshotTest*' 2>&1 | tail -80
+        continue-on-error: true
+        run: ./gradlew --no-daemon :app:testDebugUnitTest --tests '*ScreenshotTest*' > /tmp/gradle.log 2>&1
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -32,10 +33,12 @@ jobs:
         if: always()
         run: |
           mkdir -p /tmp/out && cp app/build/screenshots/*.png /tmp/out/ || true
+          tail -150 /tmp/gradle.log > /tmp/out/log.txt
+          cat app/build/test-results/testDebugUnitTest/*Screenshot*.xml 2>/dev/null | head -c 6000 > /tmp/out/result.xml || true
           git config user.name "anteprime"; git config user.email "anteprime@users.noreply.github.com"
           git checkout --orphan anteprime
           git rm -rf . -q
-          cp /tmp/out/*.png . || true
-          git add *.png
+          cp /tmp/out/* .
+          git add .
           git commit -m "anteprime" -q
           git push -f origin anteprime
