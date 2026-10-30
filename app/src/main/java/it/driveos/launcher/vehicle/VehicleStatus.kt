@@ -20,13 +20,13 @@ object KnownVehicleSignals {
 
     /** Rileva i fari dai segnali letti, senza bisogno di calibrazione. null = non noto. */
     fun lightsOn(signals: Map<String, String>): Boolean? {
+        // la seriale auto e' immediata (le proprieta' si rileggono ogni pochi secondi): ha la precedenza
+        signals["can:lights"]?.let { return it == "1" }
         for (p in lights) {
             val v = signals[p.id] ?: continue
             if (v.equals(p.on, ignoreCase = true)) return true
             if (v.equals(p.off, ignoreCase = true)) return false
         }
-        // seconda fonte: seriale auto (bit luci), se la proprieta' di sistema non c'e'
-        signals["can:lights"]?.let { return it == "1" }
         return null
     }
 
@@ -47,7 +47,7 @@ object KnownVehicleSignals {
     const val REARVIEW_ID = "bc:com.ts.rearview_state|show_state"
 
     /** true = in retromarcia, false = no, null = segnale mai visto. */
-    fun reverseOn(signals: Map<String, String>): Boolean? = when (signals[REVERSE_ID]) {
+    fun reverseOn(signals: Map<String, String>): Boolean? = when (signals["can:reverse"] ?: signals[REVERSE_ID]) {
         null -> null
         "1" -> true
         else -> false

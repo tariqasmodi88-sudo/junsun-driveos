@@ -68,6 +68,7 @@ import it.driveos.launcher.vehicle.CanDecoder
 import it.driveos.launcher.ui.theme.AutoThemeState
 import it.driveos.launcher.radio.RadioBand
 import it.driveos.launcher.radio.RadioPreset
+import it.driveos.launcher.radio.RadioState
 import it.driveos.launcher.radio.RadioPresetLogic
 import it.driveos.launcher.settings.ThemeMode
 import it.driveos.launcher.vehicle.KnownVehicleSignals
@@ -316,7 +317,7 @@ class MainActivity : ComponentActivity() {
             while (true) {
                 driveApp.vehicleRepository.pollOnce()
                 driveApp.systemControls.refresh()
-                kotlinx.coroutines.delay(5000)
+                kotlinx.coroutines.delay(2500)
             }
         }
 
@@ -548,12 +549,13 @@ class MainActivity : ComponentActivity() {
         // Schermata veicolo automatica: si apre quando l'auto è ferma (GPS) o si apre una portiera,
         // solo partendo dalla Home (non interrompe navigazione, radio, impostazioni);
         // si richiude da sola quando riparti, se era stata aperta in automatico.
+        val handbrakeOn = vehicleSignals[CanDecoder.HANDBRAKE] == "1"
         val doorOpenNow = CanDecoder.openDoors(vehicleSignals)?.isNotEmpty() ?: (vehicleSignals[LogcatParser.DOOR] == "aperta")
-        LaunchedEffect(parked, doorOpenNow, reverseNow, s.autoOverview) {
+        LaunchedEffect(parked, handbrakeOn, doorOpenNow, reverseNow, s.autoOverview) {
             if (!s.autoOverview) return@LaunchedEffect
-            if ((parked || doorOpenNow || reverseNow) && screen == Screen.DASHBOARD) {
+            if ((parked || handbrakeOn || doorOpenNow || reverseNow) && screen == Screen.DASHBOARD) {
                 screen = Screen.OVERVIEW; overviewAuto = true
-            } else if (!parked && !doorOpenNow && !reverseNow && overviewAuto && screen == Screen.OVERVIEW) {
+            } else if (!parked && !handbrakeOn && !doorOpenNow && !reverseNow && overviewAuto && screen == Screen.OVERVIEW) {
                 screen = Screen.DASHBOARD; overviewAuto = false
             }
         }
@@ -882,7 +884,9 @@ class MainActivity : ComponentActivity() {
                             )
 
                             Screen.RADIO -> RadioScreen(
-                                state = radioState,
+                                state = radioState ?: vehicleSignals[LogcatParser.RADIO_FREQ]?.toIntOrNull()?.let { k ->
+                                    RadioState(khz = k, source = "log")
+                                },
                                 detected = radioDetected,
                                 presets = s.radioPresets,
                                 currentKhz = radioState?.khz,
@@ -896,6 +900,14 @@ class MainActivity : ComponentActivity() {
                                 onStepUp = { driveApp.radioController.stepUp() },
                                 onPlayPause = { driveApp.radioController.power(radioState?.playing != true) },
                                 onAdd = { radioDialog = true },
+                                onSaveCurrent = {
+                                    val khz = radioState?.khz ?: vehicleSignals[LogcatParser.RADIO_FREQ]?.toIntOrNull()
+                                    if (khz != null) {
+                                        val p = RadioPreset(khz, "FM ${RadioPreset(khz, "").displayFrequency()}", RadioBand.FM)
+                                        if (RadioPresetLogic.isFull(s.radioPresets, p)) message("Hai già 6 stazioni: rimuovine una.")
+                                        else scope.launch { driveApp.settingsRepository.setRadioPresets(RadioPresetLogic.add(s.radioPresets, p)) }
+                                    }
+                                },
                                 onRemove = { p -> scope.launch {
                                     driveApp.settingsRepository.setRadioPresets(RadioPresetLogic.remove(s.radioPresets, p.band, p.khz))
                                 } },
@@ -1046,6 +1058,11 @@ class MainActivity : ComponentActivity() {
                             message("Frequenza non valida (87.5 – 108.0 MHz).")
                         } else {
                             val label = name.ifBlank { "FM ${RadioPreset(khz, "").displayFrequency()}" }
+                            if (RadioPresetLogic.isFull(s.radioPresets, RadioPreset(khz, label, RadioBand.FM))) {
+                                message("Hai già 6 stazioni: rimuovine una.")
+                                radioDialog = false
+                                return@RadioPresetDialog
+                            }
                             scope.launch {
                                 driveApp.settingsRepository.setRadioPresets(
                                     RadioPresetLogic.add(s.radioPresets, RadioPreset(khz, label, RadioBand.FM))

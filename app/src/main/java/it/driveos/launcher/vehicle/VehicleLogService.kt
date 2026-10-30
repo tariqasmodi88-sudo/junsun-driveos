@@ -16,6 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
@@ -69,15 +70,24 @@ class VehicleLogService : Service() {
         VehicleLog.recount(this)
         registerReceiverSafe()
         startLogcat()
-        (application as? it.driveos.launcher.DriveOSApp)?.canReader?.addSink(canSink)
+        (application as? it.driveos.launcher.DriveOSApp)?.let { a ->
+            a.canReader.addSink(canSink)
+            // la seriale va letta anche se l'app non e' aperta (registrazione di giorni)
+            scope.launch { if (a.settingsRepository.settings.first().canSerial) a.canReader.start() }
+        }
         job = scope.launch {
             // baseline: registra lo stato iniziale una volta (valori di partenza)
             val first = runCatching { VehicleRepository.readStatic(this@VehicleLogService) }.getOrDefault(emptyMap())
             baseline(first)
+            var tick = 0
             while (isActive) {
                 delay(POLL_MS)
                 val now = runCatching { VehicleRepository.readStatic(this@VehicleLogService) }.getOrDefault(emptyMap())
                 record(now)
+                // battito della seriale: una riga al minuto con il numero di messaggi visti (prova che e' viva)
+                if (++tick % 15 == 0) (application as? it.driveos.launcher.DriveOSApp)?.let {
+                    record(mapOf("can:frames" to it.canReader.framesSeen.toString()))
+                }
             }
         }
     }

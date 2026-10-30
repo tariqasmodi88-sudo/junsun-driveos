@@ -10,7 +10,7 @@ package it.driveos.launcher.vehicle
 class ParkedDetector(
     private val stopKmh: Double = 2.0,
     private val moveKmh: Double = 6.0,
-    private val stopSeconds: Long = 10,
+    private val stopSeconds: Long = 4,
 ) {
     var parked: Boolean = false
         private set

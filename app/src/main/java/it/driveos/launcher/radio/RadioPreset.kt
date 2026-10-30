@@ -33,6 +33,8 @@ object RadioPresetLogic {
     const val FM_MIN_KHZ = 87_500
     const val FM_MAX_KHZ = 108_000
     const val FM_STEP_KHZ = 100 // 0,1 MHz
+    /** Massimo di stazioni preferite. */
+    const val MAX_PRESETS = 6
 
     /** Converte "101.5" o "101,5" in kHz; null se non valido. */
     fun parseFm(text: String): Int? {
@@ -46,8 +48,14 @@ object RadioPresetLogic {
     fun normalize(list: List<RadioPreset>): List<RadioPreset> =
         list.distinctBy { it.band to it.khz }.sortedWith(compareBy({ it.band.ordinal }, { it.khz }))
 
-    fun add(list: List<RadioPreset>, preset: RadioPreset): List<RadioPreset> =
-        normalize(list.filterNot { it.band == preset.band && it.khz == preset.khz } + preset)
+    fun add(list: List<RadioPreset>, preset: RadioPreset): List<RadioPreset> {
+        val exists = list.any { it.band == preset.band && it.khz == preset.khz }
+        if (!exists && list.size >= MAX_PRESETS) return list // pieno: serve prima rimuoverne una
+        return normalize(list.filterNot { it.band == preset.band && it.khz == preset.khz } + preset)
+    }
+
+    fun isFull(list: List<RadioPreset>, preset: RadioPreset) =
+        list.size >= MAX_PRESETS && list.none { it.band == preset.band && it.khz == preset.khz }
 
     fun remove(list: List<RadioPreset>, band: RadioBand, khz: Int): List<RadioPreset> =
         list.filterNot { it.band == band && it.khz == khz }

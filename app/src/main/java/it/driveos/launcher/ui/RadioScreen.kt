@@ -54,6 +54,7 @@ fun RadioScreen(
     onStepUp: () -> Unit,
     onPlayPause: () -> Unit,
     onAdd: () -> Unit,
+    onSaveCurrent: (() -> Unit)? = null,
     onRemove: (RadioPreset) -> Unit,
     onOpenExternal: () -> Unit,
     onBack: () -> Unit,
@@ -123,6 +124,15 @@ fun RadioScreen(
                 }
             }
 
+            if (onSaveCurrent != null && state?.khz != null) {
+                Surface(onClick = onSaveCurrent, shape = RoundedCornerShape(16.dp), color = colors.surfaceVariant, contentColor = colors.onSurface,
+                    modifier = Modifier.fillMaxWidth().height(54.dp)) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text("Salva questa stazione come preferita ($freqText MHz) · max 6", fontSize = 16.sp, fontWeight = FontWeight.Medium,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+            }
             Surface(onClick = onAdd, shape = RoundedCornerShape(16.dp), color = colors.primary, contentColor = colors.onPrimary,
                 modifier = Modifier.fillMaxWidth().height(54.dp)) {
                 Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
