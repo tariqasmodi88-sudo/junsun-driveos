@@ -29,6 +29,10 @@
     <!-- "Mostra sopra altre app" (la dai tu): permette a DriveOS di tornare davanti quando una finestra Junsun si apre. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
+    <!-- Musica del dispositivo (lettore interno): solo file audio, mai video. -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+
     <!-- Velocità GPS per capire quando l'auto è ferma (schermata veicolo automatica).
          Chiesto solo quando attivi la funzione; la posizione non viene salvata né inviata. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -103,6 +107,12 @@
             android:name=".vehicle.VehicleLogService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
+
+        <!-- Lettore musica interno (tutti i brani del dispositivo, in ordine casuale). -->
+        <service
+            android:name=".media.LocalMusicService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
 
         <!-- Accesso alle notifiche (concesso dall'utente nelle impostazioni di Android):
              brano in riproduzione e indicazioni dell'app di navigazione. -->

@@ -13,8 +13,8 @@ android {
         // La Junsun FF_866X monta Android 10 (API 29): e' il minimo supportato.
         minSdk = 29
         targetSdk = 34
-        versionCode = 31
-        versionName = "0.9.11"
+        versionCode = 32
+        versionName = "0.9.12"
     }
 
     signingConfigs {

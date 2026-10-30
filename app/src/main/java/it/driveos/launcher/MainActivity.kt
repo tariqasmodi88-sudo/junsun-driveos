@@ -141,7 +141,40 @@ class MainActivity : ComponentActivity() {
      * controllo vive nell'Activity (non nella UI Compose, che in secondo piano e' ferma) e riporta
      * DriveOS davanti durante e dopo la retromarcia.
      */
+    @Volatile private var lastProjectionLaunch = 0L
+
+    /**
+     * Telefono collegato (vivavoce/Bluetooth): si apre AutoLink in automatico, anche se DriveOS non
+     * e' davanti, poi si torna alla Home. Cosi' non serve toccare il tasto Telefono.
+     */
+    private fun startAutoProjection() {
+        lifecycleScope.launch {
+            var was = false
+            driveApp.vehicleRepository.signals.collect { sig ->
+                val phone = it.driveos.launcher.vehicle.KnownVehicleSignals.phoneConnected(sig) == true
+                val rising = phone && !was
+                was = phone
+                if (!rising) return@collect
+                val cfg = runCatching { driveApp.settingsRepository.settings.first() }.getOrNull() ?: return@collect
+                if (!cfg.smartStartEnabled || !cfg.smartStartAndroidAuto) return@collect
+                kotlinx.coroutines.delay(4000) // SpeedPlay si aggancia al telefono
+                if (it.driveos.launcher.vehicle.KnownVehicleSignals.projectionActive(driveApp.vehicleRepository.signals.value)) return@collect
+                if (System.currentTimeMillis() - lastProjectionLaunch < 60_000) return@collect
+                val pkg = PROJECTION_PKGS.firstOrNull { packageManager.getLaunchIntentForPackage(it) != null } ?: return@collect
+                lastProjectionLaunch = System.currentTimeMillis()
+                runCatching { startActivity(packageManager.getLaunchIntentForPackage(pkg)!!.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                var waited = 0
+                while (!it.driveos.launcher.vehicle.KnownVehicleSignals.projectionActive(driveApp.vehicleRepository.signals.value) && waited < 20_000) {
+                    kotlinx.coroutines.delay(500); waited += 500
+                }
+                kotlinx.coroutines.delay(1500)
+                bringHomeFromBackground()
+            }
+        }
+    }
+
     private fun startReverseGuard() {
+        startAutoProjection()
         lifecycleScope.launch {
             var lastReverse: Boolean? = null
             var lastReverseMs = 0L
@@ -301,6 +334,10 @@ class MainActivity : ComponentActivity() {
             if (granted) driveApp.speedWatcher.start()
             else message("Senza posizione la schermata veicolo si apre solo quando apri una portiera.")
         }
+        val storagePermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) it.driveos.launcher.media.LocalMusicService.start(context)
+            else message("Senza accesso ai file audio la musica del dispositivo non parte.")
+        }
         val calendarPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             driveApp.calendarRepository.refresh()
             if (!granted) message("Permesso negato. Puoi concederlo in Impostazioni Android → App → DriveOS → Autorizzazioni.")
@@ -354,9 +391,7 @@ class MainActivity : ComponentActivity() {
         val projectionOn = KnownVehicleSignals.projectionActive(vehicleSignals)
 
         // Lettore musica locale della radio Junsun (USB/SD): non ha sessione media, si apre l'attività.
-        val junsunLocalPlayer = remember {
-            runCatching { pm.getPackageInfo("com.ts.dvdplayer", 0); true }.getOrDefault(false)
-        }
+        val junsunLocalPlayer = true // lettore interno di DriveOS (LocalMusicService)
         fun hasLocalMusic() = s.offlineMusicApp != null || junsunLocalPlayer
         // Riporta DriveOS davanti (CarPlay/Android Auto o il lettore restano attivi in secondo piano).
         fun bringHomeToFront() {
@@ -375,19 +410,12 @@ class MainActivity : ComponentActivity() {
         fun playLocalMusic() {
             val app = s.offlineMusicApp
             if (app != null) { driveApp.mediaRepository.resumeOrPlay(app.packageName); return }
-            if (!junsunLocalPlayer) return
-            // Schermata musica USB del firmware (quella che apre il tasto Musica Junsun).
-            val opened = listOf(
-                "com.ts.MainUI" to "com.ts.main.Media.USBMainActivity",
-                "com.ts.dvdplayer" to "com.ts.dvdplayer.USBActivity",
-            ).any { (pkg, cls) ->
-                runCatching {
-                    context.startActivity(Intent().setClassName(pkg, cls).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                }.isSuccess
+            // Lettore interno di DriveOS: tutti i brani audio del dispositivo, mai video.
+            if (!it.driveos.launcher.media.LocalMusicService.hasPermission(context)) {
+                storagePermission.launch(it.driveos.launcher.media.LocalMusicService.permission())
+                return
             }
-            if (!opened) message("Non riesco ad aprire il lettore musica della radio.")
-            // Il lettore resta a suonare in secondo piano; si torna subito alla Home DriveOS.
-            scope.launch { kotlinx.coroutines.delay(2500); bringHomeToFront() }
+            it.driveos.launcher.media.LocalMusicService.start(context)
         }
 
         fun runSmartStart() {
@@ -413,7 +441,8 @@ class MainActivity : ComponentActivity() {
                     SmartAction.PLAY_OFFLINE -> playLocalMusic()
                     SmartAction.START_NAV -> s.navApp?.let { nav -> Launcher.launchApp(context, nav) }
                     SmartAction.LAUNCH_ANDROID_AUTO ->
-                        projectionPkg?.let { pkg ->
+                        projectionPkg?.takeIf { System.currentTimeMillis() - lastProjectionLaunch > 60_000 }?.let { pkg ->
+                            lastProjectionLaunch = System.currentTimeMillis()
                             pm.getLaunchIntentForPackage(pkg)?.let { intent ->
                                 runCatching { context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
                             }
