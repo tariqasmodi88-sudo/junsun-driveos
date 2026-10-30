@@ -69,6 +69,7 @@ class VehicleLogService : Service() {
         VehicleLog.recount(this)
         registerReceiverSafe()
         startLogcat()
+        (application as? it.driveos.launcher.DriveOSApp)?.canReader?.addSink(canSink)
         job = scope.launch {
             // baseline: registra lo stato iniziale una volta (valori di partenza)
             val first = runCatching { VehicleRepository.readStatic(this@VehicleLogService) }.getOrDefault(emptyMap())
@@ -81,6 +82,7 @@ class VehicleLogService : Service() {
         }
     }
 
+    private val canSink: (Map<String, String>) -> Unit = { record(it) }
     private var logcatProc: Process? = null
     private var logcatJob: kotlinx.coroutines.Job? = null
 
@@ -143,6 +145,7 @@ class VehicleLogService : Service() {
     }
 
     override fun onDestroy() {
+        (application as? it.driveos.launcher.DriveOSApp)?.canReader?.removeSink(canSink)
         job?.cancel()
         logcatJob?.cancel()
         runCatching { logcatProc?.destroy() }

@@ -53,6 +53,10 @@ data class VehicleOverviewState(
     val reverse: Boolean?,
     val rearview: Boolean?,
     val doorOpen: Boolean?,
+    /** Quali porte sono aperte (dalla seriale auto); null = dato non disponibile. */
+    val openDoors: List<String>? = null,
+    val handbrake: Boolean? = null,
+    val batteryV: String? = null,
     val parking: Boolean?,
     val phone: Boolean?,
     val projection: Boolean,
@@ -91,8 +95,10 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onDebug: () -> Unit) {
                     }
                 }
                 StatusRow("Fari", state.lightsOn?.let { if (it) "accesi" else "spenti" }, state.lightsOn == true, Amber)
-                StatusRow("Portiere", state.doorOpen?.let { if (it) "aperta" else "chiuse" }, state.doorOpen == true, Warn,
+                StatusRow("Portiere", state.openDoors?.let { if (it.isEmpty()) "chiuse" else it.joinToString(", ") }
+                    ?: state.doorOpen?.let { if (it) "aperta" else "chiuse" }, state.doorOpen == true, Warn,
                     missing = if (!state.logsGranted) "permesso" else null)
+                StatusRow("Freno a mano", state.handbrake?.let { if (it) "tirato" else "giù" }, state.handbrake == true, Amber)
                 StatusRow("Retromarcia", state.reverse?.let { if (it) "inserita" else "no" }, state.reverse == true, Color.White)
                 StatusRow("Sensori post.", if (rearSensors(state)) "attivi" else (state.parking?.let { "no" }),
                     rearSensors(state), Amber, missing = if (!state.logsGranted) "con retro" else null)
@@ -139,11 +145,12 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onDebug: () -> Unit) {
                 SectionTitle("Motore")
                 Surface(shape = RoundedCornerShape(16.dp), color = c.surface, modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp)) {
+                        EngineLine("Batteria", state.batteryV?.let { "$it V" } ?: "—")
                         EngineLine("Carburante", "—")
                         EngineLine("Temp. motore", "—")
                         EngineLine("Giri", "—")
                         Spacer(Modifier.height(8.dp))
-                        Text("Questa radio non passa i dati del motore alle app. Arrivano con un adattatore OBD-II.",
+                        Text("Carburante, temperatura e giri arrivano dalla seriale dell'auto: li stiamo ancora identificando nel registro.",
                             fontSize = 13.sp, color = c.onSurfaceVariant)
                     }
                 }
@@ -265,28 +272,32 @@ private fun CarTopView(state: VehicleOverviewState, modifier: Modifier) {
         drawRoundRect(tailColor, Offset(left + w * 0.68f, top + h * 0.94f), Size(w * 0.24f, h * 0.03f), CornerRadius(8f))
 
         // Portiere: linee di separazione; se aperta, portiere evidenziate e "spalancate"
-        drawDoors(left, top, w, h, open = state.doorOpen == true, closedColor = outline, openColor = Warn.copy(alpha = pulse))
+        drawDoors(left, top, w, h, state.openDoors, state.doorOpen == true, closedColor = outline, openColor = Warn.copy(alpha = pulse))
     }
 }
 
-private fun DrawScope.drawDoors(left: Float, top: Float, w: Float, h: Float, open: Boolean, closedColor: Color, openColor: Color) {
+private fun DrawScope.drawDoors(left: Float, top: Float, w: Float, h: Float, openNames: List<String>?, anyOpen: Boolean, closedColor: Color, openColor: Color) {
     val frontY = top + h * 0.36f
     val midY = top + h * 0.52f
     val rearY = top + h * 0.68f
     val doorLen = h * 0.15f
-    if (!open) {
-        // tagli porte chiuse sui fianchi
-        listOf(frontY, midY, rearY).forEach { y ->
-            drawLine(closedColor, Offset(left, y), Offset(left + w * 0.12f, y), strokeWidth = 3f)
-            drawLine(closedColor, Offset(left + w * 0.88f, y), Offset(left + w, y), strokeWidth = 3f)
+    // Con la seriale sappiamo quale porta e' aperta; senza (solo log) le mostriamo tutte in evidenza.
+    fun isOpen(name: String) = if (openNames != null) name in openNames else anyOpen
+    fun side(y: Float, leftSide: Boolean, name: String) {
+        val x = if (leftSide) left else left + w
+        val dir = if (leftSide) -1f else 1f
+        if (isOpen(name)) {
+            drawLine(openColor, Offset(x, y), Offset(x + dir * doorLen * 0.75f, y + doorLen * 0.65f), strokeWidth = 9f, cap = StrokeCap.Round)
+        } else {
+            drawLine(closedColor, Offset(x, y), Offset(x - dir * w * 0.12f, y), strokeWidth = 3f)
         }
-        return
     }
-    // La radio dice "una portiera è aperta" ma non quale: le mostriamo tutte socchiuse in evidenza.
-    listOf(frontY, midY).forEach { y ->
-        // lato sinistro (guidatore)
-        drawLine(openColor, Offset(left, y), Offset(left - doorLen * 0.75f, y + doorLen * 0.65f), strokeWidth = 9f, cap = StrokeCap.Round)
-        // lato destro
-        drawLine(openColor, Offset(left + w, y), Offset(left + w + doorLen * 0.75f, y + doorLen * 0.65f), strokeWidth = 9f, cap = StrokeCap.Round)
+    side(frontY, true, "ant. sx"); side(frontY, false, "ant. dx")
+    side(midY, true, "post. sx"); side(midY, false, "post. dx")
+    // taglio fisso dietro (hatch) e baule
+    drawLine(closedColor, Offset(left + w * 0.1f, rearY), Offset(left + w * 0.9f, rearY), strokeWidth = 3f)
+    if (isOpen("baule")) {
+        drawLine(openColor, Offset(left + w * 0.2f, top + h), Offset(left + w * 0.2f, top + h + doorLen * 0.9f), strokeWidth = 9f, cap = StrokeCap.Round)
+        drawLine(openColor, Offset(left + w * 0.8f, top + h), Offset(left + w * 0.8f, top + h + doorLen * 0.9f), strokeWidth = 9f, cap = StrokeCap.Round)
     }
 }

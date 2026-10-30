@@ -64,6 +64,7 @@ import it.driveos.launcher.ui.VehicleScreen
 import it.driveos.launcher.ui.VehicleStatusStrip
 import it.driveos.launcher.ui.VehicleOverviewScreen
 import it.driveos.launcher.ui.VehicleOverviewState
+import it.driveos.launcher.vehicle.CanDecoder
 import it.driveos.launcher.ui.theme.AutoThemeState
 import it.driveos.launcher.radio.RadioBand
 import it.driveos.launcher.radio.RadioPreset
@@ -379,6 +380,9 @@ class MainActivity : ComponentActivity() {
         }
 
         // Registrazione continua: avvia/ferma il servizio in base all'impostazione.
+        LaunchedEffect(s.canSerial) {
+            if (s.canSerial) driveApp.canReader.start() else driveApp.canReader.stop()
+        }
         LaunchedEffect(s.vehicleLogging, s.discoveredActions) {
             if (s.vehicleLogging) VehicleLogService.start(context, s.discoveredActions)
             else VehicleLogService.stop(context)
@@ -551,7 +555,7 @@ class MainActivity : ComponentActivity() {
         // Schermata veicolo automatica: si apre quando l'auto è ferma (GPS) o si apre una portiera,
         // solo partendo dalla Home (non interrompe navigazione, radio, impostazioni);
         // si richiude da sola quando riparti, se era stata aperta in automatico.
-        val doorOpenNow = vehicleSignals[LogcatParser.DOOR] == "aperta"
+        val doorOpenNow = CanDecoder.openDoors(vehicleSignals)?.isNotEmpty() ?: (vehicleSignals[LogcatParser.DOOR] == "aperta")
         LaunchedEffect(parked, doorOpenNow, reverseNow, s.autoOverview) {
             if (!s.autoOverview) return@LaunchedEffect
             if ((parked || doorOpenNow || reverseNow) && screen == Screen.DASHBOARD) {
@@ -922,6 +926,8 @@ class MainActivity : ComponentActivity() {
                                 loggingOn = loggingOn,
                                 loggedChanges = loggedChanges,
                                 onToggleLogging = { on -> scope.launch { driveApp.settingsRepository.setVehicleLogging(on) } },
+                                canSerialOn = s.canSerial,
+                                onToggleCanSerial = { on -> scope.launch { driveApp.settingsRepository.setCanSerial(on) } },
                                 onExportLog = {
                                     scope.launch {
                                         val stamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmm"))
@@ -1004,7 +1010,10 @@ class MainActivity : ComponentActivity() {
                                     lightsOn = lightsResolved,
                                     reverse = KnownVehicleSignals.reverseOn(vehicleSignals),
                                     rearview = KnownVehicleSignals.rearviewOn(vehicleSignals),
-                                    doorOpen = vehicleSignals[LogcatParser.DOOR]?.let { v -> v == "aperta" },
+                                    doorOpen = CanDecoder.openDoors(vehicleSignals)?.isNotEmpty() ?: vehicleSignals[LogcatParser.DOOR]?.let { v -> v == "aperta" },
+                                    openDoors = CanDecoder.openDoors(vehicleSignals),
+                                    handbrake = vehicleSignals[CanDecoder.HANDBRAKE]?.let { it == "1" },
+                                    batteryV = vehicleSignals[CanDecoder.BATTERY_V],
                                     parking = vehicleSignals[LogcatParser.PARKING]?.let { v -> v == "1" },
                                     phone = KnownVehicleSignals.phoneConnected(vehicleSignals),
                                     projection = KnownVehicleSignals.projectionActive(vehicleSignals),

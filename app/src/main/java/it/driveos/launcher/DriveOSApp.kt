@@ -10,6 +10,7 @@ import it.driveos.launcher.media.MediaRepository
 import it.driveos.launcher.radio.RadioController
 import it.driveos.launcher.settings.SettingsRepository
 import it.driveos.launcher.system.CrashLog
+import it.driveos.launcher.vehicle.CanSerialReader
 import it.driveos.launcher.vehicle.LogcatReader
 import it.driveos.launcher.vehicle.SpeedWatcher
 import it.driveos.launcher.vehicle.VehicleRepository
@@ -38,6 +39,8 @@ class DriveOSApp : Application() {
         private set
     lateinit var speedWatcher: SpeedWatcher
         private set
+    lateinit var canReader: CanSerialReader
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -53,5 +56,6 @@ class DriveOSApp : Application() {
         radioController = RadioController(this)
         logcatReader = LogcatReader(this, vehicleRepository)
         speedWatcher = SpeedWatcher(this)
+        canReader = CanSerialReader().also { r -> r.addSink { vehicleRepository.ingest(it) } }
     }
 }

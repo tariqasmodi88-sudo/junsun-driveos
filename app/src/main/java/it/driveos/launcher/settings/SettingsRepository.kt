@@ -54,6 +54,8 @@ data class DriveSettings(
     val onlineMusicApp: AppKey? = null,
     val offlineMusicApp: AppKey? = null,
     val vehicleLogging: Boolean = false,
+    /** Lettura della seriale auto (porte, baule, freno a mano…). */
+    val canSerial: Boolean = true,
     /** Schermata veicolo automatica quando l'auto è ferma (o si apre una portiera). */
     val autoOverview: Boolean = true,
     /** Le finestre Junsun (portiere, radar, retro) e CarPlay non prendono lo schermo: si resta su DriveOS. */
@@ -91,6 +93,7 @@ class SettingsRepository(context: Context) {
         val ONLINE_MUSIC = stringPreferencesKey("online_music_app")
         val OFFLINE_MUSIC = stringPreferencesKey("offline_music_app")
         val VEH_LOG = stringPreferencesKey("vehicle_logging")
+        val CAN_SERIAL = stringPreferencesKey("can_serial")
         val THEME_V2 = stringPreferencesKey("theme_auto_default")
         val AUTO_OVERVIEW = stringPreferencesKey("auto_overview")
         val KEEP_HOME = stringPreferencesKey("keep_home")
@@ -127,6 +130,7 @@ class SettingsRepository(context: Context) {
                 onlineMusicApp = AppKey.decode(p[Keys.ONLINE_MUSIC]),
                 offlineMusicApp = AppKey.decode(p[Keys.OFFLINE_MUSIC]),
                 vehicleLogging = p[Keys.VEH_LOG] != "0",
+                canSerial = p[Keys.CAN_SERIAL] != "0",
                 autoOverview = p[Keys.AUTO_OVERVIEW] != "0",
                 keepHome = p[Keys.KEEP_HOME] != "0",
             )
@@ -162,6 +166,10 @@ class SettingsRepository(context: Context) {
 
     suspend fun setKeepHome(on: Boolean) {
         store.edit { it[Keys.KEEP_HOME] = if (on) "1" else "0" }
+    }
+
+    suspend fun setCanSerial(on: Boolean) {
+        store.edit { it[Keys.CAN_SERIAL] = if (on) "1" else "0" }
     }
 
     suspend fun setVehicleLogging(on: Boolean) {

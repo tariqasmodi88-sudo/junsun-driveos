@@ -73,6 +73,8 @@ fun VehicleScreen(
     loggingOn: Boolean,
     loggedChanges: Int,
     onToggleLogging: (Boolean) -> Unit,
+    canSerialOn: Boolean = true,
+    onToggleCanSerial: (Boolean) -> Unit = {},
     onExportLog: () -> Unit,
     onClearLog: () -> Unit,
     onClearFlags: () -> Unit,
@@ -106,6 +108,18 @@ fun VehicleScreen(
             }
             Banner("$lightsText · ${signals.size} segnali letti" +
                 (if (settings.gaugeBindings.isNotEmpty()) " · ${settings.gaugeBindings.size} sul cruscotto" else ""))
+
+            Surface(shape = RoundedCornerShape(16.dp), color = if (canSerialOn) colors.primary.copy(alpha = 0.14f) else colors.surface,
+                modifier = Modifier.fillMaxWidth()) {
+                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Seriale auto", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
+                        Text("Porte, baule, freno a mano, batteria dal canale dell'auto (sola lettura). Se qualcosa della radio nativa si comporta male, spegni qui.",
+                            fontSize = 14.sp, color = colors.onSurfaceVariant)
+                    }
+                    androidx.compose.material3.Switch(checked = canSerialOn, onCheckedChange = onToggleCanSerial)
+                }
+            }
 
             // --- Registrazione continua (la via consigliata per trovare tutto) ---
             Surface(shape = RoundedCornerShape(16.dp),
