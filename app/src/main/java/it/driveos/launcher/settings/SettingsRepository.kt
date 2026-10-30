@@ -1,5 +1,7 @@
 package it.driveos.launcher.settings
 
+import it.driveos.launcher.vehicle.KeyBinding
+import it.driveos.launcher.vehicle.KeyBindingCodec
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -56,6 +58,8 @@ data class DriveSettings(
     val vehicleLogging: Boolean = false,
     /** Lettura della seriale auto (porte, baule, freno a mano…). */
     val canSerial: Boolean = true,
+    /** Tasti dell'autoradio / volante imparati dalla seriale. */
+    val keyBindings: List<KeyBinding> = emptyList(),
     /** Schermata veicolo automatica quando l'auto è ferma (o si apre una portiera). */
     val autoOverview: Boolean = true,
     /** Le finestre Junsun (portiere, radar, retro) e CarPlay non prendono lo schermo: si resta su DriveOS. */
@@ -94,6 +98,7 @@ class SettingsRepository(context: Context) {
         val OFFLINE_MUSIC = stringPreferencesKey("offline_music_app")
         val VEH_LOG = stringPreferencesKey("vehicle_logging")
         val CAN_SERIAL = stringPreferencesKey("can_serial")
+        val KEYMAP = stringPreferencesKey("key_map")
         val THEME_V2 = stringPreferencesKey("theme_auto_default")
         val AUTO_OVERVIEW = stringPreferencesKey("auto_overview")
         val KEEP_HOME = stringPreferencesKey("keep_home")
@@ -131,6 +136,7 @@ class SettingsRepository(context: Context) {
                 offlineMusicApp = AppKey.decode(p[Keys.OFFLINE_MUSIC]),
                 vehicleLogging = p[Keys.VEH_LOG] != "0",
                 canSerial = p[Keys.CAN_SERIAL] != "0",
+                keyBindings = KeyBindingCodec.decode(p[Keys.KEYMAP]),
                 autoOverview = p[Keys.AUTO_OVERVIEW] != "0",
                 keepHome = p[Keys.KEEP_HOME] != "0",
             )
@@ -166,6 +172,10 @@ class SettingsRepository(context: Context) {
 
     suspend fun setKeepHome(on: Boolean) {
         store.edit { it[Keys.KEEP_HOME] = if (on) "1" else "0" }
+    }
+
+    suspend fun setKeyBindings(list: List<KeyBinding>) {
+        store.edit { it[Keys.KEYMAP] = KeyBindingCodec.encode(list) }
     }
 
     suspend fun setCanSerial(on: Boolean) {

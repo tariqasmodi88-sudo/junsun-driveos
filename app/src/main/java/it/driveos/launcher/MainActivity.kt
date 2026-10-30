@@ -65,6 +65,10 @@ import it.driveos.launcher.ui.VehicleStatusStrip
 import it.driveos.launcher.ui.VehicleOverviewScreen
 import it.driveos.launcher.ui.VehicleOverviewState
 import it.driveos.launcher.vehicle.CanDecoder
+import it.driveos.launcher.vehicle.KeyAction
+import it.driveos.launcher.vehicle.KeyBindingCodec
+import it.driveos.launcher.vehicle.KeyEvents
+import it.driveos.launcher.ui.KeysScreen
 import it.driveos.launcher.ui.theme.AutoThemeState
 import it.driveos.launcher.radio.RadioBand
 import it.driveos.launcher.radio.RadioPreset
@@ -95,7 +99,7 @@ import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.ZoneId
 
-enum class Screen { DASHBOARD, APPS, SETTINGS, DEVICE_INFO, NAV, MUSIC, CALENDAR, CLOCK, VEHICLE, RADIO, SMART_START, OVERVIEW }
+enum class Screen { DASHBOARD, APPS, SETTINGS, DEVICE_INFO, NAV, MUSIC, CALENDAR, CLOCK, VEHICLE, RADIO, SMART_START, OVERVIEW, KEYS }
 
 private enum class PickerTarget(val title: String) {
     NAV("App di navigazione"),
@@ -660,12 +664,27 @@ class MainActivity : ComponentActivity() {
             else openOrPick(s.musicApp, PickerTarget.MUSIC)
         }
 
+        // Tasti dell'autoradio/volante imparati dalla seriale che richiedono la schermata.
+        LaunchedEffect(Unit) {
+            KeyEvents.flow.collect { a ->
+                when (a) {
+                    KeyAction.HOME -> { screen = Screen.DASHBOARD; overviewAuto = false; bringHomeFromBackground() }
+                    KeyAction.RADIO -> openRadio()
+                    KeyAction.NAV -> openOrPick(s.navApp, PickerTarget.NAV)
+                    KeyAction.PHONE -> openOrPick(s.phoneApp, PickerTarget.PHONE)
+                    KeyAction.MUSIC -> openOrPick(s.musicApp, PickerTarget.MUSIC)
+                    else -> {}
+                }
+            }
+        }
+
         // Indietro: chiude i controlli; dalle viste a tutto schermo torna alla Home.
         BackHandler(enabled = true) {
             if (controlsOpen) { controlsOpen = false } else screen = when (screen) {
                 Screen.DEVICE_INFO -> Screen.SETTINGS
                 Screen.VEHICLE -> if (debugFromOverview) { debugFromOverview = false; Screen.OVERVIEW } else Screen.SETTINGS
                 Screen.RADIO, Screen.SMART_START -> Screen.SETTINGS
+                Screen.KEYS -> Screen.VEHICLE
                 Screen.OVERVIEW -> { overviewAuto = false; Screen.DASHBOARD }
                 else -> Screen.DASHBOARD
             }
@@ -875,6 +894,7 @@ class MainActivity : ComponentActivity() {
                                 onToggleLogging = { on -> scope.launch { driveApp.settingsRepository.setVehicleLogging(on) } },
                                 canSerialOn = s.canSerial,
                                 onToggleCanSerial = { on -> scope.launch { driveApp.settingsRepository.setCanSerial(on) } },
+                                onOpenKeys = { screen = Screen.KEYS },
                                 onExportLog = {
                                     scope.launch {
                                         val stamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmm"))
@@ -893,6 +913,20 @@ class MainActivity : ComponentActivity() {
                                 exportStatus = vehicleExportStatus,
                                 onBack = { if (debugFromOverview) { debugFromOverview = false; screen = Screen.OVERVIEW } else screen = Screen.SETTINGS },
                             )
+
+                            Screen.KEYS -> {
+                                val learning by driveApp.keyMapper.learning.collectAsStateWithLifecycle()
+                                val keyMessage by driveApp.keyMapper.message.collectAsStateWithLifecycle()
+                                KeysScreen(
+                                    bindings = s.keyBindings,
+                                    learning = learning,
+                                    message = keyMessage,
+                                    onLearn = { a -> driveApp.keyMapper.startLearning(a) },
+                                    onClear = { a -> scope.launch { repo.setKeyBindings(KeyBindingCodec.clear(s.keyBindings, a)) } },
+                                    onCancel = { driveApp.keyMapper.cancelLearning() },
+                                    onBack = { screen = Screen.VEHICLE },
+                                )
+                            }
 
                             Screen.RADIO -> RadioScreen(
                                 state = radioState ?: vehicleSignals[LogcatParser.RADIO_FREQ]?.toIntOrNull()?.let { k ->

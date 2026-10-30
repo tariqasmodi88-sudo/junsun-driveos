@@ -54,6 +54,7 @@ fun VehicleScreen(
     onToggleLogging: (Boolean) -> Unit,
     canSerialOn: Boolean,
     onToggleCanSerial: (Boolean) -> Unit,
+    onOpenKeys: () -> Unit,
     onExportLog: () -> Unit,
     onClearLog: () -> Unit,
     exportStatus: String?,
@@ -72,6 +73,8 @@ fun VehicleScreen(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 4.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            Secondary("Tasti e volante (impara i tasti)", Modifier.fillMaxWidth()) { onOpenKeys() }
+
             Surface(shape = RoundedCornerShape(16.dp), color = if (canSerialOn) colors.primary.copy(alpha = 0.14f) else colors.surface,
                 modifier = Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
