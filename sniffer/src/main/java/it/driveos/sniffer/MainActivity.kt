@@ -42,6 +42,13 @@ class MainActivity : Activity() {
                 "Permesso necessario (una volta, da ADB):\npm grant it.driveos.sniffer android.permission.READ_LOGS"
         })
         setContentView(ScrollView(this).apply { addView(root) })
+        // Da ADB: am start -n it.driveos.sniffer/.MainActivity --ez autostart true
+        if (intent?.getBooleanExtra("autostart", false) == true) start()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.getBooleanExtra("autostart", false)) start()
     }
 
     override fun onResume() { super.onResume(); handler.post(tick) }
