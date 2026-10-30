@@ -275,9 +275,25 @@ private fun CarTopView(state: VehicleOverviewState, modifier: Modifier) {
         val headColor = if (state.lightsOn == true) Beam else outline
         drawRoundRect(headColor, Offset(left + w * 0.08f, top + h * 0.025f), Size(w * 0.26f, h * 0.035f), CornerRadius(8f))
         drawRoundRect(headColor, Offset(left + w * 0.66f, top + h * 0.025f), Size(w * 0.26f, h * 0.035f), CornerRadius(8f))
-        val tailColor = if (state.reverse == true) Color.White else Warn.copy(alpha = if (state.lightsOn == true) 0.95f else 0.45f)
-        drawRoundRect(tailColor, Offset(left + w * 0.08f, top + h * 0.94f), Size(w * 0.24f, h * 0.03f), CornerRadius(8f))
-        drawRoundRect(tailColor, Offset(left + w * 0.68f, top + h * 0.94f), Size(w * 0.24f, h * 0.03f), CornerRadius(8f))
+        // Luci posteriori: rosse e con alone quando i fari sono accesi, spente (grigio) altrimenti;
+        // con la retromarcia si accende anche la luce bianca all'interno.
+        val tailOn = state.lightsOn == true
+        val tailRed = Color(0xFFFF2A2A)
+        val tailColor = if (tailOn) tailRed else outline.copy(alpha = 0.55f)
+        val tailL = Offset(left + w * 0.08f, top + h * 0.94f)
+        val tailR = Offset(left + w * 0.68f, top + h * 0.94f)
+        val tailSize = Size(w * 0.24f, h * 0.03f)
+        if (tailOn) {
+            listOf(tailL, tailR).forEach { o ->
+                drawRoundRect(tailRed.copy(alpha = 0.28f), Offset(o.x - 10f, o.y - 8f), Size(tailSize.width + 20f, tailSize.height + 16f), CornerRadius(14f))
+            }
+        }
+        drawRoundRect(tailColor, tailL, tailSize, CornerRadius(8f))
+        drawRoundRect(tailColor, tailR, tailSize, CornerRadius(8f))
+        if (state.reverse == true) {
+            drawRoundRect(Color.White, Offset(tailL.x + tailSize.width * 0.55f, tailL.y), Size(tailSize.width * 0.45f, tailSize.height), CornerRadius(8f))
+            drawRoundRect(Color.White, Offset(tailR.x, tailR.y), Size(tailSize.width * 0.45f, tailSize.height), CornerRadius(8f))
+        }
 
         // Portiere: linee di separazione; se aperta, portiere evidenziate e "spalancate"
         drawDoors(left, top, w, h, state.openDoors, state.doorOpen == true, closedColor = outline, openColor = Warn.copy(alpha = pulse))
