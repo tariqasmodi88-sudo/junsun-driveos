@@ -596,6 +596,17 @@ class MainActivity : ComponentActivity() {
             if (result is LaunchResult.Error) message(result.message)
         }
 
+        /** Tasto Radio della Home: apre la radio NATIVA Junsun (se non ne hai scelta un'altra); se non parte, la radio DriveOS. */
+        fun openRadio() {
+            val chosen = s.radioApp
+            if (chosen != null) { report(Launcher.launchApp(context, chosen)); return }
+            val ok = runCatching {
+                context.startActivity(Intent().setClassName("com.ts.MainUI", "com.ts.main.radio.RadioMainActivity")
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            }.isSuccess
+            if (!ok) screen = Screen.RADIO
+        }
+
         fun openOrPick(key: AppKey?, target: PickerTarget) {
             if (key == null) picker = target else report(Launcher.launchApp(context, key))
         }
@@ -968,7 +979,7 @@ class MainActivity : ComponentActivity() {
                         onHome = { screen = Screen.DASHBOARD },
                         onVehicle = { overviewAuto = false; screen = Screen.OVERVIEW },
                         onNav = { openOrPick(s.navApp, PickerTarget.NAV) },
-                        onRadio = { screen = Screen.RADIO },
+                        onRadio = { openRadio() },
                         onMusic = { openOrPick(s.musicApp, PickerTarget.MUSIC) },
                         onPhone = { openOrPick(s.phoneApp, PickerTarget.PHONE) },
                         onApps = { screen = Screen.APPS },
