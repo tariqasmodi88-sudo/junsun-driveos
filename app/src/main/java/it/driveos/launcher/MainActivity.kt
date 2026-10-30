@@ -919,6 +919,7 @@ class MainActivity : ComponentActivity() {
                                     openDoors = CanDecoder.openDoors(vehicleSignals),
                                     handbrake = vehicleSignals[CanDecoder.HANDBRAKE]?.let { it == "1" },
                                     batteryV = vehicleSignals[CanDecoder.BATTERY_V],
+                                    belt = vehicleSignals[CanDecoder.BELT]?.let { it == "1" },
                                     rearLevels = CanDecoder.sensorLevels(vehicleSignals, CanDecoder.REAR_SENSORS),
                                     frontLevels = CanDecoder.sensorLevels(vehicleSignals, CanDecoder.FRONT_SENSORS),
                                     parking = vehicleSignals[LogcatParser.PARKING]?.let { v -> v == "1" },

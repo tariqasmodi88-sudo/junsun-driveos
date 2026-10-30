@@ -25,6 +25,8 @@ object KnownVehicleSignals {
             if (v.equals(p.on, ignoreCase = true)) return true
             if (v.equals(p.off, ignoreCase = true)) return false
         }
+        // seconda fonte: seriale auto (bit luci), se la proprieta' di sistema non c'e'
+        signals["can:lights"]?.let { return it == "1" }
         return null
     }
 

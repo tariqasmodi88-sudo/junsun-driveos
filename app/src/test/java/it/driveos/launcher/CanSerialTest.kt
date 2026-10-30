@@ -56,6 +56,15 @@ class CanSerialTest {
         assertEquals(2, a.size + b.size)
     }
 
+    @Test fun lightsAndBelt() {
+        val m = decode("23 43 06 2e 7d 02 01 e0 00 00", "23 43 06 2e 7d 02 06 3d 00 00")
+        assertEquals("1", m[CanDecoder.LIGHTS]); assertEquals("1", m[CanDecoder.LOWBEAM])
+        assertEquals("1", m[CanDecoder.BELT])
+        val blink = decode("23 43 06 2e 7d 02 01 d0 00 00")
+        assertEquals("1", blink[CanDecoder.LIGHTS]); assertEquals(null, blink["can:C7d/01"])
+        assertEquals("0", decode("23 43 06 2e 7d 02 01 00 00 00")[CanDecoder.LIGHTS])
+    }
+
     @Test fun parkingSensors() {
         val m = decode("23 43 08 2e 22 04 03 01 01 01 aa 55", "23 43 08 2e 23 04 00 00 00 00 aa 55")
         assertEquals("3 1 1 1", m[CanDecoder.REAR_SENSORS])

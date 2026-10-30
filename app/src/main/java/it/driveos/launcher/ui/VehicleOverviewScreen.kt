@@ -57,6 +57,7 @@ data class VehicleOverviewState(
     val openDoors: List<String>? = null,
     val handbrake: Boolean? = null,
     val batteryV: String? = null,
+    val belt: Boolean? = null,
     val parking: Boolean?,
     val phone: Boolean?,
     val projection: Boolean,
@@ -103,6 +104,7 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onDebug: () -> Unit) {
                     StatusRow("Baule", if ("baule" in d) "aperto" else "chiuso", "baule" in d, Warn)
                 }
                 StatusRow("Freno a mano", state.handbrake?.let { if (it) "tirato" else "giù" }, state.handbrake == true, Amber)
+                state.belt?.let { StatusRow("Cintura guida", if (it) "allacciata" else "slacciata", false, Ok) }
                 StatusRow("Retromarcia", state.reverse?.let { if (it) "inserita" else "no" }, state.reverse == true, Color.White)
                 StatusRow("Sensori post.", if (rearSensors(state)) "attivi" else (state.parking?.let { "no" }),
                     rearSensors(state), Amber, missing = if (!state.logsGranted) "con retro" else null)

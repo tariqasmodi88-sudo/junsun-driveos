@@ -46,6 +46,9 @@ class CanStreamParser {
  *  - C 0x41 sotto-tipo 01: bit 0x20 a 0 = freno a mano tirato (verificato dall'utente);
  *  - C 0x22 / 0x23: 4 sensori di parcheggio posteriori / anteriori (1 = nessun ostacolo, sale avvicinandosi);
  *  - S 0x41: bit 0 del 2° byte = retromarcia;
+ *  - C 0x7d sotto-tipo 01 (luci, prova 30/10): bit 0x40 luci accese, 0x20 anabbaglianti, 0x04 retronebbia;
+ *    0x10/0x08 sono le frecce (lampeggiano: non vengono registrate);
+ *  - C 0x7d sotto-tipo 06: bit 0x20 = cintura guidatore allacciata (da verificare);
  *  - C 0x7d sotto-tipo 0b: tensione batteria in mV (little endian).
  * Tutto il resto viene registrato grezzo come `can:C<id>/<sotto>` o `can:S<tipo>` per scoprire
  * giri, carburante, cinture… (solo le variazioni, il filtro e' nel chiamante).
@@ -60,6 +63,10 @@ object CanDecoder {
     const val REVERSE = "can:reverse"
     const val BATTERY_V = "can:battery_v"
     const val DOORS_MASK = "can:doors"
+    const val LIGHTS = "can:lights"
+    const val LOWBEAM = "can:lowbeam"
+    const val FOG = "can:fog"
+    const val BELT = "can:belt"
     const val REAR_SENSORS = "can:rear"
     const val FRONT_SENSORS = "can:front"
 
@@ -89,6 +96,13 @@ object CanDecoder {
         when {
             id == 0x24 && sub == 0x04 && v >= 0 -> doors(v, out)
             id == 0x41 && sub == 0x01 && v >= 0 -> out[HANDBRAKE] = if ((v and 0x20) == 0) "1" else "0" // verificato in auto: bit a 0 = tirato
+            id == 0x7D && sub == 0x01 && v >= 0 -> {
+                out[LIGHTS] = if ((v and 0x40) != 0) "1" else "0"
+                out[LOWBEAM] = if ((v and 0x20) != 0) "1" else "0"
+                out[FOG] = if ((v and 0x04) != 0) "1" else "0"
+                return out // le frecce lampeggiano: niente riga grezza
+            }
+            id == 0x7D && sub == 0x06 && v >= 0 -> out[BELT] = if ((v and 0x20) != 0) "1" else "0"
             id == 0x7D && sub == 0x0B && len >= 3 -> {
                 val mv = (d[1].toInt() and 0xFF) or ((d[2].toInt() and 0xFF) shl 8)
                 out[BATTERY_V] = "%.1f".format(java.util.Locale.US, mv / 1000.0)
