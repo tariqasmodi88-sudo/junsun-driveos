@@ -40,7 +40,8 @@ class CanSerialTest {
 
     @Test fun handbrakeReverseBattery() {
         val m = decode(hbrake, rev, batt)
-        assertEquals("1", m[CanDecoder.HANDBRAKE])
+        assertEquals("0", m[CanDecoder.HANDBRAKE]) // bit 0x20 a 1 = freno giu'
+        assertEquals("1", decode("23 43 06 2e 41 02 01 80 3b 92")[CanDecoder.HANDBRAKE]) // bit a 0 = tirato
         assertEquals("1", m[CanDecoder.REVERSE])
         assertEquals("14.1", m[CanDecoder.BATTERY_V])
         assertEquals("0", decode(status)[CanDecoder.REVERSE])
@@ -53,6 +54,13 @@ class CanSerialTest {
         val a = p.feed(all.copyOfRange(0, half))
         val b = p.feed(all.copyOfRange(half, all.size))
         assertEquals(2, a.size + b.size)
+    }
+
+    @Test fun parkingSensors() {
+        val m = decode("23 43 08 2e 22 04 03 01 01 01 aa 55", "23 43 08 2e 23 04 00 00 00 00 aa 55")
+        assertEquals("3 1 1 1", m[CanDecoder.REAR_SENSORS])
+        assertEquals(listOf(2, 0, 0, 0), CanDecoder.sensorLevels(m, CanDecoder.REAR_SENSORS))
+        assertEquals(listOf(0, 0, 0, 0), CanDecoder.sensorLevels(m, CanDecoder.FRONT_SENSORS))
     }
 
     @Test fun unknownFramesAreLoggedRaw() {

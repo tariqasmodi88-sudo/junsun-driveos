@@ -90,7 +90,6 @@ class VehicleLogService : Service() {
     private fun startLogcat() {
         if (logcatJob?.isActive == true) return
         if (checkSelfPermission(android.Manifest.permission.READ_LOGS) != android.content.pm.PackageManager.PERMISSION_GRANTED) return
-        val capture = LogCapture()
         logcatJob = scope.launch(kotlinx.coroutines.Dispatchers.IO) {
             runCatching {
                 val p = ProcessBuilder("logcat", "-v", "brief", "*:V").redirectErrorStream(true).start()
@@ -100,7 +99,6 @@ class VehicleLogService : Service() {
                         val line = r.readLine() ?: break
                         val upd = LinkedHashMap<String, String>()
                         LogcatParser.parse(line)?.let { (id, v) -> upd[id] = v }
-                        capture.accept(line)?.let { e -> upd[e.id] = e.message }
                         if (upd.isNotEmpty()) record(upd)
                     }
                 }

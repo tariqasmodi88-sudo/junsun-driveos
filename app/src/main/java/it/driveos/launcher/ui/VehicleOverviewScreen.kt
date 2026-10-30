@@ -67,6 +67,7 @@ data class VehicleOverviewState(
     val gpsPermission: Boolean = true,
     /** Livello di vicinanza 0..3 dei 4 sensori posteriori (sinistra→destra); null = dato non disponibile. */
     val rearLevels: List<Int>? = null,
+    val frontLevels: List<Int>? = null,
 )
 
 private val Amber = Color(0xFFFFB020)
@@ -95,9 +96,12 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onDebug: () -> Unit) {
                     }
                 }
                 StatusRow("Fari", state.lightsOn?.let { if (it) "accesi" else "spenti" }, state.lightsOn == true, Amber)
-                StatusRow("Portiere", state.openDoors?.let { if (it.isEmpty()) "chiuse" else it.joinToString(", ") }
-                    ?: state.doorOpen?.let { if (it) "aperta" else "chiuse" }, state.doorOpen == true, Warn,
+                StatusRow("Portiere", state.openDoors?.filter { it != "baule" }?.let { if (it.isEmpty()) "chiuse" else it.joinToString(", ") }
+                    ?: state.doorOpen?.let { if (it) "aperta" else "chiuse" }, state.openDoors?.any { it != "baule" } ?: (state.doorOpen == true), Warn,
                     missing = if (!state.logsGranted) "permesso" else null)
+                state.openDoors?.let { d ->
+                    StatusRow("Baule", if ("baule" in d) "aperto" else "chiuso", "baule" in d, Warn)
+                }
                 StatusRow("Freno a mano", state.handbrake?.let { if (it) "tirato" else "giù" }, state.handbrake == true, Amber)
                 StatusRow("Retromarcia", state.reverse?.let { if (it) "inserita" else "no" }, state.reverse == true, Color.White)
                 StatusRow("Sensori post.", if (rearSensors(state)) "attivi" else (state.parking?.let { "no" }),
@@ -160,7 +164,8 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onDebug: () -> Unit) {
 }
 
 /** Sensori posteriori: dal log radar se disponibile, altrimenti attivi con la retromarcia inserita. */
-private fun rearSensors(s: VehicleOverviewState) = s.reverse == true
+private fun rearSensors(s: VehicleOverviewState) = s.reverse == true || (s.rearLevels?.any { it > 0 } == true)
+private fun frontSensors(s: VehicleOverviewState) = s.frontLevels?.any { it > 0 } == true
 
 @Composable
 private fun SectionTitle(text: String) {
@@ -206,7 +211,7 @@ private fun CarTopView(state: VehicleOverviewState, modifier: Modifier) {
     val glass = c.background.copy(alpha = 0.85f)
 
     Canvas(modifier.padding(top = 70.dp, bottom = 10.dp)) {
-        val h = size.height * 0.86f
+        val h = size.height * 0.76f
         val w = h * 0.44f
         val left = (size.width - w) / 2f
         val top = (size.height - h) / 2f + 10f
@@ -226,15 +231,14 @@ private fun CarTopView(state: VehicleOverviewState, modifier: Modifier) {
             }
         }
 
-        // Sensori di parcheggio posteriori: 4 settori ad anelli (come l'originale). Più l'ostacolo è
-        // vicino, più anelli si accendono e il colore passa da giallo a rosso. Senza dato di
-        // distanza i 4 settori "respirano" in giallo: sensori attivi.
-        if (rearSensors(state)) {
-            val levels = state.rearLevels
+        // Sensori di parcheggio: 4 settori ad anelli. Più l'ostacolo è vicino, più anelli si accendono e il
+        // colore passa da giallo a rosso. Senza dato di distanza (solo retromarcia) "respirano" in giallo.
+        fun sensorArcs(levels: List<Int>?, rear: Boolean) {
             val cx = left + w / 2
-            val cy = top + h - 6f
+            val cy = if (rear) top + h - 6f else top + 6f
             val span = 150f
             val seg = span / 4f
+            val start = if (rear) 15f else 195f
             for (i in 0 until 4) {
                 val level = levels?.getOrNull(i)?.coerceIn(0, 3)
                 for (ring in 1..3) {
@@ -247,12 +251,14 @@ private fun CarTopView(state: VehicleOverviewState, modifier: Modifier) {
                     }
                     val alpha = if (lit) (if (level == null) 0.35f + 0.4f * pulse else if (level >= 3) 0.6f + 0.4f * pulse else 0.95f) else 0.12f
                     val r = w * (0.32f + ring * 0.17f)
-                    drawArc(color.copy(alpha = alpha), 15f + seg * i + 2f, seg - 4f, false,
+                    drawArc(color.copy(alpha = alpha), start + seg * i + 2f, seg - 4f, false,
                         topLeft = Offset(cx - r, cy - r * 0.55f), size = Size(r * 2, r * 1.1f),
                         style = Stroke(width = 11f, cap = StrokeCap.Round))
                 }
             }
         }
+        if (rearSensors(state)) sensorArcs(state.rearLevels, rear = true)
+        if (frontSensors(state)) sensorArcs(state.frontLevels, rear = false)
 
         // Carrozzeria
         drawRoundRect(body, Offset(left, top), Size(w, h), CornerRadius(w * 0.32f))
@@ -294,10 +300,14 @@ private fun DrawScope.drawDoors(left: Float, top: Float, w: Float, h: Float, ope
     }
     side(frontY, true, "ant. sx"); side(frontY, false, "ant. dx")
     side(midY, true, "post. sx"); side(midY, false, "post. dx")
-    // taglio fisso dietro (hatch) e baule
+    // portellone: cerniera in alto, quando e' aperto il portellone e' disegnato pieno e sporge dietro l'auto
     drawLine(closedColor, Offset(left + w * 0.1f, rearY), Offset(left + w * 0.9f, rearY), strokeWidth = 3f)
     if (isOpen("baule")) {
-        drawLine(openColor, Offset(left + w * 0.2f, top + h), Offset(left + w * 0.2f, top + h + doorLen * 0.9f), strokeWidth = 9f, cap = StrokeCap.Round)
-        drawLine(openColor, Offset(left + w * 0.8f, top + h), Offset(left + w * 0.8f, top + h + doorLen * 0.9f), strokeWidth = 9f, cap = StrokeCap.Round)
+        val lidTop = top + h + 4f
+        val lidH = doorLen * 1.1f
+        drawRoundRect(openColor.copy(alpha = 0.35f), Offset(left + w * 0.12f, lidTop), Size(w * 0.76f, lidH), CornerRadius(14f))
+        drawRoundRect(openColor, Offset(left + w * 0.12f, lidTop), Size(w * 0.76f, lidH), CornerRadius(14f), style = Stroke(6f))
+        drawLine(openColor, Offset(left + w * 0.2f, top + h), Offset(left + w * 0.2f, lidTop), strokeWidth = 7f, cap = StrokeCap.Round)
+        drawLine(openColor, Offset(left + w * 0.8f, top + h), Offset(left + w * 0.8f, lidTop), strokeWidth = 7f, cap = StrokeCap.Round)
     }
 }

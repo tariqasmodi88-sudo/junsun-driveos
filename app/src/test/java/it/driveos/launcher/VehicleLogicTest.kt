@@ -5,14 +5,12 @@ import it.driveos.launcher.ui.theme.AutoThemeResolver
 import it.driveos.launcher.ui.theme.SunTimes
 import it.driveos.launcher.vehicle.ActionFilter
 import it.driveos.launcher.vehicle.BindingCodec
-import it.driveos.launcher.vehicle.CandidateFinder
 import it.driveos.launcher.vehicle.GetpropParser
 import it.driveos.launcher.vehicle.LightsResolver
 import it.driveos.launcher.vehicle.SignalBinding
 import it.driveos.launcher.vehicle.SignalIds
 import it.driveos.launcher.vehicle.SignalRole
 import it.driveos.launcher.vehicle.SnapshotDiff
-import it.driveos.launcher.vehicle.StringScanner
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -22,24 +20,6 @@ import java.time.LocalDate
 import kotlin.math.abs
 
 class VehicleLogicTest {
-
-    @Test
-    fun scannerFindsAsciiStringsInBinary() {
-        val bytes = byteArrayOf(0, 1, 2) + "(com.ts.can.ACTION_ILL".toByteArray() + byteArrayOf(0, 5) + "xy".toByteArray()
-        val found = StringScanner.scan(bytes)
-        assertTrue(found.contains("(com.ts.can.ACTION_ILL"))
-        assertFalse(found.any { it == "xy" })
-    }
-
-    @Test
-    fun scannerFindsUtf16StringsAndWorksInChunks() {
-        val utf16 = "com.junsun.radio.FREQ_CHANGED".toByteArray(Charsets.UTF_16LE)
-        val data = byteArrayOf(0x1D, 0x00) + utf16 + byteArrayOf(0, 0, 7)
-        val scanner = StringScanner()
-        // a pezzi di 5 byte: le stringhe non devono spezzarsi tra un blocco e l'altro
-        data.toList().chunked(5).forEach { scanner.feed(it.toByteArray()) }
-        assertTrue(scanner.finish().contains("com.junsun.radio.FREQ_CHANGED"))
-    }
 
     @Test
     fun actionFilterKeepsActionsAndDropsClasses() {
@@ -68,28 +48,6 @@ class VehicleLogicTest {
         assertEquals(listOf("b", "c"), d.map { it.id })
         val r = SnapshotDiff.diff(mapOf("a" to "1"), emptyMap())
         assertNull(r.single().after)
-    }
-
-    @Test
-    fun candidateFinderRanksConsistentSignals() {
-        val on1 = mapOf("prop:sys.ill" to "1", "set:system/screen_brightness" to "60", "prop:x.counter" to "5", "bc:a|#" to "3")
-        val off1 = mapOf("prop:sys.ill" to "0", "set:system/screen_brightness" to "200", "prop:x.counter" to "9", "bc:a|#" to "4")
-        val on2 = mapOf("prop:sys.ill" to "1", "set:system/screen_brightness" to "70")
-        val off2 = mapOf("prop:sys.ill" to "0", "set:system/screen_brightness" to "200")
-        val c = CandidateFinder.find(listOf(on1, on2), listOf(off1, off2))
-        // la luminosita' non e' coerente tra i due "accesi" (60 vs 70): scartata
-        assertEquals(listOf("prop:sys.ill"), c.map { it.id })
-        assertEquals("1", c[0].onValue)
-        assertEquals("0", c[0].offValue)
-        assertTrue(CandidateFinder.find(listOf(on1), emptyList()).isEmpty())
-    }
-
-    @Test
-    fun noisySignalsRankLower() {
-        val on = listOf(mapOf("prop:a" to "1", "prop:b" to "1"))
-        val off = listOf(mapOf("prop:a" to "0", "prop:b" to "0"))
-        val c = CandidateFinder.find(on, off, mapOf("prop:a" to 2, "prop:b" to 40))
-        assertEquals("prop:a", c.first().id)
     }
 
     @Test

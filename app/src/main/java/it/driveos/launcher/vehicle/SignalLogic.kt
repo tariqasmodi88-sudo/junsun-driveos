@@ -64,56 +64,6 @@ object SnapshotDiff {
     }
 }
 
-/**
- * Candidato per un evento (es. fari): segnale con un valore quando l'evento e' "acceso"
- * e un valore diverso quando e' "spento".
- */
-data class Candidate(val id: String, val onValue: String?, val offValue: String?, val changeCount: Int, val score: Double)
-
-object CandidateFinder {
-    /** Segnali che vengono ignorati perche' cambiano sempre (orologi, contatori di sistema). */
-    private val noisy = listOf(
-        "time", "uptime", "boottime", "_ms", "timestamp", "counter", "battery", "temp", "random",
-        "dalvik.vm", "sys.sysctl", "init.svc_debug", "ro.boottime", "persist.sys.timezone", "next_alarm",
-        "screen_off_timeout", "debug.", "logd", "heartbeat",
-    )
-
-    /**
-     * @param on istantanee prese quando l'evento e' attivo (es. fari accesi), una o piu'
-     * @param off istantanee prese quando l'evento non e' attivo
-     * @param changeCounts quante volte ogni segnale e' cambiato durante la registrazione
-     *        (un segnale che cambia di continuo e' poco affidabile)
-     */
-    fun find(
-        on: List<Map<String, String>>,
-        off: List<Map<String, String>>,
-        changeCounts: Map<String, Int> = emptyMap(),
-    ): List<Candidate> {
-        if (on.isEmpty() || off.isEmpty()) return emptyList()
-        val ids = (on.flatMap { it.keys } + off.flatMap { it.keys }).toSet()
-        val out = ArrayList<Candidate>()
-        for (id in ids) {
-            if (id.endsWith("|#")) continue // i conteggi crescono sempre: non distinguono acceso/spento
-            if (noisy.any { id.lowercase().contains(it) }) continue
-            val onValues = on.map { it[id] }.toSet()
-            val offValues = off.map { it[id] }.toSet()
-            // coerente: stesso valore in tutte le istantanee "on", stesso in tutte le "off", e diversi
-            if (onValues.size != 1 || offValues.size != 1) continue
-            val onV = onValues.first()
-            val offV = offValues.first()
-            if (onV == offV) continue
-            val changes = changeCounts[id] ?: 0
-            val cycles = minOf(on.size, off.size)
-            // piu' cicli confermati = piu' affidabile; troppi cambi extra = rumore
-            val expected = (on.size + off.size).toDouble()
-            val noise = if (changes > expected * 2) (changes / expected) else 1.0
-            val sourceBonus = when (SignalIds.source(id)) { "bc" -> 1.3; "prop" -> 1.2; "file" -> 1.1; else -> 1.0 }
-            out.add(Candidate(id, onV, offV, changes, cycles * sourceBonus / noise))
-        }
-        return out.sortedWith(compareByDescending<Candidate> { it.score }.thenBy { it.id })
-    }
-}
-
 /** Ruolo di un segnale collegato dall'utente. */
 enum class SignalRole { LIGHTS, GAUGE, ALERT }
 

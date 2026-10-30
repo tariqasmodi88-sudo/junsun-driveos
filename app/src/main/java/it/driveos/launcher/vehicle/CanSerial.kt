@@ -43,7 +43,8 @@ class CanStreamParser {
 /**
  * Traduce i messaggi in segnali (id → valore). Decodifica verificata sul giro del 30/10 (Tiguan 2016):
  *  - C 0x24 sotto-tipo 04: maschera porte (1 ant.sx, 2 ant.dx, 4 post.sx, 8 post.dx, 0x10 baule);
- *  - C 0x41 sotto-tipo 01: bit 0x20 = freno a mano tirato;
+ *  - C 0x41 sotto-tipo 01: bit 0x20 a 0 = freno a mano tirato (verificato dall'utente);
+ *  - C 0x22 / 0x23: 4 sensori di parcheggio posteriori / anteriori (1 = nessun ostacolo, sale avvicinandosi);
  *  - S 0x41: bit 0 del 2° byte = retromarcia;
  *  - C 0x7d sotto-tipo 0b: tensione batteria in mV (little endian).
  * Tutto il resto viene registrato grezzo come `can:C<id>/<sotto>` o `can:S<tipo>` per scoprire
@@ -59,6 +60,8 @@ object CanDecoder {
     const val REVERSE = "can:reverse"
     const val BATTERY_V = "can:battery_v"
     const val DOORS_MASK = "can:doors"
+    const val REAR_SENSORS = "can:rear"
+    const val FRONT_SENSORS = "can:front"
 
     fun decode(f: CanFrame): Map<String, String> {
         val p = f.payload
@@ -85,12 +88,16 @@ object CanDecoder {
         val v = if (len >= 2) d[1].toInt() and 0xFF else -1
         when {
             id == 0x24 && sub == 0x04 && v >= 0 -> doors(v, out)
-            id == 0x41 && sub == 0x01 && v >= 0 -> out[HANDBRAKE] = if ((v and 0x20) != 0) "1" else "0"
+            id == 0x41 && sub == 0x01 && v >= 0 -> out[HANDBRAKE] = if ((v and 0x20) == 0) "1" else "0" // verificato in auto: bit a 0 = tirato
             id == 0x7D && sub == 0x0B && len >= 3 -> {
                 val mv = (d[1].toInt() and 0xFF) or ((d[2].toInt() and 0xFF) shl 8)
                 out[BATTERY_V] = "%.1f".format(java.util.Locale.US, mv / 1000.0)
                 return out // cambia di continuo: niente riga grezza
             }
+        }
+        if ((id == 0x22 || id == 0x23) && len == 4) {
+            // 4 valori, uno per sensore (sinistra → destra)
+            out[if (id == 0x22) REAR_SENSORS else FRONT_SENSORS] = d.joinToString(" ") { (it.toInt() and 0xFF).toString() }
         }
         out["can:C%02x/%02x".format(id, sub)] = hex(d, 1)
         return out
@@ -107,6 +114,13 @@ object CanDecoder {
 
     private fun bit(mask: Int, b: Int) = if ((mask and b) != 0) "1" else "0"
     private fun hex(b: ByteArray, from: Int) = (from until b.size).joinToString(" ") { "%02x".format(b[it]) }
+
+    /** Livelli 0..3 dei 4 sensori (0 = libero). La scala grezza non e' ancora nota: 1 = libero, poi sale. */
+    fun sensorLevels(signals: Map<String, String>, key: String): List<Int>? {
+        val raw = signals[key]?.split(" ")?.mapNotNull { it.toIntOrNull() } ?: return null
+        if (raw.size != 4) return null
+        return raw.map { (it - 1).coerceIn(0, 3) }
+    }
 
     /** Etichette leggibili delle porte aperte, es. ["anteriore sinistra", "baule"]. */
     fun openDoors(signals: Map<String, String>): List<String>? {

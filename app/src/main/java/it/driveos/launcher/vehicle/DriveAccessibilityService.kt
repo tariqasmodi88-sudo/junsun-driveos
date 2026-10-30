@@ -12,7 +12,6 @@ import it.driveos.launcher.DriveOSApp
 class DriveAccessibilityService : AccessibilityService() {
 
     private var lastKey = ""
-    private var lastTree = ""
     private val handler = android.os.Handler(android.os.Looper.getMainLooper())
     private val clearDoor = Runnable { (application as? DriveOSApp)?.vehicleRepository?.ingest(mapOf(LogcatParser.DOOR to "chiuse")) }
     private val clearRadar = Runnable { (application as? DriveOSApp)?.vehicleRepository?.ingest(mapOf(LogcatParser.PARKING to "0")) }
@@ -32,47 +31,15 @@ class DriveAccessibilityService : AccessibilityService() {
         handler.postDelayed({ if (lastKey == key) lastKey = "" }, 3000)
         val kind = WindowRules.classify(pkg, cls)
         val repo = (application as? DriveOSApp)?.vehicleRepository
-        // Il nome dell'ultima finestra finisce nel registro/export (utile a capire il firmware).
+        // Il nome dell'ultima finestra serve a riportare DriveOS davanti dopo popup/radar/retro Junsun.
         repo?.ingest(mapOf("win:last" to key))
-        runCatching { VehicleLog.append(this, listOf(LogFormat.line(System.currentTimeMillis(), VehicleLog.nowIso(), "win:last", null, key))) }
         when (kind) {
             // La finestra non dice quando si chiude: la portiera resta "aperta" 15 s dall'ultimo avviso.
             WindowKind.DOOR -> { repo?.ingest(mapOf(LogcatParser.DOOR to "aperta")); handler.removeCallbacks(clearDoor); handler.postDelayed(clearDoor, 15_000) }
             WindowKind.RADAR -> { repo?.ingest(mapOf(LogcatParser.PARKING to "1")); handler.removeCallbacks(clearRadar); handler.postDelayed(clearRadar, 15_000) }
             else -> {}
         }
-        if (kind == WindowKind.DOOR || kind == WindowKind.RADAR || pkg == "com.ts.MainUI") {
-            // Cosa c'e' dentro la finestra (nomi dei pezzi): serve a capire QUALE porta/sensore.
-            handler.postDelayed({ dumpTree(key) }, 400)
-        }
         WindowWatcher.emit(WindowEvent(pkg, cls, kind))
-    }
-
-    private fun dumpTree(key: String) {
-        val root = runCatching { rootInActiveWindow }.getOrNull() ?: return
-        val parts = ArrayList<String>()
-        fun walk(n: android.view.accessibility.AccessibilityNodeInfo?, depth: Int) {
-            if (n == null || parts.size >= 40 || depth > 12) return
-            val id = n.viewIdResourceName?.substringAfter(":id/")
-            val d = n.contentDescription?.toString()
-            val t = n.text?.toString()
-            if (id != null || d != null || t != null) {
-                parts.add(listOfNotNull(id, d?.let { "d=$it" }, t?.let { "t=$it" }, if (n.isSelected) "sel" else null,
-                    if (n.isChecked) "chk" else null).joinToString(":"))
-            }
-            for (i in 0 until n.childCount) walk(n.getChild(i), depth + 1)
-        }
-        walk(root, 0)
-        if (parts.isNotEmpty()) {
-            val text = (key + " | " + parts.joinToString(" ; ")).take(900)
-            (application as? DriveOSApp)?.vehicleRepository?.ingest(mapOf("win:tree" to text))
-            // finisce anche nel registro CSV (il servizio di registrazione non vede i segnali di questa app)
-            if (text != lastTree) {
-                lastTree = text
-                val now = System.currentTimeMillis()
-                runCatching { VehicleLog.append(this, listOf(LogFormat.line(now, VehicleLog.nowIso(), "win:tree", null, text))) }
-            }
-        }
     }
 
     override fun onInterrupt() {}

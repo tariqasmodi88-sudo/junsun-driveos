@@ -70,8 +70,6 @@ import it.driveos.launcher.radio.RadioBand
 import it.driveos.launcher.radio.RadioPreset
 import it.driveos.launcher.radio.RadioPresetLogic
 import it.driveos.launcher.settings.ThemeMode
-import it.driveos.launcher.vehicle.ActionDiscovery
-import it.driveos.launcher.vehicle.CandidateFinder
 import it.driveos.launcher.vehicle.KnownVehicleSignals
 import it.driveos.launcher.vehicle.LogcatParser
 import it.driveos.launcher.vehicle.SignalBinding
@@ -288,7 +286,6 @@ class MainActivity : ComponentActivity() {
         val calendar by driveApp.calendarRepository.state.collectAsStateWithLifecycle()
         val guidanceMap by NavGuidanceStore.guidance.collectAsStateWithLifecycle()
         val vehicleSignals by driveApp.vehicleRepository.signals.collectAsStateWithLifecycle()
-        val vehicleChanges by driveApp.vehicleRepository.changeCounts.collectAsStateWithLifecycle()
         val volumeState by driveApp.systemControls.volume.collectAsStateWithLifecycle()
         val windowBrightness by driveApp.systemControls.windowBrightness.collectAsStateWithLifecycle()
         val btConnected by driveApp.bluetoothWatcher.connected.collectAsStateWithLifecycle()
@@ -309,10 +306,6 @@ class MainActivity : ComponentActivity() {
         var controlsOpen by remember { mutableStateOf(false) }
         var radioDialog by remember { mutableStateOf(false) }
         // Calibrazione fari: istantanee prese con fari accesi / spenti.
-        var onSnaps by remember { mutableStateOf<List<Map<String, String>>>(emptyList()) }
-        var offSnaps by remember { mutableStateOf<List<Map<String, String>>>(emptyList()) }
-        var scanning by remember { mutableStateOf(false) }
-        var scanResult by remember { mutableStateOf<String?>(null) }
         var vehicleExportStatus by remember { mutableStateOf<String?>(null) }
         val smartTrigger = remember { ConnectionTrigger() }
         val context: Context = this
@@ -584,30 +577,6 @@ class MainActivity : ComponentActivity() {
             window.attributes = window.attributes.apply {
                 screenBrightness = if (windowBrightness < 0f)
                     android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE else windowBrightness
-            }
-        }
-
-        fun recordSnapshot(on: Boolean) {
-            val snap = driveApp.vehicleRepository.snapshot()
-            if (on) onSnaps = onSnaps + snap else offSnaps = offSnaps + snap
-        }
-        val candidates = remember(onSnaps, offSnaps, vehicleChanges) {
-            CandidateFinder.find(onSnaps, offSnaps, vehicleChanges)
-        }
-
-        fun scanVehicleApps() {
-            scanning = true
-            scanResult = null
-            scope.launch {
-                val result = withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    runCatching { ActionDiscovery.discover(context) }.getOrNull()
-                }
-                scanning = false
-                if (result == null) { scanResult = "Scansione non riuscita."; return@launch }
-                driveApp.settingsRepository.setDiscoveredActions(result.actions)
-                val veh = result.vehicleApps.joinToString(", ").ifBlank { "nessuna app veicolo riconosciuta" }
-                scanResult = "Trovate ${result.actions.size} azioni in ${result.scannedApps.size} app " +
-                    "(approfondite: $veh). Attiva la registrazione continua e muovi il veicolo."
             }
         }
 
@@ -886,42 +855,7 @@ class MainActivity : ComponentActivity() {
                             )
 
                             Screen.VEHICLE -> VehicleScreen(
-                                settings = s,
                                 signals = vehicleSignals,
-                                scanning = scanning,
-                                scanResult = scanResult,
-                                lightsResolved = lightsResolved,
-                                candidates = candidates,
-                                recordedOn = onSnaps.size,
-                                recordedOff = offSnaps.size,
-                                onScanApps = { scanVehicleApps() },
-                                onRecordOn = { recordSnapshot(true) },
-                                onRecordOff = { recordSnapshot(false) },
-                                onAssignLights = { c ->
-                                    scope.launch {
-                                        driveApp.settingsRepository.upsertBinding(
-                                            SignalBinding(c.id, SignalRole.LIGHTS, "Fari", c.onValue, c.offValue)
-                                        )
-                                        if (s.themeMode != ThemeMode.AUTO) driveApp.settingsRepository.setThemeMode(ThemeMode.AUTO)
-                                    }
-                                    message("Fari collegati. Tema automatico attivo.")
-                                },
-                                onAddGauge = { id ->
-                                    scope.launch {
-                                        driveApp.settingsRepository.upsertBinding(
-                                            SignalBinding(id, SignalRole.GAUGE, SignalIds.describe(id).take(28))
-                                        )
-                                    }
-                                },
-                                onAddAlert = { id, activeValue ->
-                                    scope.launch {
-                                        driveApp.settingsRepository.upsertBinding(
-                                            SignalBinding(id, SignalRole.ALERT, SignalIds.describe(id).take(28), onValue = activeValue, offValue = null)
-                                        )
-                                    }
-                                    message("Spia creata: attiva quando il valore è «$activeValue».")
-                                },
-                                onRemoveBinding = { b -> scope.launch { driveApp.settingsRepository.removeBinding(b.id, b.role) } },
                                 logsGranted = driveApp.logcatReader.available(),
                                 loggingOn = loggingOn,
                                 loggedChanges = loggedChanges,
@@ -943,36 +877,7 @@ class MainActivity : ComponentActivity() {
                                     scope.launch { withContext(kotlinx.coroutines.Dispatchers.IO) { VehicleLog.clear(context) } }
                                     vehicleExportStatus = "Registro azzerato."
                                 },
-                                onClearFlags = {
-                                    scope.launch { driveApp.settingsRepository.clearAllBindings() }
-                                    message("Flag azzerati.")
-                                },
                                 exportStatus = vehicleExportStatus,
-                                onExport = {
-                                    scope.launch {
-                                        val components = withContext(kotlinx.coroutines.Dispatchers.IO) {
-                                            runCatching { ActionDiscovery.vendorComponents(context) }.getOrDefault(emptyList())
-                                        }
-                                        val json = org.json.JSONObject().apply {
-                                            put("generato", java.time.ZonedDateTime.now().toString())
-                                            put("segnali", org.json.JSONObject().also { o -> vehicleSignals.forEach { (k, v) -> o.put(k, v) } })
-                                            put("azioniScoperte", org.json.JSONArray(s.discoveredActions))
-                                            put("collegamenti", org.json.JSONArray(s.signalBindings.map { "${it.role}:${it.id}=${it.onValue}/${it.offValue}" }))
-                                            // segnali identificati su questa radio, con valore attuale (etichetta leggibile)
-                                            put("identificati", org.json.JSONObject().also { o ->
-                                                it.driveos.launcher.vehicle.KnownCatalog.identified(vehicleSignals).forEach { (label, value) -> o.put(label, value) }
-                                            })
-                                            // servizi/provider delle app TS-ForFan-TXZ: da dove l'interfaccia Junsun legge portiere e radio
-                                            put("componentiFirmware", org.json.JSONArray(components))
-                                        }
-                                        val stamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmm"))
-                                        val r = withContext(kotlinx.coroutines.Dispatchers.IO) {
-                                            it.driveos.launcher.system.Exporter.save(context, "driveos_veicolo_$stamp.json", "application/json", json.toString(2).toByteArray())
-                                        }
-                                        vehicleExportStatus = if (r.ok) "Scansione salvata in: " + r.saved.joinToString(" · ")
-                                        else "Export non riuscito. " + r.errors.firstOrNull().orEmpty()
-                                    }
-                                },
                                 onBack = { if (debugFromOverview) { debugFromOverview = false; screen = Screen.OVERVIEW } else screen = Screen.SETTINGS },
                             )
 
@@ -1014,6 +919,8 @@ class MainActivity : ComponentActivity() {
                                     openDoors = CanDecoder.openDoors(vehicleSignals),
                                     handbrake = vehicleSignals[CanDecoder.HANDBRAKE]?.let { it == "1" },
                                     batteryV = vehicleSignals[CanDecoder.BATTERY_V],
+                                    rearLevels = CanDecoder.sensorLevels(vehicleSignals, CanDecoder.REAR_SENSORS),
+                                    frontLevels = CanDecoder.sensorLevels(vehicleSignals, CanDecoder.FRONT_SENSORS),
                                     parking = vehicleSignals[LogcatParser.PARKING]?.let { v -> v == "1" },
                                     phone = KnownVehicleSignals.phoneConnected(vehicleSignals),
                                     projection = KnownVehicleSignals.projectionActive(vehicleSignals),
