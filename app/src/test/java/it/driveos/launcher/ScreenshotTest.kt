@@ -68,7 +68,7 @@ class ScreenshotTest {
         assumeTrue(System.getenv("DRIVEOS_SHOTS") == "1")
         shot("1_veicolo_notte_retro", ThemeMode.DARK) {
             VehicleOverviewScreen(base.copy(lightsOn = true, reverse = true, handbrake = true, belt = true,
-                rearLevels = listOf(0, 0, 2, 3), speedKmh = 0.0), onDebug = {})
+                rearLevels = listOf(0, 0, 2, 3), frontLevels = listOf(1, 2, 0, 0), speedKmh = 0.0), onDebug = {})
         }
     }
 
@@ -76,7 +76,7 @@ class ScreenshotTest {
         assumeTrue(System.getenv("DRIVEOS_SHOTS") == "1")
         shot("2_veicolo_giorno_porte", ThemeMode.LIGHT) {
             VehicleOverviewScreen(base.copy(doorOpen = true, openDoors = listOf("ant. dx", "post. sx", "baule"),
-                alerts = listOf(ActiveAlert("Sensori parcheggio"))), onDebug = {})
+                alerts = listOf(ActiveAlert("Sensori parcheggio"), ActiveAlert("Pressione pneumatici"))), onDebug = {})
         }
     }
 

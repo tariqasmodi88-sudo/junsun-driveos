@@ -71,6 +71,7 @@ data class VehicleOverviewState(
     val frontLevels: List<Int>? = null,
 )
 
+private val DRAWN_ALERTS = setOf("Retromarcia", "Portiera", "Sensori parcheggio")
 private val Amber = Color(0xFFFFB020)
 private val Warn = Color(0xFFFF5A4E)
 private val Ok = Color(0xFF3DDC97)
@@ -96,18 +97,9 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onDebug: () -> Unit) {
                             modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
                     }
                 }
-                StatusRow("Fari", state.lightsOn?.let { if (it) "accesi" else "spenti" }, state.lightsOn == true, Amber)
-                StatusRow("Portiere", state.openDoors?.filter { it != "baule" }?.let { if (it.isEmpty()) "chiuse" else it.joinToString(", ") }
-                    ?: state.doorOpen?.let { if (it) "aperta" else "chiuse" }, state.openDoors?.any { it != "baule" } ?: (state.doorOpen == true), Warn,
-                    missing = if (!state.logsGranted) "permesso" else null)
-                state.openDoors?.let { d ->
-                    StatusRow("Baule", if ("baule" in d) "aperto" else "chiuso", "baule" in d, Warn)
-                }
+                // Fari, portiere, baule, retromarcia e sensori sono già disegnati sull'auto: qui solo il resto.
                 StatusRow("Freno a mano", state.handbrake?.let { if (it) "tirato" else "giù" }, state.handbrake == true, Amber)
                 state.belt?.let { StatusRow("Cintura guida", if (it) "allacciata" else "slacciata", false, Ok) }
-                StatusRow("Retromarcia", state.reverse?.let { if (it) "inserita" else "no" }, state.reverse == true, Color.White)
-                StatusRow("Sensori post.", if (rearSensors(state)) "attivi" else (state.parking?.let { "no" }),
-                    rearSensors(state), Amber, missing = if (!state.logsGranted) "con retro" else null)
                 StatusRow("Telefono", state.phone?.let { if (it) "collegato" else "scollegato" }, state.phone == true, Ok)
                 StatusRow("CarPlay/AA", if (state.projection) "attivo" else "no", state.projection, Ok)
                 StatusRow("Radio", state.radioKhz?.let { "%.1f MHz".format(it / 1000.0) }, false, c.primary)
@@ -128,7 +120,9 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onDebug: () -> Unit) {
             Column(Modifier.weight(0.34f).fillMaxHeight().verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 SectionTitle("Spie")
-                if (state.alerts.isEmpty()) {
+                // Portiere, retromarcia e sensori sono già disegnati sull'auto: qui solo le vere spie (pneumatici, luci guaste…).
+                val spie = state.alerts.filter { it.label !in DRAWN_ALERTS }
+                if (spie.isEmpty()) {
                     Surface(shape = RoundedCornerShape(16.dp), color = Ok.copy(alpha = 0.14f), modifier = Modifier.fillMaxWidth()) {
                         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                             Box(Modifier.size(12.dp).background(Ok, CircleShape))
@@ -137,7 +131,7 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onDebug: () -> Unit) {
                         }
                     }
                 } else {
-                    state.alerts.forEach { a ->
+                    spie.forEach { a ->
                         Surface(shape = RoundedCornerShape(16.dp), color = Warn.copy(alpha = 0.18f), modifier = Modifier.fillMaxWidth()) {
                             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("⚠", fontSize = 20.sp, color = Warn)
@@ -260,7 +254,8 @@ private fun CarTopView(state: VehicleOverviewState, modifier: Modifier) {
             }
         }
         if (rearSensors(state)) sensorArcs(state.rearLevels, rear = true)
-        if (frontSensors(state)) sensorArcs(state.frontLevels, rear = false)
+        // Davanti solo a bassa velocità (manovra): sotto i 10 km/h
+        if (frontSensors(state) && (state.speedKmh ?: 0.0) < 10.0) sensorArcs(state.frontLevels, rear = false)
 
         // Carrozzeria
         drawRoundRect(body, Offset(left, top), Size(w, h), CornerRadius(w * 0.32f))
@@ -321,11 +316,10 @@ private fun DrawScope.drawDoors(left: Float, top: Float, w: Float, h: Float, ope
     // portellone: cerniera in alto, quando e' aperto il portellone e' disegnato pieno e sporge dietro l'auto
     drawLine(closedColor, Offset(left + w * 0.1f, rearY), Offset(left + w * 0.9f, rearY), strokeWidth = 3f)
     if (isOpen("baule")) {
-        val lidTop = top + h + 4f
-        val lidH = doorLen * 1.1f
-        drawRoundRect(openColor.copy(alpha = 0.35f), Offset(left + w * 0.12f, lidTop), Size(w * 0.76f, lidH), CornerRadius(14f))
-        drawRoundRect(openColor, Offset(left + w * 0.12f, lidTop), Size(w * 0.76f, lidH), CornerRadius(14f), style = Stroke(6f))
-        drawLine(openColor, Offset(left + w * 0.2f, top + h), Offset(left + w * 0.2f, lidTop), strokeWidth = 7f, cap = StrokeCap.Round)
-        drawLine(openColor, Offset(left + w * 0.8f, top + h), Offset(left + w * 0.8f, lidTop), strokeWidth = 7f, cap = StrokeCap.Round)
+        // Baule aperto: solo il profilo del portellone sollevato (barra + due montanti), come le portiere
+        val lidTop = top + h + doorLen * 0.55f
+        drawLine(openColor, Offset(left + w * 0.14f, lidTop), Offset(left + w * 0.86f, lidTop), strokeWidth = 9f, cap = StrokeCap.Round)
+        drawLine(openColor, Offset(left + w * 0.14f, top + h), Offset(left + w * 0.14f, lidTop), strokeWidth = 5f, cap = StrokeCap.Round)
+        drawLine(openColor, Offset(left + w * 0.86f, top + h), Offset(left + w * 0.86f, lidTop), strokeWidth = 5f, cap = StrokeCap.Round)
     }
 }
