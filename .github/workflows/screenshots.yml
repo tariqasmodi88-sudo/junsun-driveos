@@ -3,6 +3,9 @@ name: Anteprime schermate
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   shots:
     runs-on: ubuntu-latest
@@ -25,3 +28,14 @@ jobs:
           path: |
             app/build/screenshots/*.png
             app/build/reports/tests/testDebugUnitTest/**
+      - name: Salva le immagini nel branch anteprime
+        if: always()
+        run: |
+          mkdir -p /tmp/out && cp app/build/screenshots/*.png /tmp/out/ || true
+          git config user.name "anteprime"; git config user.email "anteprime@users.noreply.github.com"
+          git checkout --orphan anteprime
+          git rm -rf . -q
+          cp /tmp/out/*.png . || true
+          git add *.png
+          git commit -m "anteprime" -q
+          git push -f origin anteprime
