@@ -6,10 +6,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onRoot
+import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import android.graphics.Canvas
 import it.driveos.launcher.settings.ThemeMode
 import it.driveos.launcher.ui.KeysScreen
 import it.driveos.launcher.ui.VehicleOverviewScreen
@@ -36,7 +35,7 @@ import java.io.File
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [34], qualifiers = "w853dp-h480dp-land-hdpi")
 class ScreenshotTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
 
     private fun shot(name: String, mode: ThemeMode, content: @Composable () -> Unit) {
         rule.mainClock.autoAdvance = false
@@ -46,7 +45,15 @@ class ScreenshotTest {
             }
         }
         rule.mainClock.advanceTimeBy(600)
-        val bmp = rule.onRoot().captureToImage().asAndroidBitmap()
+        // Si disegna la vista radice a mano: captureToImage attenderebbe l'animazione infinita
+        val view = rule.activity.window.decorView
+        view.measure(
+            android.view.View.MeasureSpec.makeMeasureSpec(1280, android.view.View.MeasureSpec.EXACTLY),
+            android.view.View.MeasureSpec.makeMeasureSpec(720, android.view.View.MeasureSpec.EXACTLY),
+        )
+        view.layout(0, 0, 1280, 720)
+        val bmp = Bitmap.createBitmap(1280, 720, Bitmap.Config.ARGB_8888)
+        view.draw(Canvas(bmp))
         val dir = File("build/screenshots").also { it.mkdirs() }
         File(dir, "$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
