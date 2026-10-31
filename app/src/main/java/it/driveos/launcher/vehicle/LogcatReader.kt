@@ -38,6 +38,7 @@ class LogcatReader(context: Context, private val repo: VehicleRepository) {
     fun start() {
         if (!available() || job?.isActive == true) return
         job = scope.launch { readLoop() }
+        if (ticker?.isActive != true) ticker = scope.launch { while (isActive) { tick(); delay(300) } }
     }
 
     fun stop() {
@@ -52,12 +53,24 @@ class LogcatReader(context: Context, private val repo: VehicleRepository) {
     val names: StateFlow<Map<Int, String>> = _names
     /** true durante "Leggi nomi": i nomi letti sostituiscono quelli gia' salvati. */
     @Volatile var readingNames = false
-    private var tunedKhz: Int? = null
-    private var tunedHasName = false
+    /** Stato RDS della frequenza sintonizzata (SEARCHING / OK / NO_RDS). */
+    val tracker = RdsTracker()
+    private val _rds = MutableStateFlow(tracker.state)
+    val rds: StateFlow<RdsTracker.State> = _rds
+    private var ticker: Job? = null
     private val setFreq = Regex("setfreq=(\\d{4,5})")
     /** Si aspetta il nome della stazione gia' sintonizzata (radio nativa appena portata davanti). */
-    fun expectName(khz: Int) { tunedKhz = khz; tunedHasName = false }
-    fun clearNames() { _names.value = emptyMap(); tunedKhz = null }
+    fun expectName(khz: Int) { tracker.onTune(khz, force = true); _rds.value = tracker.state }
+    /** Frequenza letta dalla radio (binder): reset immediato dello stato RDS se e' cambiata. */
+    fun onTuned(khz: Int) { if (tracker.onTune(khz)) _rds.value = tracker.state }
+    fun clearNames() { _names.value = emptyMap() }
+    private fun tick() {
+        tracker.tick()?.let { (k, n) ->
+            // PS che scorre: se per questa frequenza c'e' gia' un nome, si tiene quello
+            if (!(tracker.isDynamic && _names.value.containsKey(k))) _names.value = _names.value + (k to n)
+        }
+        _rds.value = tracker.state
+    }
     private var parkingClear: Job? = null
 
     /** Il log dice solo "sensori attivi": se tace per [LogcatParser.PARKING_TIMEOUT_MS], li segna spenti. */
@@ -80,12 +93,9 @@ class LogcatReader(context: Context, private val repo: VehicleRepository) {
             BufferedReader(InputStreamReader(p.inputStream)).use { reader ->
                 while (scope.isActive) {
                     val line = reader.readLine() ?: break
-                    setFreq.find(line)?.let { m -> tunedKhz = m.groupValues[1].toInt() * 10; tunedHasName = false }
+                    setFreq.find(line)?.let { m -> onTuned(m.groupValues[1].toInt() * 10) }
                     LogcatParser.parse(line)?.let { (id, value) ->
-                        // il primo nome dopo una sintonia e' quello di quella stazione (poi lo scorrimento del testo lo spezzerebbe)
-                        if (id == LogcatParser.RADIO_NAME) tunedKhz?.let { k ->
-                            if (!tunedHasName) { tunedHasName = true; _names.value = _names.value + (k to value) }
-                        }
+                        if (id == LogcatParser.RADIO_NAME) { tracker.onPs(value); _rds.value = tracker.state }
                         if (id == LogcatParser.RADIO_NAME) repo.ingest(mapOf(id to value, LogcatParser.RADIO_NAME_SEQ to (++nameSeq).toString()))
                         else repo.ingest(mapOf(id to value))
                         if (id == LogcatParser.PARKING && value == "1") armParkingClear()

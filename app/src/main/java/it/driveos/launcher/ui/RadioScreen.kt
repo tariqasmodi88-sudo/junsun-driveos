@@ -79,6 +79,8 @@ fun RadioScreen(
     rdsOn: Boolean? = null,
     readingNames: Boolean = false,
     onReadOne: (() -> Unit)? = null,
+    /** SEARCHING / OK / NO_RDS per la frequenza attuale (null = sconosciuto). */
+    rdsStatus: String? = null,
 ) {
     val colors = MaterialTheme.colorScheme
     val khz = state?.khz ?: currentKhz
@@ -118,11 +120,14 @@ fun RadioScreen(
                                 Text("FM", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = colors.primary,
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
                             }
-                            if (rdsOn != null) {
+                            if (rdsStatus != null || rdsOn != null) {
+                                // RDS acceso solo con un nome valido; "RDS…" trasparente mentre lo cerca
+                                val lit = if (rdsStatus != null) rdsStatus == "OK" || name != null else rdsOn == true
+                                val searching = rdsStatus == "SEARCHING" && name == null
                                 Spacer(Modifier.width(8.dp))
-                                Surface(shape = RoundedCornerShape(10.dp), color = if (rdsOn) colors.primary.copy(alpha = 0.18f) else colors.surfaceVariant) {
-                                    Text("RDS", fontSize = 14.sp, fontWeight = FontWeight.Bold,
-                                        color = if (rdsOn) colors.primary else colors.onSurfaceVariant.copy(alpha = 0.5f),
+                                Surface(shape = RoundedCornerShape(10.dp), color = if (lit) colors.primary.copy(alpha = 0.18f) else colors.surfaceVariant.copy(alpha = 0.5f)) {
+                                    Text(if (searching) "RDS…" else "RDS", fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                                        color = when { lit -> colors.primary; searching -> colors.onSurfaceVariant.copy(alpha = 0.7f); else -> colors.onSurfaceVariant.copy(alpha = 0.35f) },
                                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
                                 }
                             }

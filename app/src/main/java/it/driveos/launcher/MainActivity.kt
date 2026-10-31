@@ -301,6 +301,7 @@ class MainActivity : ComponentActivity() {
         var bridgeRds by remember { mutableStateOf<Boolean?>(null) }
         // nomi RDS ricevuti, per frequenza: restano visibili anche se il log non li ripete
         val stationNames by driveApp.logcatReader.names.collectAsStateWithLifecycle()
+        val rdsState by driveApp.logcatReader.rds.collectAsStateWithLifecycle()
         val logName = vehicleSignals[LogcatParser.RADIO_NAME]
         val logKhz = vehicleSignals[LogcatParser.RADIO_FREQ]?.toIntOrNull()
         LaunchedEffect(screen) {
@@ -324,6 +325,7 @@ class MainActivity : ComponentActivity() {
                 val info = driveApp.tsBridge.radioInfo()
                 bridgeKhz = if (info != null && info.second < 3) TsBridge.toKhz(info.first) else null
                 bridgeRds = driveApp.tsBridge.rdsOn()
+                bridgeKhz?.let { driveApp.logcatReader.onTuned(it) }
                 bridgeKhz?.let { k -> if (k != savedKhz) { savedKhz = k; driveApp.settingsRepository.setLastRadioKhz(k) } }
                 kotlinx.coroutines.delay(1000)
             }
@@ -1106,6 +1108,7 @@ class MainActivity : ComponentActivity() {
                                 stationName = (bridgeKhz ?: logKhz)?.let { stationNames[it] },
                                 logsGranted = driveApp.logcatReader.available(),
                                 rdsOn = bridgeRds,
+                                rdsStatus = rdsState.takeIf { it.khz == (bridgeKhz ?: logKhz) }?.status?.name,
                                 onReadNames = { readNames() },
                                 readingNames = readingNames,
                                 onReadOne = { readOne() },
