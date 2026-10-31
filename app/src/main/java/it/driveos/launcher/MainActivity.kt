@@ -317,13 +317,13 @@ class MainActivity : ComponentActivity() {
             if (!nativeRadioWarmed) {
                 nativeRadioWarmed = true
                 val ok = runCatching {
-                    context.startActivity(Intent().setClassName("com.ts.MainUI", "com.ts.main.radio.RadioMainActivity")
+                    this@MainActivity.startActivity(Intent().setClassName("com.ts.MainUI", "com.ts.main.radio.RadioMainActivity")
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 }.isSuccess
                 if (ok) {
                     kotlinx.coroutines.delay(1200)
                     if (!WindowWatcher.goHome()) {
-                        runCatching { context.startActivity(Intent(context, MainActivity::class.java)
+                        runCatching { this@MainActivity.startActivity(Intent(this@MainActivity, MainActivity::class.java)
                             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) }
                     }
                     kotlinx.coroutines.delay(500)
