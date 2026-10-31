@@ -553,9 +553,19 @@ class MainActivity : ComponentActivity() {
         // nel registro). La telecamera non c'è: si resta/si torna sulla Home DriveOS.
         val reverseNow = KnownVehicleSignals.reverseOn(vehicleSignals) == true
         val foregroundPkg = vehicleSignals["prop:forfan.want2start"]
+        // Retromarcia inserita: subito la schermata Veicolo (e DriveOS davanti a qualunque finestra Junsun).
+        // Tolta la retro: si torna alla Home, salvo che l'auto sia ferma.
+        val parkedNow by androidx.compose.runtime.rememberUpdatedState(parked)
+        var reverseOpened by remember { mutableStateOf(false) }
         LaunchedEffect(reverseNow) {
-            if (reverseNow && screen != Screen.OVERVIEW && screen != Screen.VEHICLE) {
-                overviewAuto = true; screen = Screen.OVERVIEW
+            if (reverseNow) {
+                reverseOpened = true
+                if (screen != Screen.OVERVIEW && screen != Screen.VEHICLE) { overviewAuto = true; screen = Screen.OVERVIEW }
+                WindowWatcher.goHome()
+            } else if (reverseOpened) {
+                reverseOpened = false
+                kotlinx.coroutines.delay(1500)
+                if (!parkedNow && screen == Screen.OVERVIEW) { screen = Screen.DASHBOARD; overviewAuto = false }
             }
         }
         val overlayGranted = remember(a11yOn, screen) { android.provider.Settings.canDrawOverlays(context) }
