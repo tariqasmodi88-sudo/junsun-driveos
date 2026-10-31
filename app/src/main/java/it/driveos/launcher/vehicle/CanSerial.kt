@@ -24,16 +24,24 @@ class CanStreamParser {
     fun feed(data: ByteArray, len: Int = data.size): List<CanFrame> {
         buf += data.copyOfRange(0, len)
         val out = ArrayList<CanFrame>()
+        val junk = java.io.ByteArrayOutputStream()
+        fun flushJunk() {
+            // Byte che non fanno parte di nessun messaggio noto (es. tasti dell'autoradio): li teniamo, "X".
+            val b = junk.toByteArray(); junk.reset()
+            if (b.isNotEmpty() && b.any { it.toInt() != 0 }) out.add(CanFrame('X', b.copyOfRange(0, minOf(b.size, 24))))
+        }
         var i = 0
         while (i + 3 <= buf.size) {
             val t = buf[i + 1].toInt()
             if (buf[i].toInt() == 0x23 && (t == 'C'.code || t == 'S'.code) && (buf[i + 2].toInt() and 0xFF) in 1..40) {
                 val n = buf[i + 2].toInt() and 0xFF
                 if (i + 4 + n > buf.size) break // messaggio incompleto: aspetta altri byte
+                flushJunk()
                 out.add(CanFrame(t.toChar(), buf.copyOfRange(i + 3, i + 3 + n)))
                 i += 4 + n
-            } else i++
+            } else { junk.write(buf[i].toInt()); i++ }
         }
+        flushJunk()
         buf = buf.copyOfRange(i, buf.size)
         if (buf.size > 4096) buf = ByteArray(0)
         return out
@@ -69,10 +77,16 @@ object CanDecoder {
     const val BELT = "can:belt"
     const val REAR_SENSORS = "can:rear"
     const val FRONT_SENSORS = "can:front"
+    /** Byte della seriale che non sono un messaggio noto (probabili tasti dell'autoradio). */
+    const val RAW_BYTES = "can:X"
 
     fun decode(f: CanFrame): Map<String, String> {
         val p = f.payload
         val out = LinkedHashMap<String, String>()
+        if (f.type == 'X') {
+            out[RAW_BYTES] = hex(p, 0)
+            return out
+        }
         if (f.type == 'S') {
             if (p.isEmpty()) return out
             val t = p[0].toInt() and 0xFF
@@ -180,7 +194,11 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
                             val changes = LinkedHashMap<String, String>()
                             for (f in parser.feed(buf, n)) {
                                 framesSeen++
-                                for ((k, v) in CanDecoder.decode(f)) if (last[k] != v) { last[k] = v; changes[k] = v }
+                                for ((k, v) in CanDecoder.decode(f)) {
+                                    // I tasti (byte "X") sono eventi: ogni pressione conta, anche se identica alla precedente.
+                                    if (k == CanDecoder.RAW_BYTES) changes[k] = v
+                                    else if (last[k] != v) { last[k] = v; changes[k] = v }
+                                }
                             }
                             if (changes.isNotEmpty()) sinks.forEach { runCatching { it(changes) } }
                         }

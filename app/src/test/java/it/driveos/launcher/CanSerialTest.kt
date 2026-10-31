@@ -77,3 +77,19 @@ class CanSerialTest {
         assertEquals("01 01 01", m["can:C22/02"])
     }
 }
+
+class CanSerialJunkTest {
+    @org.junit.Test fun bytesFuoriProtocolloDiventanoEventoX() {
+        val p = CanStreamParser()
+        val key = byteArrayOf(0x55, 0x10, 0x07, 0x00)
+        val frames = p.feed(key, key.size)
+        org.junit.Assert.assertEquals(1, frames.size)
+        org.junit.Assert.assertEquals('X', frames[0].type)
+        val sig = CanDecoder.decode(frames[0])
+        org.junit.Assert.assertEquals("55 10 07 00", sig[CanDecoder.RAW_BYTES])
+    }
+    @org.junit.Test fun soloZeriNonSonoUnTasto() {
+        val frames = CanStreamParser().feed(ByteArray(4), 4)
+        org.junit.Assert.assertTrue(frames.isEmpty())
+    }
+}
