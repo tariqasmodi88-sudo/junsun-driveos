@@ -65,16 +65,19 @@ fun MusicDetailScreen(
     repeat: Int = 0,
     onShuffle: () -> Unit = {},
     onRepeat: () -> Unit = {},
+    onPickFolder: (() -> Unit)? = null,
+    onPlayLast: (() -> Unit)? = null,
 ) {
     val colors = MaterialTheme.colorScheme
     Column(Modifier.fillMaxSize()) {
         ScreenHeader("Musica", onBack) {
             val app = sourceEntry ?: musicApp
+            if (onPickFolder != null) CardButton("Scegli cartella", Icons.Filled.PlayArrow, onPickFolder, Modifier.widthIn(max = 320.dp), height = 56.dp)
             if (app != null) CardButton("Apri ${app.label}", Icons.Filled.PlayArrow, onOpenSource, Modifier.widthIn(max = 320.dp), height = 56.dp)
         }
         Column(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 20.dp)) {
             when {
-                !access -> Column(Modifier.weight(1f)) {
+                !access && media == null -> Column(Modifier.weight(1f)) {
                     Text("Per mostrare brano, copertina e comandi serve l'accesso alle notifiche.", fontSize = 22.sp, color = colors.onSurface)
                     Spacer(Modifier.height(8.dp))
                     Text(
@@ -87,7 +90,11 @@ fun MusicDetailScreen(
 
                 media == null || media.title.isBlank() -> Column(Modifier.weight(1f)) {
                     Text("Nessuna riproduzione in corso.", fontSize = 24.sp, color = colors.onSurface)
-                    Text("Avvia una sorgente qui sotto.", fontSize = 18.sp, color = colors.onSurfaceVariant)
+                    Text("Scegli una cartella di brani o avvia una sorgente.", fontSize = 18.sp, color = colors.onSurfaceVariant)
+                    if (onPlayLast != null) {
+                        Spacer(Modifier.height(12.dp))
+                        CardButton("Riproduci l'ultima cartella", Icons.Filled.PlayArrow, onPlayLast, Modifier.widthIn(max = 420.dp).fillMaxWidth(), height = 64.dp, primary = true)
+                    }
                 }
 
                 else -> BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {

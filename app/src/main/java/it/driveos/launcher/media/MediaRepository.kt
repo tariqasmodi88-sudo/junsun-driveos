@@ -122,8 +122,33 @@ class MediaRepository(context: Context) {
         publish()
     }
 
+    // --- Lettore interno (cartella di file) ---
+    private val local by lazy {
+        LocalPlayer(app) { info ->
+            _media.value = info
+            if (info != null) { _shuffle.value = local.shuffle; _repeat.value = local.repeat }
+        }
+    }
+    @Volatile private var localActive = false
+
+    fun playFolder(uri: android.net.Uri) = handler.post {
+        runCatching { controller?.transportControls?.pause() }
+        localActive = true
+        local.playFolder(uri)
+    }
+    fun lastFolder(): String? = local.lastFolder
+    fun playLastFolder() = handler.post {
+        runCatching { controller?.transportControls?.pause() }
+        localActive = true
+        local.playLastFolder()
+    }
+
     private fun publish() {
         val c = controller
+        if (localActive) {
+            if (c?.playbackState?.state == PlaybackState.STATE_PLAYING) { local.pause(); localActive = false }
+            else return
+        }
         if (c == null) {
             _media.value = null
             return
@@ -235,6 +260,7 @@ class MediaRepository(context: Context) {
 
     /** Porta il brano al punto indicato (se il lettore lo permette). */
     fun seekTo(ms: Long) {
+        if (localActive) { local.seekTo(ms); return }
         runCatching { controller?.transportControls?.seekTo(ms.coerceAtLeast(0)) }
     }
 
@@ -242,6 +268,7 @@ class MediaRepository(context: Context) {
     @Volatile private var pausedForRadio = false
 
     fun pauseIfPlaying() {
+        if (localActive) { if (local.isPlaying) { local.pause(); pausedForRadio = true }; return }
         val c = controller ?: return
         if (c.playbackState?.state == PlaybackState.STATE_PLAYING) { runCatching { c.transportControls.pause() }; pausedForRadio = true }
     }
@@ -250,6 +277,7 @@ class MediaRepository(context: Context) {
     fun resumeIfPausedForRadio(): Boolean {
         if (!pausedForRadio) return false
         pausedForRadio = false
+        if (localActive) { local.play(); return true }
         runCatching { controller?.transportControls?.play() }
         return true
     }
@@ -267,6 +295,7 @@ class MediaRepository(context: Context) {
 
     /** Casuale on/off. false se il lettore non espone questo comando. */
     fun toggleShuffle(): Boolean {
+        if (localActive) { local.toggleShuffle(); return true }
         val a = customAction("shuffle", "random", "casual") ?: return false
         runCatching { controller?.transportControls?.sendCustomAction(a, null) }
         _shuffle.value = !_shuffle.value
@@ -275,6 +304,7 @@ class MediaRepository(context: Context) {
 
     /** Ripeti: no → tutto → singolo. false se il lettore non espone il comando. */
     fun cycleRepeat(): Boolean {
+        if (localActive) { local.cycleRepeat(); return true }
         val a = customAction("repeat", "loop", "ripet") ?: return false
         runCatching { controller?.transportControls?.sendCustomAction(a, null) }
         _repeat.value = (_repeat.value + 1) % 3
@@ -282,16 +312,19 @@ class MediaRepository(context: Context) {
     }
 
     fun playPause() {
+        if (localActive) { local.playPause(); return }
         val c = controller ?: return
         if (c.playbackState?.state == PlaybackState.STATE_PLAYING) c.transportControls.pause()
         else c.transportControls.play()
     }
 
     fun next() {
+        if (localActive) { local.next(); return }
         controller?.transportControls?.skipToNext()
     }
 
     fun previous() {
+        if (localActive) { local.previous(); return }
         controller?.transportControls?.skipToPrevious()
     }
 

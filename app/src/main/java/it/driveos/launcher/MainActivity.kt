@@ -378,6 +378,9 @@ class MainActivity : ComponentActivity() {
             driveApp.calendarRepository.refresh()
             if (!granted) message("Permesso negato. Puoi concederlo in Impostazioni Android → App → DriveOS → Autorizzazioni.")
         }
+        val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+            if (uri != null) driveApp.mediaRepository.playFolder(uri)
+        }
         val voiceLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             val text = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
             if (!text.isNullOrBlank()) navQuery = text
@@ -906,6 +909,8 @@ class MainActivity : ComponentActivity() {
                                 onShuffle = { if (!driveApp.mediaRepository.toggleShuffle()) message("Questo lettore non permette di cambiare la riproduzione casuale.") },
                                 onRepeat = { if (!driveApp.mediaRepository.cycleRepeat()) message("Questo lettore non permette di cambiare la ripetizione.") },
                                 onOpenSource = { openSource() },
+                                onPickFolder = { folderPicker.launch(null) },
+                                onPlayLast = if (driveApp.mediaRepository.lastFolder() != null) ({ driveApp.mediaRepository.playLastFolder() }) else null,
                                 onLaunch = { report(Launcher.launchApp(context, it)) },
                                 onBack = { screen = Screen.DASHBOARD },
                             )
