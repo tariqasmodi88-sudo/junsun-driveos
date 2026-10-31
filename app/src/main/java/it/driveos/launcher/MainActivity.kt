@@ -303,14 +303,17 @@ class MainActivity : ComponentActivity() {
         val stationNames = remember { mutableStateMapOf<Int, String>() }
         val logName = vehicleSignals[LogcatParser.RADIO_NAME]
         val logKhz = vehicleSignals[LogcatParser.RADIO_FREQ]?.toIntOrNull()
-        LaunchedEffect(logName, logKhz, bridgeKhz) {
+        val logNameSeq = vehicleSignals[LogcatParser.RADIO_NAME_SEQ]
+        val readingNow = remember { booleanArrayOf(false) }
+        // Si assegna un nome SOLO quando ne arriva uno nuovo dal registro (non a ogni cambio di frequenza,
+        // altrimenti il nome della stazione precedente finirebbe su quella nuova).
+        LaunchedEffect(logNameSeq) {
             val k = bridgeKhz ?: logKhz
             if (logName != null && k != null) {
                 stationNames[k] = logName
-                // un preferito con nome generico ("FM 99,6") prende il nome ricevuto
                 val cur = settingsState?.radioPresets.orEmpty()
-                if (cur.any { it.khz == k && it.name.startsWith("FM ") }) {
-                    driveApp.settingsRepository.setRadioPresets(cur.map { if (it.khz == k && it.name.startsWith("FM ")) it.copy(name = logName) else it })
+                if (cur.any { it.khz == k && (readingNow[0] || it.name.startsWith("FM ")) && it.name != logName }) {
+                    driveApp.settingsRepository.setRadioPresets(cur.map { if (it.khz == k && (readingNow[0] || it.name.startsWith("FM "))) it.copy(name = logName) else it })
                 }
             }
         }
@@ -678,7 +681,11 @@ class MainActivity : ComponentActivity() {
         fun readNames() {
             if (readingNames) return
             readingNames = true
+            readingNow[0] = true
             scope.launch {
+                // riparte da zero: i nomi sbagliati vengono sostituiti da quelli letti
+                driveApp.settingsRepository.setRadioPresets(s.radioPresets.map { if (it.khz > 0) it.copy(name = "FM " + RadioPreset(it.khz, "").displayFrequency()) else it })
+                stationNames.clear()
                 val list = s.radioPresets.filter { it.khz > 0 }
                 runCatching {
                     context.startActivity(Intent().setClassName("com.ts.MainUI", "com.ts.main.radio.RadioMainActivity")
@@ -691,6 +698,7 @@ class MainActivity : ComponentActivity() {
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) }
                 }
                 screen = Screen.RADIO
+                readingNow[0] = false
                 readingNames = false
             }
         }

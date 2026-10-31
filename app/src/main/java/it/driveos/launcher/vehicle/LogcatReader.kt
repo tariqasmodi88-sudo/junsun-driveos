@@ -44,6 +44,7 @@ class LogcatReader(context: Context, private val repo: VehicleRepository) {
         process = null
     }
 
+    private var nameSeq = 0L
     private var parkingClear: Job? = null
 
     /** Il log dice solo "sensori attivi": se tace per [LogcatParser.PARKING_TIMEOUT_MS], li segna spenti. */
@@ -67,7 +68,8 @@ class LogcatReader(context: Context, private val repo: VehicleRepository) {
                 while (scope.isActive) {
                     val line = reader.readLine() ?: break
                     LogcatParser.parse(line)?.let { (id, value) ->
-                        repo.ingest(mapOf(id to value))
+                        if (id == LogcatParser.RADIO_NAME) repo.ingest(mapOf(id to value, LogcatParser.RADIO_NAME_SEQ to (++nameSeq).toString()))
+                        else repo.ingest(mapOf(id to value))
                         if (id == LogcatParser.PARKING && value == "1") armParkingClear()
                     }
                 }
