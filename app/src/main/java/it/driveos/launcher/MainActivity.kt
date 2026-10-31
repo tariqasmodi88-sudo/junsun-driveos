@@ -313,22 +313,6 @@ class MainActivity : ComponentActivity() {
             if (screen != Screen.RADIO) return@LaunchedEffect
             // entrando in Radio: ferma i file/lo streaming e accendi il sintonizzatore
             driveApp.mediaRepository.pauseIfPlaying()
-            // Una volta per avvio: la radio nativa va "accesa" dietro DriveOS, cosi' scrive il nome RDS nel registro.
-            if (!nativeRadioWarmed) {
-                nativeRadioWarmed = true
-                val ok = runCatching {
-                    this@MainActivity.startActivity(Intent().setClassName("com.ts.MainUI", "com.ts.main.radio.RadioMainActivity")
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                }.isSuccess
-                if (ok) {
-                    kotlinx.coroutines.delay(1200)
-                    if (!WindowWatcher.goHome()) {
-                        runCatching { this@MainActivity.startActivity(Intent(this@MainActivity, MainActivity::class.java)
-                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) }
-                    }
-                    kotlinx.coroutines.delay(500)
-                }
-            }
             val br = driveApp.tsBridge
             br.radioCall { it.OpenRadioCh(); it.onRadioFM() }
             // riprende l'ultima stazione scelta

@@ -5,8 +5,5 @@
         <item name="android:windowBackground">@android:color/black</item>
         <item name="android:colorBackground">@android:color/black</item>
         <item name="android:windowShowWallpaper">false</item>
-        <!-- Traslucida ma con sfondo nero pieno: l'aspetto non cambia, ma la radio nativa dietro resta "in pausa" e non "fermata",
-             quindi continua a scrivere il nome RDS nel registro. -->
-        <item name="android:windowIsTranslucent">true</item>
     </style>
 </resources>
