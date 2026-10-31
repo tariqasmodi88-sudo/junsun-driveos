@@ -64,13 +64,13 @@ fun RadioScreen(
     onAm: () -> Unit,
     onAdd: () -> Unit,
     onSaveCurrent: (() -> Unit)? = null,
-    /** Pressione lunga su P1…P6: registra la stazione attuale in quel posto. */
-    onSaveSlot: ((Int) -> Unit)? = null,
     onRemove: (RadioPreset) -> Unit,
     onOpenExternal: () -> Unit,
     onBack: () -> Unit,
     /** Nome RDS, se il firmware lo pubblica. */
     stationName: String? = null,
+    /** Pressione lunga su P1…P6: registra la stazione attuale in quel posto. */
+    onSaveSlot: ((Int) -> Unit)? = null,
 ) {
     val colors = MaterialTheme.colorScheme
     val khz = state?.khz ?: currentKhz
