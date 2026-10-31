@@ -239,9 +239,19 @@ class MediaRepository(context: Context) {
     }
 
     /** Mette in pausa se sta suonando (per lasciare l'audio alla radio). */
+    @Volatile private var pausedForRadio = false
+
     fun pauseIfPlaying() {
         val c = controller ?: return
-        if (c.playbackState?.state == PlaybackState.STATE_PLAYING) runCatching { c.transportControls.pause() }
+        if (c.playbackState?.state == PlaybackState.STATE_PLAYING) { runCatching { c.transportControls.pause() }; pausedForRadio = true }
+    }
+
+    /** Se la musica era stata fermata dalla Radio, la riprende dal punto in cui era. */
+    fun resumeIfPausedForRadio(): Boolean {
+        if (!pausedForRadio) return false
+        pausedForRadio = false
+        runCatching { controller?.transportControls?.play() }
+        return true
     }
 
     private val _shuffle = MutableStateFlow(false)

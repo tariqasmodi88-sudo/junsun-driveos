@@ -304,6 +304,9 @@ class MainActivity : ComponentActivity() {
             if (logName != null && k != null) stationNames[k] = logName
         }
         LaunchedEffect(screen) {
+            if (screen == Screen.MUSIC && driveApp.mediaRepository.resumeIfPausedForRadio()) {
+                driveApp.tsBridge.radioCall { it.CloseRadioCh() }
+            }
             if (screen != Screen.RADIO) return@LaunchedEffect
             // entrando in Radio: ferma i file/lo streaming e accendi il sintonizzatore
             driveApp.mediaRepository.pauseIfPlaying()
@@ -516,8 +519,21 @@ class MainActivity : ComponentActivity() {
         // Home DriveOS (serve il servizio di accessibilità, attivato in Impostazioni).
         val screenNow by androidx.compose.runtime.rememberUpdatedState(screen)
         val settingsLive by androidx.compose.runtime.rememberUpdatedState(s)
+        // Scelta del brano nell'app file: appena parte il lettore dell'app, si torna a DriveOS (la musica continua).
+        val pickUntil = remember { longArrayOf(0L) }
+        val pickInfo = remember { arrayOfNulls<String>(2) } // [0]=pacchetto, [1]=prima finestra
         LaunchedEffect(Unit) {
             WindowWatcher.events.collect { e ->
+                if (System.currentTimeMillis() < pickUntil[0] && e.pkg == pickInfo[0]) {
+                    if (pickInfo[1] == null) pickInfo[1] = e.cls
+                    else if (e.cls != pickInfo[1]) {
+                        pickUntil[0] = 0L
+                        kotlinx.coroutines.delay(600)
+                        WindowWatcher.goHome()
+                        screen = Screen.MUSIC
+                        return@collect
+                    }
+                }
                 val cur = settingsLive
                 if (!cur.keepHome) return@collect
                 val includeProj = System.currentTimeMillis() < projectionBounceUntil
@@ -695,6 +711,10 @@ class MainActivity : ComponentActivity() {
         }
 
         fun openSource() {
+            val pkg = sourceEntry?.key?.packageName ?: s.musicApp?.packageName
+            if (pkg != null && WindowWatcher.enabled()) {
+                pickUntil[0] = System.currentTimeMillis() + 5 * 60_000L; pickInfo[0] = pkg; pickInfo[1] = null
+            }
             if (sourceEntry != null) report(Launcher.launchApp(context, sourceEntry.key))
             else openOrPick(s.musicApp, PickerTarget.MUSIC)
         }
