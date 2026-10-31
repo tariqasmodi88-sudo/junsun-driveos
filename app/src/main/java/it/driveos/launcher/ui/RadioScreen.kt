@@ -113,7 +113,6 @@ fun RadioScreen(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     CtrlButton(null, "Cerca giù", Modifier.weight(1.2f), onSeekDown, textIcon = "‹ cerca")
                     CtrlButton(null, "FM", Modifier.weight(0.6f), onFm, highlighted = true, textIcon = "FM")
-                    CtrlButton(null, "AM", Modifier.weight(0.6f), onAm, textIcon = "AM")
                     CtrlButton(null, "Cerca su", Modifier.weight(1.2f), onSeekUp, textIcon = "cerca ›")
                 }
                 Spacer(Modifier.height(4.dp))

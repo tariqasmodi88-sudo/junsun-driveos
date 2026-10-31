@@ -27,6 +27,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -294,6 +295,14 @@ class MainActivity : ComponentActivity() {
         val guidanceMap by NavGuidanceStore.guidance.collectAsStateWithLifecycle()
         val vehicleSignals by driveApp.vehicleRepository.signals.collectAsStateWithLifecycle()
         var bridgeKhz by remember { mutableStateOf<Int?>(null) }
+        // nomi RDS ricevuti, per frequenza: restano visibili anche se il log non li ripete
+        val stationNames = remember { mutableStateMapOf<Int, String>() }
+        val logName = vehicleSignals[LogcatParser.RADIO_NAME]
+        val logKhz = vehicleSignals[LogcatParser.RADIO_FREQ]?.toIntOrNull()
+        LaunchedEffect(logName) {
+            val k = bridgeKhz ?: logKhz
+            if (logName != null && k != null) stationNames[k] = logName
+        }
         LaunchedEffect(screen) {
             if (screen != Screen.RADIO) return@LaunchedEffect
             while (true) {
@@ -958,9 +967,9 @@ class MainActivity : ComponentActivity() {
                                 onAm = { radioPress(NativeRadio.AM) { bridge.radioCall { it.onRadioAM() } } },
                                 onAdd = { radioDialog = true },
                                 onSaveCurrent = {
-                                    val khz = radioState?.khz ?: vehicleSignals[LogcatParser.RADIO_FREQ]?.toIntOrNull()
+                                    val khz = bridgeKhz ?: radioState?.khz ?: vehicleSignals[LogcatParser.RADIO_FREQ]?.toIntOrNull()
                                     if (khz != null) {
-                                        val p = RadioPreset(khz, "FM ${RadioPreset(khz, "").displayFrequency()}", RadioBand.FM)
+                                        val p = RadioPreset(khz, stationNames[khz] ?: "FM ${RadioPreset(khz, "").displayFrequency()}", RadioBand.FM)
                                         if (RadioPresetLogic.isFull(s.radioPresets, p)) message("Hai già 6 stazioni: rimuovine una.")
                                         else scope.launch { driveApp.settingsRepository.setRadioPresets(RadioPresetLogic.add(s.radioPresets, p)) }
                                     }
@@ -976,7 +985,7 @@ class MainActivity : ComponentActivity() {
                                     }.isSuccess
                                     if (!ok) openOrPick(s.radioApp, PickerTarget.RADIO)
                                 },
-                                stationName = vehicleSignals[LogcatParser.RADIO_NAME],
+                                stationName = (bridgeKhz ?: logKhz)?.let { stationNames[it] } ?: logName,
                                 onBack = { screen = Screen.SETTINGS },
                             )
 
