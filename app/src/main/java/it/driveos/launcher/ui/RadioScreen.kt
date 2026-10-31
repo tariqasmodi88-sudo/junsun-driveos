@@ -75,6 +75,8 @@ fun RadioScreen(
     logsGranted: Boolean = true,
     /** Giro dei preferiti sulla radio nativa per leggere i nomi RDS. */
     onReadNames: (() -> Unit)? = null,
+    /** La stazione trasmette RDS (come l'indicatore della radio nativa). */
+    rdsOn: Boolean? = null,
     readingNames: Boolean = false,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -107,6 +109,14 @@ fun RadioScreen(
                             Surface(shape = RoundedCornerShape(10.dp), color = colors.primary.copy(alpha = 0.18f)) {
                                 Text("FM", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = colors.primary,
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                            }
+                            if (rdsOn != null) {
+                                Spacer(Modifier.width(8.dp))
+                                Surface(shape = RoundedCornerShape(10.dp), color = if (rdsOn) colors.primary.copy(alpha = 0.18f) else colors.surfaceVariant) {
+                                    Text("RDS", fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                                        color = if (rdsOn) colors.primary else colors.onSurfaceVariant.copy(alpha = 0.5f),
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                                }
                             }
                             Spacer(Modifier.weight(1f))
                             Text(if (detected) (if (playing) "In ascolto" else "In pausa") else "Frequenza dal sistema",

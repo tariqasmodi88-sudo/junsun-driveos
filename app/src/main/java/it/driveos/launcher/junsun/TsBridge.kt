@@ -72,6 +72,12 @@ class TsBridge(context: Context) {
             ?.also { if (toKhz(it.first) != null) rawSample = it.first }
     }
 
+    /** La radio riceve dati RDS dalla stazione (indicazione ufficiale del servizio radio). null = non collegata. */
+    suspend fun rdsOn(): Boolean? {
+        val r = radio ?: return null
+        return withContext(Dispatchers.IO) { runCatching { r.bRdsOn() }.getOrNull() }
+    }
+
     companion object {
         const val PKG = "com.ts.MainUI"
         const val RADIO_ACTION = "com.ts.tsspeechlib.radio.TsRadioService"

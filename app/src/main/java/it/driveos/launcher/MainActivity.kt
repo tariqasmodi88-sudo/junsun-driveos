@@ -298,6 +298,7 @@ class MainActivity : ComponentActivity() {
         val guidanceMap by NavGuidanceStore.guidance.collectAsStateWithLifecycle()
         val vehicleSignals by driveApp.vehicleRepository.signals.collectAsStateWithLifecycle()
         var bridgeKhz by remember { mutableStateOf<Int?>(null) }
+        var bridgeRds by remember { mutableStateOf<Boolean?>(null) }
         // nomi RDS ricevuti, per frequenza: restano visibili anche se il log non li ripete
         val stationNames = remember { mutableStateMapOf<Int, String>() }
         val logName = vehicleSignals[LogcatParser.RADIO_NAME]
@@ -333,6 +334,7 @@ class MainActivity : ComponentActivity() {
             while (true) {
                 val info = driveApp.tsBridge.radioInfo()
                 bridgeKhz = if (info != null && info.second < 3) TsBridge.toKhz(info.first) else null
+                bridgeRds = driveApp.tsBridge.rdsOn()
                 bridgeKhz?.let { k -> if (k != savedKhz) { savedKhz = k; driveApp.settingsRepository.setLastRadioKhz(k) } }
                 kotlinx.coroutines.delay(1000)
             }
@@ -1076,6 +1078,7 @@ class MainActivity : ComponentActivity() {
                                 },
                                 stationName = (bridgeKhz ?: logKhz)?.let { stationNames[it] },
                                 logsGranted = driveApp.logcatReader.available(),
+                                rdsOn = bridgeRds,
                                 onReadNames = { readNames() },
                                 readingNames = readingNames,
                                 onBack = { screen = Screen.SETTINGS },
