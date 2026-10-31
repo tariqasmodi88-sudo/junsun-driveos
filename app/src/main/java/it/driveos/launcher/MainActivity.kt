@@ -611,7 +611,7 @@ class MainActivity : ComponentActivity() {
             if (result is LaunchResult.Error) message(result.message)
         }
 
-        /** Tasto Radio della Home: apre la radio NATIVA Junsun (se non ne hai scelta un'altra); se non parte, la radio DriveOS. */
+        /** Tasto Radio della Home: apre la radio DriveOS (o l'app radio che hai scelto). */
         val bridge = driveApp.tsBridge
         fun radioPress(id: String, viaBridge: (() -> Boolean)? = null) {
             if (viaBridge?.invoke() == true) return
@@ -623,11 +623,7 @@ class MainActivity : ComponentActivity() {
         fun openRadio() {
             val chosen = s.radioApp
             if (chosen != null) { report(Launcher.launchApp(context, chosen)); return }
-            val ok = runCatching {
-                context.startActivity(Intent().setClassName("com.ts.MainUI", "com.ts.main.radio.RadioMainActivity")
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-            }.isSuccess
-            if (!ok) screen = Screen.RADIO
+            screen = Screen.RADIO
         }
 
         fun openOrPick(key: AppKey?, target: PickerTarget) {
