@@ -41,6 +41,8 @@ class CanStreamParser {
                 i += 4 + n
             } else { junk.write(buf[i].toInt()); i++ }
         }
+        // Gli ultimi 1-2 byte che non possono iniziare un messaggio ('#') non vanno tenuti in attesa.
+        if (i + 3 > buf.size) while (i < buf.size && buf[i].toInt() != 0x23) { junk.write(buf[i].toInt()); i++ }
         flushJunk()
         buf = buf.copyOfRange(i, buf.size)
         if (buf.size > 4096) buf = ByteArray(0)
