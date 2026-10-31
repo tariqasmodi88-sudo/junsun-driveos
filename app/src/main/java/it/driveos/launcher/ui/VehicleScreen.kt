@@ -59,6 +59,8 @@ fun VehicleScreen(
     onClearLog: () -> Unit,
     exportStatus: String?,
     onBack: () -> Unit,
+    frontSensorsOn: Boolean = false,
+    onToggleFrontSensors: (Boolean) -> Unit = {},
 ) {
     var showAll by remember { mutableStateOf(false) }
     val colors = MaterialTheme.colorScheme
@@ -89,6 +91,18 @@ fun VehicleScreen(
                             fontSize = 13.sp, color = colors.onSurfaceVariant)
                     }
                     androidx.compose.material3.Switch(checked = canSerialOn, onCheckedChange = onToggleCanSerial)
+                }
+            }
+
+            Surface(shape = RoundedCornerShape(16.dp), color = if (frontSensorsOn) colors.primary.copy(alpha = 0.14f) else colors.surface,
+                modifier = Modifier.fillMaxWidth()) {
+                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Sensori di parcheggio anteriori", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
+                        Text(if (frontSensorsOn) "Montati: si disegnano a bassa velocità." else "Non montati: non si disegnano.",
+                            fontSize = 14.sp, color = colors.onSurfaceVariant)
+                    }
+                    androidx.compose.material3.Switch(checked = frontSensorsOn, onCheckedChange = onToggleFrontSensors)
                 }
             }
 

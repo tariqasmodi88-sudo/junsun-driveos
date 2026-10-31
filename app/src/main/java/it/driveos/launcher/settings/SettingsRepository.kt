@@ -60,6 +60,8 @@ data class DriveSettings(
     val vehicleLogging: Boolean = false,
     /** Lettura della seriale auto (porte, baule, freno a mano…). */
     val canSerial: Boolean = true,
+    /** Sensori di parcheggio anteriori montati sull'auto (di default no: non si disegnano). */
+    val frontSensors: Boolean = false,
     /** Tasti dell'autoradio / volante imparati dalla seriale. */
     val keyBindings: List<KeyBinding> = emptyList(),
     /** Schermata veicolo automatica quando l'auto è ferma (o si apre una portiera). */
@@ -101,6 +103,7 @@ class SettingsRepository(context: Context) {
         val OFFLINE_MUSIC = stringPreferencesKey("offline_music_app")
         val VEH_LOG = stringPreferencesKey("vehicle_logging")
         val CAN_SERIAL = stringPreferencesKey("can_serial")
+        val FRONT_SENSORS = stringPreferencesKey("front_sensors")
         val KEYMAP = stringPreferencesKey("key_map")
         val THEME_V2 = stringPreferencesKey("theme_auto_default")
         val AUTO_OVERVIEW = stringPreferencesKey("auto_overview")
@@ -140,6 +143,7 @@ class SettingsRepository(context: Context) {
                 offlineMusicApp = AppKey.decode(p[Keys.OFFLINE_MUSIC]),
                 vehicleLogging = p[Keys.VEH_LOG] != "0",
                 canSerial = p[Keys.CAN_SERIAL] != "0",
+                frontSensors = p[Keys.FRONT_SENSORS] == "1",
                 keyBindings = KeyBindingCodec.decode(p[Keys.KEYMAP]),
                 autoOverview = p[Keys.AUTO_OVERVIEW] != "0",
                 keepHome = p[Keys.KEEP_HOME] != "0",
@@ -181,6 +185,8 @@ class SettingsRepository(context: Context) {
     suspend fun setKeyBindings(list: List<KeyBinding>) {
         store.edit { it[Keys.KEYMAP] = KeyBindingCodec.encode(list) }
     }
+
+    suspend fun setFrontSensors(on: Boolean) { store.edit { it[Keys.FRONT_SENSORS] = if (on) "1" else "0" } }
 
     suspend fun setCanSerial(on: Boolean) {
         store.edit { it[Keys.CAN_SERIAL] = if (on) "1" else "0" }

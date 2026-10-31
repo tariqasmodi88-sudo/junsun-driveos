@@ -954,6 +954,8 @@ class MainActivity : ComponentActivity() {
                                 onToggleLogging = { on -> scope.launch { driveApp.settingsRepository.setVehicleLogging(on) } },
                                 canSerialOn = s.canSerial,
                                 onToggleCanSerial = { on -> scope.launch { driveApp.settingsRepository.setCanSerial(on) } },
+                                frontSensorsOn = s.frontSensors,
+                                onToggleFrontSensors = { on -> scope.launch { driveApp.settingsRepository.setFrontSensors(on) } },
                                 onOpenKeys = { screen = Screen.KEYS },
                                 onExportLog = {
                                     scope.launch {
@@ -1047,7 +1049,7 @@ class MainActivity : ComponentActivity() {
                                     belt = vehicleSignals[CanDecoder.BELT]?.let { it == "1" },
                                     rearLevels = CanDecoder.sensorLevels(vehicleSignals, CanDecoder.REAR_SENSORS),
                                     rearRaw = CanDecoder.sensorRaw(vehicleSignals, CanDecoder.REAR_SENSORS),
-                                    frontLevels = CanDecoder.sensorLevels(vehicleSignals, CanDecoder.FRONT_SENSORS),
+                                    frontLevels = if (s.frontSensors) CanDecoder.sensorLevels(vehicleSignals, CanDecoder.FRONT_SENSORS) else null,
                                     parking = vehicleSignals[LogcatParser.PARKING]?.let { v -> v == "1" },
                                     phone = KnownVehicleSignals.phoneConnected(vehicleSignals),
                                     projection = KnownVehicleSignals.projectionActive(vehicleSignals),
