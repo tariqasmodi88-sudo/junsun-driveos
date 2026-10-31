@@ -133,6 +133,8 @@ object VehicleStatus {
 
     /** Stato fari: dal collegamento esplicito, altrimenti dai segnali noti automatici. */
     fun lightsOn(lightsBinding: SignalBinding?, signals: Map<String, String>): Boolean? {
+        // la seriale dell'auto e' immediata e affidabile: ha la precedenza su un vecchio collegamento che si rilegge a intervalli
+        signals["can:lights"]?.let { return it == "1" }
         if (lightsBinding != null) {
             val v = signals[lightsBinding.id]
             if (v != null) {
