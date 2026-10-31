@@ -178,6 +178,12 @@ class MediaRepository(context: Context) {
         runCatching { controller?.transportControls?.seekTo(ms.coerceAtLeast(0)) }
     }
 
+    /** Mette in pausa se sta suonando (per lasciare l'audio alla radio). */
+    fun pauseIfPlaying() {
+        val c = controller ?: return
+        if (c.playbackState?.state == PlaybackState.STATE_PLAYING) runCatching { c.transportControls.pause() }
+    }
+
     fun playPause() {
         val c = controller ?: return
         if (c.playbackState?.state == PlaybackState.STATE_PLAYING) c.transportControls.pause()
