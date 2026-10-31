@@ -23,6 +23,9 @@ object LogcatParser {
     const val PARKING = "log:sensori_parcheggio"
     const val REVERSE = "log:retromarcia"
     const val RADIO_FREQ = "log:radio_freq_khz"
+    /** Nome RDS della stazione: l'app Junsun lo scrive nel registro (tag "Test") quando si sintonizza. */
+    const val RADIO_NAME = "log:radio_name"
+    private val radioName = Regex("^[VDIWEF]/Test\\s*\\(\\s*\\d+\\):\\s*(.{2,16}?)\\s*$")
 
     private val doorOn = Regex("CanDoorMsgbox.*SetShowFlg\\s*=\\s*true", RegexOption.IGNORE_CASE)
     private val doorOff = Regex("CanDoorMsgbox.*SetShowFlg\\s*=\\s*false", RegexOption.IGNORE_CASE)
@@ -51,6 +54,7 @@ object LogcatParser {
         carStatus.find(line)?.let { return REVERSE to if (it.groupValues[1].equals("reverse", true)) "1" else "0" }
         if (backcarIn.containsMatchIn(line)) return REVERSE to "1"
         // Radio: solo se il contesto parla di FM/radio, per non prendere numeri a caso
+        radioName.find(line)?.let { m -> return RADIO_NAME to m.groupValues[1] }
         if (freqCtx.containsMatchIn(line)) {
             freqNum.find(line)?.let { m ->
                 val khz = RadioFreq.toKhz(m.value)

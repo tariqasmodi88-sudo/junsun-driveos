@@ -29,7 +29,7 @@ class RadioPresetTest {
         l = RadioPresetLogic.add(l, RadioPreset(87500, "B"))
         l = RadioPresetLogic.add(l, RadioPreset(101500, "A2")) // sostituisce la stessa frequenza
         assertEquals(2, l.size)
-        assertEquals(87500, l.first().khz) // ordinata
+        assertEquals(101500, l.first().khz) // ordine di salvataggio (P1, P2…)
         assertEquals("A2", l.first { it.khz == 101500 }.name)
         assertEquals(1, RadioPresetLogic.remove(l, RadioBand.FM, 87500).size)
     }

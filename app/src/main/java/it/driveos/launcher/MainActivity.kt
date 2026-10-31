@@ -84,6 +84,7 @@ import it.driveos.launcher.vehicle.VehicleLog
 import it.driveos.launcher.vehicle.VehicleLogService
 import it.driveos.launcher.vehicle.VehicleStatus
 import it.driveos.launcher.vehicle.WindowRules
+import it.driveos.launcher.vehicle.NativeRadio
 import it.driveos.launcher.vehicle.WindowWatcher
 import it.driveos.launcher.ui.cards.CalendarCard
 import it.driveos.launcher.ui.cards.ClockCard
@@ -601,6 +602,12 @@ class MainActivity : ComponentActivity() {
         }
 
         /** Tasto Radio della Home: apre la radio NATIVA Junsun (se non ne hai scelta un'altra); se non parte, la radio DriveOS. */
+        fun radioPress(id: String) {
+            if (!NativeRadio.press(context, id)) {
+                message(if (!WindowWatcher.enabled()) "Per comandare la radio attiva il servizio Accessibilità di DriveOS (Impostazioni → Veicolo)." else "Comando radio ancora in corso, riprova tra un attimo.")
+            }
+        }
+
         fun openRadio() {
             val chosen = s.radioApp
             if (chosen != null) { report(Launcher.launchApp(context, chosen)); return }
@@ -936,14 +943,13 @@ class MainActivity : ComponentActivity() {
                                 presets = s.radioPresets,
                                 currentKhz = radioState?.khz,
                                 onTune = { p ->
-                                    driveApp.radioController.tune(p.khz)
-                                    if (!radioDetected) message("Comando inviato (sperimentale). Se non cambia, esporta i dati in Veicolo.")
+                                    val slot = s.radioPresets.indexOf(p) + 1
+                                    radioPress(NativeRadio.preset(slot))
                                 },
-                                onSeekDown = { driveApp.radioController.seekDown() },
-                                onSeekUp = { driveApp.radioController.seekUp() },
-                                onStepDown = { driveApp.radioController.stepDown() },
-                                onStepUp = { driveApp.radioController.stepUp() },
-                                onPlayPause = { driveApp.radioController.power(radioState?.playing != true) },
+                                onSeekDown = { radioPress(NativeRadio.SEEK_DOWN) },
+                                onSeekUp = { radioPress(NativeRadio.SEEK_UP) },
+                                onFm = { radioPress(NativeRadio.FM) },
+                                onAm = { radioPress(NativeRadio.AM) },
                                 onAdd = { radioDialog = true },
                                 onSaveCurrent = {
                                     val khz = radioState?.khz ?: vehicleSignals[LogcatParser.RADIO_FREQ]?.toIntOrNull()
@@ -964,6 +970,7 @@ class MainActivity : ComponentActivity() {
                                     }.isSuccess
                                     if (!ok) openOrPick(s.radioApp, PickerTarget.RADIO)
                                 },
+                                stationName = vehicleSignals[LogcatParser.RADIO_NAME],
                                 onBack = { screen = Screen.SETTINGS },
                             )
 

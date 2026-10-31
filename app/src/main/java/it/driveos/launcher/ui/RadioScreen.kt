@@ -59,9 +59,8 @@ fun RadioScreen(
     onTune: (RadioPreset) -> Unit,
     onSeekDown: () -> Unit,
     onSeekUp: () -> Unit,
-    onStepDown: () -> Unit,
-    onStepUp: () -> Unit,
-    onPlayPause: () -> Unit,
+    onFm: () -> Unit,
+    onAm: () -> Unit,
     onAdd: () -> Unit,
     onSaveCurrent: (() -> Unit)? = null,
     onRemove: (RadioPreset) -> Unit,
@@ -112,11 +111,10 @@ fun RadioScreen(
                     }
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    CtrlButton(null, "Cerca giù", Modifier.weight(1f), onSeekDown, textIcon = "«")
-                    CtrlButton(null, "Passo giù", Modifier.weight(0.8f), onStepDown, textIcon = "‹")
-                    CtrlButton(if (playing) PauseIcon else Icons.Filled.PlayArrow, "Play/Pausa", Modifier.weight(1f), onPlayPause, highlighted = true)
-                    CtrlButton(null, "Passo su", Modifier.weight(0.8f), onStepUp, textIcon = "›")
-                    CtrlButton(null, "Cerca su", Modifier.weight(1f), onSeekUp, textIcon = "»")
+                    CtrlButton(null, "Cerca giù", Modifier.weight(1.2f), onSeekDown, textIcon = "‹ cerca")
+                    CtrlButton(null, "FM", Modifier.weight(0.6f), onFm, highlighted = true, textIcon = "FM")
+                    CtrlButton(null, "AM", Modifier.weight(0.6f), onAm, textIcon = "AM")
+                    CtrlButton(null, "Cerca su", Modifier.weight(1.2f), onSeekUp, textIcon = "cerca ›")
                 }
                 Spacer(Modifier.height(4.dp))
             }
@@ -177,7 +175,7 @@ private fun CtrlButton(
         modifier = modifier.height(64.dp)) {
         Box(contentAlignment = Alignment.Center) {
             if (icon != null) Icon(icon, desc, modifier = Modifier.size(30.dp))
-            else Text(textIcon ?: "", fontSize = 28.sp, fontWeight = FontWeight.Bold)
+            else Text(textIcon ?: "", fontSize = if ((textIcon?.length ?: 0) > 3) 20.sp else 24.sp, fontWeight = FontWeight.Bold)
         }
     }
 }

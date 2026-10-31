@@ -44,14 +44,15 @@ object RadioPresetLogic {
         return if (snapped in FM_MIN_KHZ..FM_MAX_KHZ) snapped else null
     }
 
-    /** Ordina per banda e frequenza; evita doppioni della stessa frequenza nella stessa banda. */
+    /** Evita doppioni della stessa frequenza; l'ordine è quello di salvataggio (posto P1…P6, come sulla radio). */
     fun normalize(list: List<RadioPreset>): List<RadioPreset> =
-        list.distinctBy { it.band to it.khz }.sortedWith(compareBy({ it.band.ordinal }, { it.khz }))
+        list.distinctBy { it.band to it.khz }
 
     fun add(list: List<RadioPreset>, preset: RadioPreset): List<RadioPreset> {
         val exists = list.any { it.band == preset.band && it.khz == preset.khz }
         if (!exists && list.size >= MAX_PRESETS) return list // pieno: serve prima rimuoverne una
-        return normalize(list.filterNot { it.band == preset.band && it.khz == preset.khz } + preset)
+        val i = list.indexOfFirst { it.band == preset.band && it.khz == preset.khz }
+        return if (i >= 0) normalize(list.toMutableList().also { it[i] = preset }) else normalize(list + preset)
     }
 
     fun isFull(list: List<RadioPreset>, preset: RadioPreset) =
