@@ -621,8 +621,6 @@ class MainActivity : ComponentActivity() {
         }
 
         fun openRadio() {
-            val chosen = s.radioApp
-            if (chosen != null) { report(Launcher.launchApp(context, chosen)); return }
             screen = Screen.RADIO
         }
 
