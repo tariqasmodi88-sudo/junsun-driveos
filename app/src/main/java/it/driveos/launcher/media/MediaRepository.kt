@@ -133,10 +133,10 @@ class MediaRepository(context: Context) {
     }
     @Volatile private var localActive = false
 
-    fun playFolder(uri: android.net.Uri) = handler.post {
+    fun playFolder(folder: String) = handler.post {
         runCatching { controller?.transportControls?.pause() }
         localActive = true
-        local.playFolder(uri)
+        local.playFolder(folder)
     }
     fun lastFolder(): String? = local.lastFolder
     fun playLastFolder() = handler.post {

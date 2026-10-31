@@ -370,16 +370,20 @@ class MainActivity : ComponentActivity() {
             if (granted) driveApp.speedWatcher.start()
             else message("Senza posizione la schermata veicolo si apre solo quando apri una portiera.")
         }
+        var showFolders by remember { mutableStateOf(false) }
+        var pendingFolders by remember { mutableStateOf(false) }
+        if (showFolders) it.driveos.launcher.ui.detail.FolderPickerDialog(
+            onPick = { showFolders = false; driveApp.mediaRepository.playFolder(it) },
+            onDismiss = { showFolders = false },
+        )
         val storagePermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            if (granted) it.driveos.launcher.media.LocalMusicService.start(context)
+            if (granted && pendingFolders) { pendingFolders = false; showFolders = true }
+            else if (granted) it.driveos.launcher.media.LocalMusicService.start(context)
             else message("Senza accesso ai file audio la musica del dispositivo non parte.")
         }
         val calendarPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             driveApp.calendarRepository.refresh()
             if (!granted) message("Permesso negato. Puoi concederlo in Impostazioni Android → App → DriveOS → Autorizzazioni.")
-        }
-        val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
-            if (uri != null) driveApp.mediaRepository.playFolder(uri)
         }
         val voiceLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             val text = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
@@ -909,7 +913,10 @@ class MainActivity : ComponentActivity() {
                                 onShuffle = { if (!driveApp.mediaRepository.toggleShuffle()) message("Questo lettore non permette di cambiare la riproduzione casuale.") },
                                 onRepeat = { if (!driveApp.mediaRepository.cycleRepeat()) message("Questo lettore non permette di cambiare la ripetizione.") },
                                 onOpenSource = { openSource() },
-                                onPickFolder = { folderPicker.launch(null) },
+                                onPickFolder = {
+                                    if (!it.driveos.launcher.media.LocalMusicService.hasPermission(context)) { pendingFolders = true; storagePermission.launch(it.driveos.launcher.media.LocalMusicService.permission()) }
+                                    else showFolders = true
+                                },
                                 onPlayLast = if (driveApp.mediaRepository.lastFolder() != null) ({ driveApp.mediaRepository.playLastFolder() }) else null,
                                 onLaunch = { report(Launcher.launchApp(context, it)) },
                                 onBack = { screen = Screen.DASHBOARD },

@@ -9,7 +9,6 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.documentfile.provider.DocumentFile
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -53,31 +52,14 @@ class LocalPlayer(context: Context, private val onChange: (MediaInfo?) -> Unit) 
     /** 0 = no, 1 = tutto, 2 = singolo */
     val repeat: Int get() = if (!hasItems) 0 else when (player.repeatMode) { Player.REPEAT_MODE_ALL -> 1; Player.REPEAT_MODE_ONE -> 2; else -> 0 }
 
-    fun playLastFolder(): Boolean {
-        val u = lastFolder ?: return false
-        playFolder(Uri.parse(u), remember = false)
-        return true
-    }
-
-    /** Legge la cartella (con sottocartelle) e avvia il primo brano. */
-    fun playFolder(tree: Uri, remember: Boolean = true) {
-        if (remember) {
-            runCatching { app.contentResolver.takePersistableUriPermission(tree, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION) }
-            prefs.edit().putString("folder", tree.toString()).apply()
-        }
+    /** Cartella ("" = tutti i brani) dalla raccolta Audio; la ricorda per la volta dopo. */
+    fun playFolder(folder: String) {
+        prefs.edit().putString("folder", folder).apply()
         thread(name = "local-scan") {
-            val files = ArrayList<DocumentFile>()
-            fun walk(d: DocumentFile, depth: Int) {
-                if (depth > 6) return
-                d.listFiles().sortedBy { it.name.orEmpty().lowercase() }.forEach { f ->
-                    if (f.isDirectory) walk(f, depth + 1)
-                    else if (isAudio(f)) files.add(f)
-                }
-            }
-            runCatching { DocumentFile.fromTreeUri(app, tree)?.let { walk(it, 0) } }
+            val uris = if (folder.isEmpty()) AudioFolders.all(app) else AudioFolders.tracks(app, folder)
             main.post {
-                if (files.isEmpty()) { onChange(null); return@post }
-                val items = files.map { MediaItem.Builder().setUri(it.uri).setMediaId(it.uri.toString()).build() }
+                if (uris.isEmpty()) { onChange(null); return@post }
+                val items = uris.map { MediaItem.Builder().setUri(it).setMediaId(it.toString()).build() }
                 hasItems = true
                 player.setMediaItems(items)
                 player.prepare()
@@ -88,11 +70,7 @@ class LocalPlayer(context: Context, private val onChange: (MediaInfo?) -> Unit) 
         }
     }
 
-    private fun isAudio(f: DocumentFile): Boolean {
-        if (f.type?.startsWith("audio/") == true) return true
-        val n = f.name.orEmpty().lowercase()
-        return listOf(".mp3", ".flac", ".m4a", ".aac", ".ogg", ".opus", ".wav", ".wma", ".mka").any { n.endsWith(it) }
-    }
+    fun playLastFolder(): Boolean { val f = lastFolder ?: return false; playFolder(f); return true }
 
     private fun loadMeta(item: MediaItem?) {
         val id = item?.mediaId ?: return
