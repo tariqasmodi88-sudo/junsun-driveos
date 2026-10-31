@@ -688,6 +688,26 @@ class MainActivity : ComponentActivity() {
                 readingNames = false
             }
         }
+        // Come "Leggi nomi" ma solo per la stazione sintonizzata ora (anche se non e' nei preferiti).
+        fun readOne() {
+            val k = bridgeKhz ?: return
+            if (readingNames) return
+            readingNames = true
+            driveApp.logcatReader.expectName(k)
+            scope.launch {
+                runCatching {
+                    context.startActivity(Intent().setClassName("com.ts.MainUI", "com.ts.main.radio.RadioMainActivity")
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                }
+                kotlinx.coroutines.delay(4000)
+                if (!WindowWatcher.goHome()) {
+                    runCatching { context.startActivity(Intent(context, MainActivity::class.java)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) }
+                }
+                screen = Screen.RADIO
+                readingNames = false
+            }
+        }
         fun radioPress(id: String, viaBridge: (() -> Boolean)? = null) {
             if (viaBridge?.invoke() == true) return
             if (!NativeRadio.press(context, id)) {
@@ -1075,6 +1095,7 @@ class MainActivity : ComponentActivity() {
                                 rdsOn = bridgeRds,
                                 onReadNames = { readNames() },
                                 readingNames = readingNames,
+                                onReadOne = { readOne() },
                                 onBack = { screen = Screen.SETTINGS },
                             )
 

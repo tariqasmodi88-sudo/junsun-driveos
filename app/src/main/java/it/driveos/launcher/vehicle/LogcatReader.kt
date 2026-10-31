@@ -55,6 +55,8 @@ class LogcatReader(context: Context, private val repo: VehicleRepository) {
     private var tunedKhz: Int? = null
     private var tunedHasName = false
     private val setFreq = Regex("setfreq=(\\d{4,5})")
+    /** Si aspetta il nome della stazione gia' sintonizzata (radio nativa appena portata davanti). */
+    fun expectName(khz: Int) { tunedKhz = khz; tunedHasName = false }
     fun clearNames() { _names.value = emptyMap(); tunedKhz = null }
     private var parkingClear: Job? = null
 

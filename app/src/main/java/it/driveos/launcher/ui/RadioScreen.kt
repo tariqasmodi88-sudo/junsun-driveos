@@ -78,6 +78,7 @@ fun RadioScreen(
     /** La stazione trasmette RDS (come l'indicatore della radio nativa). */
     rdsOn: Boolean? = null,
     readingNames: Boolean = false,
+    onReadOne: (() -> Unit)? = null,
 ) {
     val colors = MaterialTheme.colorScheme
     val khz = state?.khz ?: currentKhz
@@ -96,6 +97,13 @@ fun RadioScreen(
                 Spacer(Modifier.width(10.dp))
                 Surface(onClick = { if (!readingNames) onReadNames() }, shape = RoundedCornerShape(14.dp), color = colors.surfaceVariant, contentColor = colors.onSurface) {
                     Text(if (readingNames) "Leggo i nomi…" else "Leggi nomi", fontSize = 14.sp, fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp))
+                }
+            }
+            if (onReadOne != null) {
+                Spacer(Modifier.width(10.dp))
+                Surface(onClick = { if (!readingNames) onReadOne() }, shape = RoundedCornerShape(14.dp), color = colors.surfaceVariant, contentColor = colors.onSurface) {
+                    Text("Leggi nome", fontSize = 14.sp, fontWeight = FontWeight.Medium,
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp))
                 }
             }
