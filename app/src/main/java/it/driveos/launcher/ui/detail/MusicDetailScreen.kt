@@ -19,12 +19,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Slider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,6 +56,7 @@ fun MusicDetailScreen(
     onPlayPause: () -> Unit,
     onNext: () -> Unit,
     onPrevious: () -> Unit,
+    onSeek: (Long) -> Unit = {},
     onOpenSource: () -> Unit,
     onLaunch: (AppKey) -> Unit,
     onBack: () -> Unit,
@@ -99,23 +103,30 @@ fun MusicDetailScreen(
                                         delay(1000)
                                     }
                                 }
-                                LinearProgressIndicator(
-                                    progress = { PlaybackMath.progress(pos, media.durationMs) },
-                                    modifier = Modifier.fillMaxWidth().height(6.dp),
+                                var drag by remember(media.title) { mutableStateOf<Float?>(null) }
+                                val shown = drag ?: PlaybackMath.progress(pos, media.durationMs).coerceIn(0f, 1f)
+                                Slider(
+                                    value = shown,
+                                    onValueChange = { drag = it },
+                                    onValueChangeFinished = {
+                                        drag?.let { onSeek((it * media.durationMs).toLong()) }
+                                        drag = null
+                                    },
+                                    modifier = Modifier.fillMaxWidth().height(40.dp),
                                 )
                                 Row(Modifier.fillMaxWidth()) {
-                                    Text(PlaybackMath.format(pos), fontSize = 15.sp, color = colors.onSurfaceVariant)
+                                    Text(PlaybackMath.format(drag?.let { (it * media.durationMs).toLong() } ?: pos), fontSize = 15.sp, color = colors.onSurfaceVariant)
                                     Spacer(Modifier.weight(1f))
                                     Text(PlaybackMath.format(media.durationMs), fontSize = 15.sp, color = colors.onSurfaceVariant)
                                 }
                                 Spacer(Modifier.height(12.dp))
                             }
-                            TransportControls(media.isPlaying, onPlayPause, onNext, onPrevious, height = 80.dp, modifier = Modifier.fillMaxWidth())
+                            TransportControls(media.isPlaying, onPlayPause, onNext, onPrevious, height = 112.dp, modifier = Modifier.fillMaxWidth())
                         }
                     }
                 }
             }
-            if (sources.isNotEmpty()) {
+            if (sources.isNotEmpty() && (media == null || media.title.isBlank())) {
                 Spacer(Modifier.height(12.dp))
                 Text("SORGENTI", fontSize = 13.sp, letterSpacing = 1.2.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurfaceVariant)
                 Spacer(Modifier.height(8.dp))

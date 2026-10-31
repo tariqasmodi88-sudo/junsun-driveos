@@ -810,6 +810,7 @@ class MainActivity : ComponentActivity() {
                                 onPlayPause = { mediaRepo.playPause() },
                                 onNext = { mediaRepo.next() },
                                 onPrevious = { mediaRepo.previous() },
+                                onSeek = { mediaRepo.seekTo(it) },
                                 onOpenSource = { openSource() },
                                 onLaunch = { report(Launcher.launchApp(context, it)) },
                                 onBack = { screen = Screen.DASHBOARD },

@@ -173,6 +173,11 @@ class MediaRepository(context: Context) {
     private fun firstText(vararg values: String?): String =
         values.firstOrNull { !it.isNullOrBlank() }.orEmpty()
 
+    /** Porta il brano al punto indicato (se il lettore lo permette). */
+    fun seekTo(ms: Long) {
+        runCatching { controller?.transportControls?.seekTo(ms.coerceAtLeast(0)) }
+    }
+
     fun playPause() {
         val c = controller ?: return
         if (c.playbackState?.state == PlaybackState.STATE_PLAYING) c.transportControls.pause()
