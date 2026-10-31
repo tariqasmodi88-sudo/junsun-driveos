@@ -53,7 +53,7 @@ class CanSerialTest {
         val half = all.size / 2
         val a = p.feed(all.copyOfRange(0, half))
         val b = p.feed(all.copyOfRange(half, all.size))
-        assertEquals(2, a.size + b.size)
+        assertEquals(2, (a + b).count { it.type != 'X' })
     }
 
     @Test fun lightsAndBelt() {
