@@ -84,6 +84,7 @@ import it.driveos.launcher.vehicle.VehicleLog
 import it.driveos.launcher.vehicle.VehicleLogService
 import it.driveos.launcher.vehicle.VehicleStatus
 import it.driveos.launcher.vehicle.WindowRules
+import it.driveos.launcher.junsun.TsBridge
 import it.driveos.launcher.vehicle.NativeRadio
 import it.driveos.launcher.vehicle.WindowWatcher
 import it.driveos.launcher.ui.cards.CalendarCard
@@ -292,6 +293,15 @@ class MainActivity : ComponentActivity() {
         val calendar by driveApp.calendarRepository.state.collectAsStateWithLifecycle()
         val guidanceMap by NavGuidanceStore.guidance.collectAsStateWithLifecycle()
         val vehicleSignals by driveApp.vehicleRepository.signals.collectAsStateWithLifecycle()
+        var bridgeKhz by remember { mutableStateOf<Int?>(null) }
+        LaunchedEffect(screen) {
+            if (screen != Screen.RADIO) return@LaunchedEffect
+            while (true) {
+                val info = driveApp.tsBridge.radioInfo()
+                bridgeKhz = if (info != null && info.second < 3) TsBridge.toKhz(info.first) else null
+                kotlinx.coroutines.delay(1000)
+            }
+        }
         val volumeState by driveApp.systemControls.volume.collectAsStateWithLifecycle()
         val windowBrightness by driveApp.systemControls.windowBrightness.collectAsStateWithLifecycle()
         val btConnected by driveApp.bluetoothWatcher.connected.collectAsStateWithLifecycle()
@@ -602,7 +612,9 @@ class MainActivity : ComponentActivity() {
         }
 
         /** Tasto Radio della Home: apre la radio NATIVA Junsun (se non ne hai scelta un'altra); se non parte, la radio DriveOS. */
-        fun radioPress(id: String) {
+        val bridge = driveApp.tsBridge
+        fun radioPress(id: String, viaBridge: (() -> Boolean)? = null) {
+            if (viaBridge?.invoke() == true) return
             if (!NativeRadio.press(context, id)) {
                 message(if (!WindowWatcher.enabled()) "Per comandare la radio attiva il servizio Accessibilità di DriveOS (Impostazioni → Veicolo)." else "Comando radio ancora in corso, riprova tra un attimo.")
             }
@@ -936,20 +948,20 @@ class MainActivity : ComponentActivity() {
                             }
 
                             Screen.RADIO -> RadioScreen(
-                                state = radioState ?: vehicleSignals[LogcatParser.RADIO_FREQ]?.toIntOrNull()?.let { k ->
+                                state = bridgeKhz?.let { RadioState(khz = it, source = "radio") } ?: radioState ?: vehicleSignals[LogcatParser.RADIO_FREQ]?.toIntOrNull()?.let { k ->
                                     RadioState(khz = k, source = "log")
                                 },
                                 detected = radioDetected,
                                 presets = s.radioPresets,
-                                currentKhz = radioState?.khz,
+                                currentKhz = bridgeKhz ?: radioState?.khz,
                                 onTune = { p ->
                                     val slot = s.radioPresets.indexOf(p) + 1
-                                    radioPress(NativeRadio.preset(slot))
+                                    radioPress(NativeRadio.preset(slot)) { if (p.band == RadioBand.FM) bridge.tuneFm(p.khz) else false }
                                 },
-                                onSeekDown = { radioPress(NativeRadio.SEEK_DOWN) },
-                                onSeekUp = { radioPress(NativeRadio.SEEK_UP) },
-                                onFm = { radioPress(NativeRadio.FM) },
-                                onAm = { radioPress(NativeRadio.AM) },
+                                onSeekDown = { radioPress(NativeRadio.SEEK_DOWN) { bridge.radioCall { it.SeekDn() } } },
+                                onSeekUp = { radioPress(NativeRadio.SEEK_UP) { bridge.radioCall { it.SeekUp() } } },
+                                onFm = { radioPress(NativeRadio.FM) { bridge.radioCall { it.onRadioFM() } } },
+                                onAm = { radioPress(NativeRadio.AM) { bridge.radioCall { it.onRadioAM() } } },
                                 onAdd = { radioDialog = true },
                                 onSaveCurrent = {
                                     val khz = radioState?.khz ?: vehicleSignals[LogcatParser.RADIO_FREQ]?.toIntOrNull()

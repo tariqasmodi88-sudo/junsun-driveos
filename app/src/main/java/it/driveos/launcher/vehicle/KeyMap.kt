@@ -105,39 +105,19 @@ class KeyMapper(context: Context) {
         }
     }
 
-    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
-    private var volBeforeMute = -1
+    /** Ponte verso la radio Junsun: volume e muto li fa lei, come con i suoi tasti. */
+    @Volatile var bridge: it.driveos.launcher.junsun.TsBridge? = null
 
-    /**
-     * Volume: prima il modo normale di Android; se dopo un attimo il livello non e' cambiato (su questa radio
-     * il volume lo governa l'app Junsun) si manda il comando Junsun, che lo gestisce da solo.
-     */
     private fun volume(audio: AudioManager?, dir: Int) {
-        val a = audio ?: return
-        val max = a.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-        val before = a.getStreamVolume(AudioManager.STREAM_MUSIC)
-        val target = (before + dir).coerceIn(0, max)
-        if (target == before) return
-        runCatching { a.setStreamVolume(AudioManager.STREAM_MUSIC, target, AudioManager.FLAG_SHOW_UI) }
-        handler.postDelayed({
-            if (runCatching { a.getStreamVolume(AudioManager.STREAM_MUSIC) }.getOrDefault(before) == before) {
-                val action = if (dir > 0) "forfan.intent.action.VOLUMEUP" else "forfan.intent.action.VOLUMEDN"
-                runCatching { app.sendBroadcast(android.content.Intent(action)) }
-            }
-        }, 250)
+        val b = bridge
+        if (b != null && b.functionCall { f -> if (dir > 0) f.onVolumeUp() else f.onVolumeDown() }) return
+        audio?.adjustStreamVolume(AudioManager.STREAM_MUSIC, if (dir > 0) AudioManager.ADJUST_RAISE else AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
     }
 
-    /** Muto: porta il volume a 0 e lo ripristina al tocco successivo. */
     private fun mute(audio: AudioManager?) {
-        val a = audio ?: return
-        val cur = a.getStreamVolume(AudioManager.STREAM_MUSIC)
-        if (cur > 0) {
-            volBeforeMute = cur
-            runCatching { a.setStreamVolume(AudioManager.STREAM_MUSIC, 0, AudioManager.FLAG_SHOW_UI) }
-        } else {
-            val back = if (volBeforeMute > 0) volBeforeMute else a.getStreamMaxVolume(AudioManager.STREAM_MUSIC) / 2
-            runCatching { a.setStreamVolume(AudioManager.STREAM_MUSIC, back, AudioManager.FLAG_SHOW_UI) }
-        }
+        val b = bridge
+        if (b != null && b.functionCall { f -> if (f.isVolumeMute()) f.onVolumeUnmute() else f.onVolumeMute() }) return
+        audio?.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_TOGGLE_MUTE, AudioManager.FLAG_SHOW_UI)
     }
 
     private fun media(audio: AudioManager?, code: Int) {

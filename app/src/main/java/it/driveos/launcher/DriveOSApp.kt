@@ -35,6 +35,7 @@ class DriveOSApp : Application() {
     lateinit var vehicleRepository: VehicleRepository
         private set
     lateinit var systemControls: SystemControls
+    lateinit var tsBridge: it.driveos.launcher.junsun.TsBridge
         private set
     lateinit var bluetoothWatcher: BluetoothWatcher
         private set
@@ -59,13 +60,14 @@ class DriveOSApp : Application() {
         mediaRepository = MediaRepository(this)
         calendarRepository = CalendarRepository(this)
         vehicleRepository = VehicleRepository(this)
-        systemControls = SystemControls(this)
+        tsBridge = it.driveos.launcher.junsun.TsBridge(this).also { it.connect() }
+        systemControls = SystemControls(this).also { it.bridge = tsBridge }
         bluetoothWatcher = BluetoothWatcher(this)
         connectivityWatcher = ConnectivityWatcher(this)
         radioController = RadioController(this)
         logcatReader = LogcatReader(this, vehicleRepository)
         speedWatcher = SpeedWatcher(this)
-        keyMapper = KeyMapper(this)
+        keyMapper = KeyMapper(this).also { it.bridge = tsBridge }
         canReader = CanSerialReader().also { r ->
             r.addSink { vehicleRepository.ingest(it) }
             r.addSink { keyMapper.onChanges(it) }

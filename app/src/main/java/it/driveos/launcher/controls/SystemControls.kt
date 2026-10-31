@@ -18,6 +18,9 @@ class SystemControls(context: Context) {
     private val app = context.applicationContext
     private val audio = app.getSystemService(AudioManager::class.java)
 
+    /** Ponte verso la radio Junsun: il volume lo governa lei, DriveOS le chiede di cambiarlo. */
+    @Volatile var bridge: it.driveos.launcher.junsun.TsBridge? = null
+
     data class VolumeState(val index: Int, val max: Int, val percent: Int)
 
     private val _volume = MutableStateFlow(readVolume())
@@ -39,6 +42,11 @@ class SystemControls(context: Context) {
     }
 
     fun setVolumePercent(percent: Int) {
+        val b = bridge
+        if (b != null && b.functionCall { f ->
+                val lo = f.getMinVolume(); val hi = f.getMaxVolume()
+                if (hi > lo) f.setVolume(lo + Math.round((hi - lo) * percent.coerceIn(0, 100) / 100f))
+            }) { refreshLater(); return }
         val a = audio ?: return
         val max = a.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
         runCatching { a.setStreamVolume(AudioManager.STREAM_MUSIC, ControlMath.fromPercent(percent, max), 0) }
@@ -46,11 +54,17 @@ class SystemControls(context: Context) {
     }
 
     fun nudgeVolume(delta: Int) {
+        val b = bridge
+        if (b != null && b.functionCall { f -> if (delta > 0) f.onVolumeUp() else f.onVolumeDown() }) { refreshLater(); return }
         val a = audio ?: return
         val max = a.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
         val next = ControlMath.step(a.getStreamVolume(AudioManager.STREAM_MUSIC), delta, max)
         runCatching { a.setStreamVolume(AudioManager.STREAM_MUSIC, next, 0) }
         refresh()
+    }
+
+    private fun refreshLater() {
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ refresh() }, 350)
     }
 
     fun setWindowBrightness(fraction: Float) {
