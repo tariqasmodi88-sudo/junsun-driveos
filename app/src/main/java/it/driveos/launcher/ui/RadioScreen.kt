@@ -79,7 +79,7 @@ fun RadioScreen(
     val freqText = khz?.let { RadioPreset(it, "").displayFrequency() } ?: "—"
     val playing = state?.playing == true
     val current = presets.firstOrNull { it.khz == khz }
-    val name = stationName ?: current?.name
+    val name = stationName ?: current?.name?.takeIf { !it.startsWith("FM ") }
 
     Column(Modifier.fillMaxSize()) {
         ScreenHeader("Radio", onBack) {

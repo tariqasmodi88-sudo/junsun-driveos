@@ -304,7 +304,14 @@ class MainActivity : ComponentActivity() {
         val logKhz = vehicleSignals[LogcatParser.RADIO_FREQ]?.toIntOrNull()
         LaunchedEffect(logName, logKhz, bridgeKhz) {
             val k = bridgeKhz ?: logKhz
-            if (logName != null && k != null) stationNames[k] = logName
+            if (logName != null && k != null) {
+                stationNames[k] = logName
+                // un preferito con nome generico ("FM 99,6") prende il nome ricevuto
+                val cur = settingsState?.radioPresets.orEmpty()
+                if (cur.any { it.khz == k && it.name.startsWith("FM ") }) {
+                    driveApp.settingsRepository.setRadioPresets(cur.map { if (it.khz == k && it.name.startsWith("FM ")) it.copy(name = logName) else it })
+                }
+            }
         }
         LaunchedEffect(screen) {
             if (screen == Screen.MUSIC && driveApp.mediaRepository.resumeIfPausedForRadio()) {
@@ -1046,7 +1053,7 @@ class MainActivity : ComponentActivity() {
                                     }.isSuccess
                                     if (!ok) openOrPick(s.radioApp, PickerTarget.RADIO)
                                 },
-                                stationName = (bridgeKhz ?: logKhz)?.let { stationNames[it] } ?: logName,
+                                stationName = (bridgeKhz ?: logKhz)?.let { stationNames[it] },
                                 logsGranted = driveApp.logcatReader.available(),
                                 onBack = { screen = Screen.SETTINGS },
                             )
