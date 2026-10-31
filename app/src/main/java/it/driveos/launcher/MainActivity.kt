@@ -671,6 +671,27 @@ class MainActivity : ComponentActivity() {
 
         /** Tasto Radio della Home: apre la radio DriveOS (o l'app radio che hai scelto). */
         val bridge = driveApp.tsBridge
+        var readingNames by remember { mutableStateOf(false) }
+        // Giro sui preferiti con la radio nativa davanti: e' la sua schermata a scrivere il nome RDS nel registro.
+        fun readNames() {
+            if (readingNames) return
+            readingNames = true
+            scope.launch {
+                val list = s.radioPresets.filter { it.khz > 0 }
+                runCatching {
+                    context.startActivity(Intent().setClassName("com.ts.MainUI", "com.ts.main.radio.RadioMainActivity")
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                }
+                kotlinx.coroutines.delay(1500)
+                for (p in list) { bridge.tuneFm(p.khz); kotlinx.coroutines.delay(6000) }
+                if (!WindowWatcher.goHome()) {
+                    runCatching { context.startActivity(Intent(context, MainActivity::class.java)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) }
+                }
+                screen = Screen.RADIO
+                readingNames = false
+            }
+        }
         fun radioPress(id: String, viaBridge: (() -> Boolean)? = null) {
             if (viaBridge?.invoke() == true) return
             if (!NativeRadio.press(context, id)) {
@@ -1055,6 +1076,8 @@ class MainActivity : ComponentActivity() {
                                 },
                                 stationName = (bridgeKhz ?: logKhz)?.let { stationNames[it] },
                                 logsGranted = driveApp.logcatReader.available(),
+                                onReadNames = { readNames() },
+                                readingNames = readingNames,
                                 onBack = { screen = Screen.SETTINGS },
                             )
 

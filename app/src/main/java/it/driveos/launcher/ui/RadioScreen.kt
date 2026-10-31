@@ -73,6 +73,9 @@ fun RadioScreen(
     onSaveSlot: ((Int) -> Unit)? = null,
     /** false = DriveOS non puo' leggere il registro di sistema, da cui arriva il nome RDS. */
     logsGranted: Boolean = true,
+    /** Giro dei preferiti sulla radio nativa per leggere i nomi RDS. */
+    onReadNames: (() -> Unit)? = null,
+    readingNames: Boolean = false,
 ) {
     val colors = MaterialTheme.colorScheme
     val khz = state?.khz ?: currentKhz
@@ -86,6 +89,13 @@ fun RadioScreen(
             Surface(onClick = onOpenExternal, shape = RoundedCornerShape(14.dp), color = colors.surfaceVariant, contentColor = colors.onSurface) {
                 Text("Radio Junsun", fontSize = 14.sp, fontWeight = FontWeight.Medium,
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp))
+            }
+            if (onReadNames != null) {
+                Spacer(Modifier.width(10.dp))
+                Surface(onClick = { if (!readingNames) onReadNames() }, shape = RoundedCornerShape(14.dp), color = colors.surfaceVariant, contentColor = colors.onSurface) {
+                    Text(if (readingNames) "Leggo i nomi…" else "Leggi nomi", fontSize = 14.sp, fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp))
+                }
             }
         }
         Row(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -103,14 +113,21 @@ fun RadioScreen(
                                 fontSize = 13.sp, color = colors.onSurfaceVariant)
                         }
                         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Row(verticalAlignment = Alignment.Bottom) {
-                                Text(freqText, fontSize = 64.sp, fontWeight = FontWeight.Light, color = colors.onSurface)
-                                Spacer(Modifier.width(8.dp))
-                                Text("MHz", fontSize = 18.sp, color = colors.onSurfaceVariant, modifier = Modifier.padding(bottom = 14.dp))
+                            if (name != null) {
+                                Text(name, fontSize = 52.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface,
+                                    maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Row(verticalAlignment = Alignment.Bottom) {
+                                    Text(freqText, fontSize = 24.sp, fontWeight = FontWeight.Medium, color = colors.primary)
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("MHz", fontSize = 14.sp, color = colors.onSurfaceVariant, modifier = Modifier.padding(bottom = 3.dp))
+                                }
+                            } else {
+                                Row(verticalAlignment = Alignment.Bottom) {
+                                    Text(freqText, fontSize = 64.sp, fontWeight = FontWeight.Light, color = colors.onSurface)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("MHz", fontSize = 18.sp, color = colors.onSurfaceVariant, modifier = Modifier.padding(bottom = 14.dp))
+                                }
                             }
-                            Text(name ?: "—", fontSize = 20.sp, fontWeight = FontWeight.SemiBold,
-                                color = if (name != null) colors.primary else colors.onSurfaceVariant,
-                                maxLines = 1, overflow = TextOverflow.Ellipsis)
                             if (!logsGranted && stationName == null)
                                 Text("Nome RDS non leggibile: manca il permesso ai log (vedi istruzioni in chat)", fontSize = 12.sp, color = colors.onSurfaceVariant)
                         }
@@ -196,12 +213,14 @@ private fun PresetTile(slot: Int, p: RadioPreset, selected: Boolean, onTune: (Ra
         modifier = Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxSize().combinedClickable(onClick = { onTune(p) }, onLongClick = onLong).padding(horizontal = 14.dp, vertical = 6.dp)) {
             Column(Modifier.align(Alignment.CenterStart)) {
+                val named = p.name.isNotBlank() && !p.name.startsWith("FM ")
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("P$slot", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (selected) colors.primary else colors.onSurfaceVariant)
                     Spacer(Modifier.width(8.dp))
-                    Text(p.name, fontSize = 13.sp, color = colors.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    if (named) Text(p.displayFrequency(), fontSize = 13.sp, color = colors.onSurfaceVariant, maxLines = 1)
                 }
-                Text(p.displayFrequency(), fontSize = 26.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
+                Text(if (named) p.name else p.displayFrequency(), fontSize = if (named) 24.sp else 26.sp, fontWeight = FontWeight.SemiBold,
+                    color = colors.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
     }
