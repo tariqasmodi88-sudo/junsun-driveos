@@ -68,7 +68,10 @@ class CanSerialTest {
     @Test fun parkingSensors() {
         val m = decode("23 43 08 2e 22 04 03 01 01 01 aa 55", "23 43 08 2e 23 04 00 00 00 00 aa 55")
         assertEquals("3 1 1 1", m[CanDecoder.REAR_SENSORS])
-        assertEquals(listOf(2, 0, 0, 0), CanDecoder.sensorLevels(m, CanDecoder.REAR_SENSORS))
+        assertEquals(listOf(3, 3, 3, 3), CanDecoder.sensorLevels(m, CanDecoder.REAR_SENSORS))
+        assertEquals(listOf(0, 3, 3, 3), CanDecoder.sensorLevels(mapOf(CanDecoder.REAR_SENSORS to "0 3 3 2"), CanDecoder.REAR_SENSORS))
+        assertEquals(listOf(0, 0, 0, 0), CanDecoder.sensorLevels(mapOf(CanDecoder.REAR_SENSORS to "0 10 10 0"), CanDecoder.REAR_SENSORS))
+        assertEquals(listOf(0, 2, 1, 3), CanDecoder.sensorLevels(mapOf(CanDecoder.REAR_SENSORS to "12 5 8 2"), CanDecoder.REAR_SENSORS))
         assertEquals(listOf(0, 0, 0, 0), CanDecoder.sensorLevels(m, CanDecoder.FRONT_SENSORS))
     }
 

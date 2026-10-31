@@ -54,7 +54,7 @@ class CanStreamParser {
  * Traduce i messaggi in segnali (id → valore). Decodifica verificata sul giro del 30/10 (Tiguan 2016):
  *  - C 0x24 sotto-tipo 04: maschera porte (1 ant.sx, 2 ant.dx, 4 post.sx, 8 post.dx, 0x10 baule);
  *  - C 0x41 sotto-tipo 01: bit 0x20 a 0 = freno a mano tirato (verificato dall'utente);
- *  - C 0x22 / 0x23: 4 sensori di parcheggio posteriori / anteriori (valore alto = libero, scende avvicinandosi: scala appresa dai dati);
+ *  - C 0x22 / 0x23: 4 sensori di parcheggio posteriori / anteriori (valore basso = ostacolo vicino; 0 o >= 10 = nulla);
  *  - S 0x41: bit 0 del 2° byte = retromarcia;
  *  - C 0x7d sotto-tipo 01 (luci, prova 30/10): bit 0x40 luci accese, 0x20 anabbaglianti, 0x04 retronebbia;
  *    0x10/0x08 sono le frecce (lampeggiano: non vengono registrate);
@@ -146,15 +146,21 @@ object CanDecoder {
     private fun hex(b: ByteArray, from: Int) = (from until b.size).joinToString(" ") { "%02x".format(b[it]) }
 
     /**
-     * Livelli 0..3 dei 4 sensori (0 = libero/bianco, 1 = giallo, 2 = arancio, 3 = rosso). Valori grezzi 0 e 1 =
-     * nessun ostacolo; salgono avvicinandosi. La scala esatta del firmware non e' ancora nota: i numeri grezzi
-     * sono mostrati sotto l'auto per tararla.
+     * Livelli 0..3 dei 4 sensori: 0 = bianco, 1 = giallo, 2 = arancio, 3 = rosso. Scala misurata in auto:
+     * il valore SCENDE avvicinandosi all'ostacolo (1-3 = vicinissimo); da 10 in su, oppure 0, il sensore non vede nulla.
      */
     fun resetSensorScale() {}
 
     fun sensorLevels(signals: Map<String, String>, key: String): List<Int>? {
         val raw = sensorRaw(signals, key) ?: return null
-        return raw.map { (it - 1).coerceIn(0, 3) }
+        return raw.map { v ->
+            when {
+                v <= 0 || v >= 10 -> 0
+                v <= 3 -> 3
+                v <= 6 -> 2
+                else -> 1
+            }
+        }
     }
 
     fun sensorRaw(signals: Map<String, String>, key: String): List<Int>? {
