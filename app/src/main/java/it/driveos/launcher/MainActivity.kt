@@ -306,7 +306,7 @@ class MainActivity : ComponentActivity() {
         LaunchedEffect(screen) {
             if (screen != Screen.RADIO) return@LaunchedEffect
             // entrando in Radio: ferma i file/lo streaming e accendi il sintonizzatore
-            mediaRepo.pauseIfPlaying()
+            driveApp.mediaRepository.pauseIfPlaying()
             driveApp.tsBridge.radioCall { it.OpenRadioCh(); it.onRadioFM() }
             while (true) {
                 val info = driveApp.tsBridge.radioInfo()
