@@ -299,7 +299,7 @@ class MainActivity : ComponentActivity() {
         val stationNames = remember { mutableStateMapOf<Int, String>() }
         val logName = vehicleSignals[LogcatParser.RADIO_NAME]
         val logKhz = vehicleSignals[LogcatParser.RADIO_FREQ]?.toIntOrNull()
-        LaunchedEffect(logName) {
+        LaunchedEffect(logName, logKhz, bridgeKhz) {
             val k = bridgeKhz ?: logKhz
             if (logName != null && k != null) stationNames[k] = logName
         }
@@ -972,6 +972,14 @@ class MainActivity : ComponentActivity() {
                                         val p = RadioPreset(khz, stationNames[khz] ?: "FM ${RadioPreset(khz, "").displayFrequency()}", RadioBand.FM)
                                         if (RadioPresetLogic.isFull(s.radioPresets, p)) message("Hai già 6 stazioni: rimuovine una.")
                                         else scope.launch { driveApp.settingsRepository.setRadioPresets(RadioPresetLogic.add(s.radioPresets, p)) }
+                                    }
+                                },
+                                onSaveSlot = { slot ->
+                                    val khz = bridgeKhz ?: radioState?.khz ?: vehicleSignals[LogcatParser.RADIO_FREQ]?.toIntOrNull()
+                                    if (khz != null) {
+                                        val name = stationNames[khz] ?: "FM ${RadioPreset(khz, "").displayFrequency()}"
+                                        scope.launch { driveApp.settingsRepository.setRadioPresets(RadioPresetLogic.setSlot(s.radioPresets, slot, RadioPreset(khz, name, RadioBand.FM))) }
+                                        message("P$slot: $name ${RadioPreset(khz, "").displayFrequency()}")
                                     }
                                 },
                                 onRemove = { p -> scope.launch {

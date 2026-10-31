@@ -55,6 +55,17 @@ object RadioPresetLogic {
         return if (i >= 0) normalize(list.toMutableList().also { it[i] = preset }) else normalize(list + preset)
     }
 
+    /** Mette [preset] nel posto [slot] (1-based) togliendo un'eventuale copia altrove; posti oltre la fine vanno in coda. */
+    fun setSlot(list: List<RadioPreset>, slot: Int, preset: RadioPreset): List<RadioPreset> {
+        val idx = (slot - 1).coerceIn(0, MAX_PRESETS - 1)
+        val target = list.getOrNull(idx)
+        val others = list.filterNot { it.band == preset.band && it.khz == preset.khz && it !== target }
+        val at = if (target == null) others.size else others.indexOf(target)
+        val out = others.toMutableList()
+        if (target != null && at >= 0) out[at] = preset else out.add(preset)
+        return out.take(MAX_PRESETS)
+    }
+
     fun isFull(list: List<RadioPreset>, preset: RadioPreset) =
         list.size >= MAX_PRESETS && list.none { it.band == preset.band && it.khz == preset.khz }
 

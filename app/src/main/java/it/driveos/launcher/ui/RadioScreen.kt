@@ -2,6 +2,7 @@ package it.driveos.launcher.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -63,6 +64,8 @@ fun RadioScreen(
     onAm: () -> Unit,
     onAdd: () -> Unit,
     onSaveCurrent: (() -> Unit)? = null,
+    /** Pressione lunga su P1…P6: registra la stazione attuale in quel posto. */
+    onSaveSlot: ((Int) -> Unit)? = null,
     onRemove: (RadioPreset) -> Unit,
     onOpenExternal: () -> Unit,
     onBack: () -> Unit,
@@ -127,8 +130,9 @@ fun RadioScreen(
                             val i = row * 2 + col
                             val p = presets.getOrNull(i)
                             Box(Modifier.weight(1f).fillMaxHeight()) {
-                                if (p != null) PresetTile(i + 1, p, selected = khz == p.khz, onTune, onRemove)
+                                if (p != null) PresetTile(i + 1, p, selected = khz == p.khz, onTune, onRemove, onLong = { onSaveSlot?.invoke(i + 1) })
                                 else EmptyTile(i + 1, canSave = onSaveCurrent != null && khz != null,
+                                    onLong = { onSaveSlot?.invoke(i + 1) },
                                     onClick = { if (onSaveCurrent != null && khz != null) onSaveCurrent() else onAdd() })
                             }
                         }
@@ -180,12 +184,13 @@ private fun CtrlButton(
 }
 
 @Composable
-private fun PresetTile(slot: Int, p: RadioPreset, selected: Boolean, onTune: (RadioPreset) -> Unit, onRemove: (RadioPreset) -> Unit) {
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+private fun PresetTile(slot: Int, p: RadioPreset, selected: Boolean, onTune: (RadioPreset) -> Unit, onRemove: (RadioPreset) -> Unit, onLong: () -> Unit = {}) {
     val colors = MaterialTheme.colorScheme
-    Surface(onClick = { onTune(p) }, shape = RoundedCornerShape(20.dp),
+    Surface(shape = RoundedCornerShape(20.dp),
         color = if (selected) colors.primary.copy(alpha = 0.22f) else colors.surface,
         modifier = Modifier.fillMaxSize()) {
-        Box(Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 6.dp)) {
+        Box(Modifier.fillMaxSize().combinedClickable(onClick = { onTune(p) }, onLongClick = onLong).padding(horizontal = 14.dp, vertical = 6.dp)) {
             Column(Modifier.align(Alignment.CenterStart).padding(end = 22.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("P$slot", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (selected) colors.primary else colors.onSurfaceVariant)
@@ -202,11 +207,12 @@ private fun PresetTile(slot: Int, p: RadioPreset, selected: Boolean, onTune: (Ra
 }
 
 @Composable
-private fun EmptyTile(slot: Int, canSave: Boolean, onClick: () -> Unit) {
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+private fun EmptyTile(slot: Int, canSave: Boolean, onClick: () -> Unit, onLong: () -> Unit = {}) {
     val colors = MaterialTheme.colorScheme
-    Surface(onClick = onClick, shape = RoundedCornerShape(20.dp), color = colors.surface.copy(alpha = 0.5f),
+    Surface(shape = RoundedCornerShape(20.dp), color = colors.surface.copy(alpha = 0.5f),
         modifier = Modifier.fillMaxSize()) {
-        Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+        Column(Modifier.fillMaxSize().combinedClickable(onClick = onClick, onLongClick = onLong), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Text("P$slot", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = colors.onSurfaceVariant)
             Icon(Icons.Filled.Add, null, tint = colors.onSurfaceVariant, modifier = Modifier.size(26.dp))
             Text(if (canSave) "Salva questa" else "Aggiungi", fontSize = 12.sp, color = colors.onSurfaceVariant)
