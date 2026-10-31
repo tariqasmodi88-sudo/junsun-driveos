@@ -122,6 +122,9 @@ private val PROJECTION_PKGS = listOf("com.google.android.projection.gearhead", "
  * Unica activity: schermata Home (categoria HOME) e voce nell'elenco app (LAUNCHER).
  * Non tocca radio, CAN, retrocamera o impostazioni di sistema: avvia solo altre app.
  */
+/** La radio nativa e' gia' stata avviata dietro DriveOS in questo avvio. */
+private var nativeRadioWarmed = false
+
 class MainActivity : ComponentActivity() {
 
     private var screen by mutableStateOf(Screen.DASHBOARD)
@@ -310,6 +313,22 @@ class MainActivity : ComponentActivity() {
             if (screen != Screen.RADIO) return@LaunchedEffect
             // entrando in Radio: ferma i file/lo streaming e accendi il sintonizzatore
             driveApp.mediaRepository.pauseIfPlaying()
+            // Una volta per avvio: la radio nativa va "accesa" dietro DriveOS, cosi' scrive il nome RDS nel registro.
+            if (!nativeRadioWarmed) {
+                nativeRadioWarmed = true
+                val ok = runCatching {
+                    context.startActivity(Intent().setClassName("com.ts.MainUI", "com.ts.main.radio.RadioMainActivity")
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                }.isSuccess
+                if (ok) {
+                    kotlinx.coroutines.delay(1200)
+                    if (!WindowWatcher.goHome()) {
+                        runCatching { context.startActivity(Intent(context, MainActivity::class.java)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) }
+                    }
+                    kotlinx.coroutines.delay(500)
+                }
+            }
             val br = driveApp.tsBridge
             br.radioCall { it.OpenRadioCh(); it.onRadioFM() }
             // riprende l'ultima stazione scelta
