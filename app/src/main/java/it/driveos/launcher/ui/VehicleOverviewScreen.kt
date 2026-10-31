@@ -228,7 +228,7 @@ private fun CarTopView(state: VehicleOverviewState, modifier: Modifier) {
         }
 
         // Sensori di parcheggio: 4 settori ad anelli. Più l'ostacolo è vicino, più anelli si accendono e il
-        // colore passa da giallo a rosso. Senza dato di distanza (solo retromarcia) "respirano" in giallo.
+        // colore passa da giallo a rosso; senza ostacoli sono bianchi.
         fun sensorArcs(levels: List<Int>?, rear: Boolean) {
             val cx = left + w / 2
             val cy = if (rear) top + h - 6f else top + 6f
@@ -238,14 +238,15 @@ private fun CarTopView(state: VehicleOverviewState, modifier: Modifier) {
             for (i in 0 until 4) {
                 val level = levels?.getOrNull(i)?.coerceIn(0, 3)
                 for (ring in 1..3) {
-                    val lit = if (level == null) ring == 1 else ring <= level
+                    // Libero: anelli bianchi. Ostacolo rilevato: gialli (arancio se vicino). Troppo vicino: rossi.
+                    val lit = level != null && ring <= level
                     val color = when {
-                        level == null -> Amber
-                        level >= 3 -> Warn
+                        !lit -> Color.White
+                        level!! >= 3 -> Warn
                         level == 2 -> Color(0xFFFF9A3D)
                         else -> Amber
                     }
-                    val alpha = if (lit) (if (level == null) 0.35f + 0.4f * pulse else if (level >= 3) 0.6f + 0.4f * pulse else 0.95f) else 0.12f
+                    val alpha = if (!lit) 0.4f else if (level!! >= 3) 0.7f + 0.3f * pulse else 0.95f
                     val r = w * (0.32f + ring * 0.17f)
                     drawArc(color.copy(alpha = alpha), start + seg * i + 2f, seg - 4f, false,
                         topLeft = Offset(cx - r, cy - r * 0.55f), size = Size(r * 2, r * 1.1f),

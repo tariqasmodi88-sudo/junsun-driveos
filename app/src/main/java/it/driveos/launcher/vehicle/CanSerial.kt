@@ -54,7 +54,7 @@ class CanStreamParser {
  * Traduce i messaggi in segnali (id → valore). Decodifica verificata sul giro del 30/10 (Tiguan 2016):
  *  - C 0x24 sotto-tipo 04: maschera porte (1 ant.sx, 2 ant.dx, 4 post.sx, 8 post.dx, 0x10 baule);
  *  - C 0x41 sotto-tipo 01: bit 0x20 a 0 = freno a mano tirato (verificato dall'utente);
- *  - C 0x22 / 0x23: 4 sensori di parcheggio posteriori / anteriori (1 = nessun ostacolo, sale avvicinandosi);
+ *  - C 0x22 / 0x23: 4 sensori di parcheggio posteriori / anteriori (valore alto = libero, scende avvicinandosi: scala appresa dai dati);
  *  - S 0x41: bit 0 del 2° byte = retromarcia;
  *  - C 0x7d sotto-tipo 01 (luci, prova 30/10): bit 0x40 luci accese, 0x20 anabbaglianti, 0x04 retronebbia;
  *    0x10/0x08 sono le frecce (lampeggiano: non vengono registrate);
@@ -145,11 +145,23 @@ object CanDecoder {
     private fun bit(mask: Int, b: Int) = if ((mask and b) != 0) "1" else "0"
     private fun hex(b: ByteArray, from: Int) = (from until b.size).joinToString(" ") { "%02x".format(b[it]) }
 
-    /** Livelli 0..3 dei 4 sensori (0 = libero). La scala grezza non e' ancora nota: 1 = libero, poi sale. */
+    /**
+     * Livelli 0..3 dei 4 sensori (0 = libero, 3 = ostacolo vicinissimo). La scala grezza del firmware non e'
+     * documentata: lontano il valore e' alto e scende avvicinandosi. Il valore "libero" e quello piu' vicino
+     * si imparano dai dati (massimo e minimo visti), senza fissare numeri.
+     */
+    private val scales = mutableMapOf<String, IntArray>() // [massimo, minimo]
+
+    fun resetSensorScale() = scales.clear()
+
     fun sensorLevels(signals: Map<String, String>, key: String): List<Int>? {
         val raw = signals[key]?.split(" ")?.mapNotNull { it.toIntOrNull() } ?: return null
         if (raw.size != 4) return null
-        return raw.map { (it - 1).coerceIn(0, 3) }
+        val sc = scales.getOrPut(key) { intArrayOf(raw.max(), raw.min()) }
+        sc[0] = maxOf(sc[0], raw.max())
+        sc[1] = minOf(sc[1], raw.min())
+        val span = (sc[0] - sc[1]).coerceAtLeast(1)
+        return raw.map { v -> Math.ceil(3.0 * (sc[0] - v) / span).toInt().coerceIn(0, 3) }
     }
 
     /** Etichette leggibili delle porte aperte, es. ["anteriore sinistra", "baule"]. */
