@@ -95,13 +95,48 @@ class KeyMapper(context: Context) {
     private fun perform(a: KeyAction) {
         val audio = app.getSystemService(AudioManager::class.java)
         when (a) {
-            KeyAction.VOL_UP -> audio?.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
-            KeyAction.VOL_DOWN -> audio?.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
-            KeyAction.MUTE -> audio?.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_TOGGLE_MUTE, AudioManager.FLAG_SHOW_UI)
+            KeyAction.VOL_UP -> volume(audio, +1)
+            KeyAction.VOL_DOWN -> volume(audio, -1)
+            KeyAction.MUTE -> mute(audio)
             KeyAction.NEXT -> media(audio, KeyEvent.KEYCODE_MEDIA_NEXT)
             KeyAction.PREV -> media(audio, KeyEvent.KEYCODE_MEDIA_PREVIOUS)
             KeyAction.PLAY_PAUSE -> media(audio, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE)
             else -> KeyEvents.flow.tryEmit(a)
+        }
+    }
+
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var volBeforeMute = -1
+
+    /**
+     * Volume: prima il modo normale di Android; se dopo un attimo il livello non e' cambiato (su questa radio
+     * il volume lo governa l'app Junsun) si manda il comando Junsun, che lo gestisce da solo.
+     */
+    private fun volume(audio: AudioManager?, dir: Int) {
+        val a = audio ?: return
+        val max = a.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        val before = a.getStreamVolume(AudioManager.STREAM_MUSIC)
+        val target = (before + dir).coerceIn(0, max)
+        if (target == before) return
+        runCatching { a.setStreamVolume(AudioManager.STREAM_MUSIC, target, AudioManager.FLAG_SHOW_UI) }
+        handler.postDelayed({
+            if (runCatching { a.getStreamVolume(AudioManager.STREAM_MUSIC) }.getOrDefault(before) == before) {
+                val action = if (dir > 0) "forfan.intent.action.VOLUMEUP" else "forfan.intent.action.VOLUMEDN"
+                runCatching { app.sendBroadcast(android.content.Intent(action)) }
+            }
+        }, 250)
+    }
+
+    /** Muto: porta il volume a 0 e lo ripristina al tocco successivo. */
+    private fun mute(audio: AudioManager?) {
+        val a = audio ?: return
+        val cur = a.getStreamVolume(AudioManager.STREAM_MUSIC)
+        if (cur > 0) {
+            volBeforeMute = cur
+            runCatching { a.setStreamVolume(AudioManager.STREAM_MUSIC, 0, AudioManager.FLAG_SHOW_UI) }
+        } else {
+            val back = if (volBeforeMute > 0) volBeforeMute else a.getStreamMaxVolume(AudioManager.STREAM_MUSIC) / 2
+            runCatching { a.setStreamVolume(AudioManager.STREAM_MUSIC, back, AudioManager.FLAG_SHOW_UI) }
         }
     }
 
