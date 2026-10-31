@@ -44,33 +44,42 @@ object RadioPresetLogic {
         return if (snapped in FM_MIN_KHZ..FM_MAX_KHZ) snapped else null
     }
 
-    /** Evita doppioni della stessa frequenza; l'ordine è quello di salvataggio (posto P1…P6, come sulla radio). */
-    fun normalize(list: List<RadioPreset>): List<RadioPreset> =
-        list.distinctBy { it.band to it.khz }
+    /** Posto vuoto: i preferiti hanno posti fissi P1…P6, un posto libero non fa slittare gli altri. */
+    val EMPTY = RadioPreset(0, "")
+    fun RadioPreset.isEmpty() = khz <= 0
 
-    fun add(list: List<RadioPreset>, preset: RadioPreset): List<RadioPreset> {
-        val exists = list.any { it.band == preset.band && it.khz == preset.khz }
-        if (!exists && list.size >= MAX_PRESETS) return list // pieno: serve prima rimuoverne una
-        val i = list.indexOfFirst { it.band == preset.band && it.khz == preset.khz }
-        return if (i >= 0) normalize(list.toMutableList().also { it[i] = preset }) else normalize(list + preset)
+    private fun trim(list: List<RadioPreset>): List<RadioPreset> = list.dropLastWhile { it.isEmpty() }.take(MAX_PRESETS)
+
+    /** Stessa frequenza in due posti: resta solo il primo, l'altro diventa vuoto (nessuno slittamento). */
+    fun normalize(list: List<RadioPreset>): List<RadioPreset> {
+        val seen = HashSet<Pair<RadioBand, Int>>()
+        return trim(list.map { p -> if (p.isEmpty() || seen.add(p.band to p.khz)) p else EMPTY })
     }
 
-    /** Mette [preset] nel posto [slot] (1-based) togliendo un'eventuale copia altrove; posti oltre la fine vanno in coda. */
+    /** Aggiunge nel primo posto libero (o aggiorna il nome se la frequenza c'è già). */
+    fun add(list: List<RadioPreset>, preset: RadioPreset): List<RadioPreset> {
+        val i = list.indexOfFirst { !it.isEmpty() && it.band == preset.band && it.khz == preset.khz }
+        if (i >= 0) return normalize(list.toMutableList().also { it[i] = preset })
+        val free = list.indexOfFirst { it.isEmpty() }
+        if (free >= 0) return normalize(list.toMutableList().also { it[free] = preset })
+        if (list.size >= MAX_PRESETS) return list // pieno
+        return normalize(list + preset)
+    }
+
+    /** Mette [preset] nel posto [slot] (1-based). Se la frequenza era in un altro posto, quello si svuota. */
     fun setSlot(list: List<RadioPreset>, slot: Int, preset: RadioPreset): List<RadioPreset> {
         val idx = (slot - 1).coerceIn(0, MAX_PRESETS - 1)
-        val target = list.getOrNull(idx)
-        val others = list.filterNot { it.band == preset.band && it.khz == preset.khz && it !== target }
-        val at = if (target == null) others.size else others.indexOf(target)
-        val out = others.toMutableList()
-        if (target != null && at >= 0) out[at] = preset else out.add(preset)
-        return out.take(MAX_PRESETS)
+        val out = list.map { if (!it.isEmpty() && it.band == preset.band && it.khz == preset.khz) EMPTY else it }.toMutableList()
+        while (out.size <= idx) out.add(EMPTY)
+        out[idx] = preset
+        return trim(out)
     }
 
     fun isFull(list: List<RadioPreset>, preset: RadioPreset) =
-        list.size >= MAX_PRESETS && list.none { it.band == preset.band && it.khz == preset.khz }
+        list.size >= MAX_PRESETS && list.none { it.isEmpty() } && list.none { it.band == preset.band && it.khz == preset.khz }
 
     fun remove(list: List<RadioPreset>, band: RadioBand, khz: Int): List<RadioPreset> =
-        list.filterNot { it.band == band && it.khz == khz }
+        trim(list.map { if (it.band == band && it.khz == khz) EMPTY else it })
 }
 
 object RadioPresetCodec {

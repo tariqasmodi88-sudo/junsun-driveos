@@ -128,12 +128,12 @@ fun RadioScreen(
                     Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         for (col in 0 until 2) {
                             val i = row * 2 + col
-                            val p = presets.getOrNull(i)
+                            val p = presets.getOrNull(i)?.takeIf { it.khz > 0 }
                             Box(Modifier.weight(1f).fillMaxHeight()) {
                                 if (p != null) PresetTile(i + 1, p, selected = khz == p.khz, onTune, onRemove, onLong = { onSaveSlot?.invoke(i + 1) })
-                                else EmptyTile(i + 1, canSave = onSaveCurrent != null && khz != null,
+                                else EmptyTile(i + 1, canSave = onSaveSlot != null && khz != null,
                                     onLong = { onSaveSlot?.invoke(i + 1) },
-                                    onClick = { if (onSaveCurrent != null && khz != null) onSaveCurrent() else onAdd() })
+                                    onClick = { if (onSaveSlot != null && khz != null) onSaveSlot(i + 1) else onAdd() })
                             }
                         }
                     }

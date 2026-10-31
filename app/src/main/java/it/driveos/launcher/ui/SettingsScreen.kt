@@ -120,7 +120,7 @@ fun SettingsScreen(
                 if (keepHome) "Sì: portiere, radar, retromarcia e CarPlay non coprono lo schermo"
                 else "No: le finestre Junsun restano sopra. Tocca per attivare", onToggleKeepHome)
             SettingRow("Veicolo (dati tecnici)", "Segnali, registrazione continua, export", onOpenVehicle)
-            SettingRow("Radio integrata", "Sintonizzatore e canali memorizzati" + (if (settings.radioPresets.isNotEmpty()) " (${settings.radioPresets.size})" else ""), onOpenRadio)
+            SettingRow("Radio integrata", "Sintonizzatore e canali memorizzati" + (settings.radioPresets.count { it.khz > 0 }.let { if (it > 0) " ($it)" else "" }), onOpenRadio)
             SettingRow("Avvio intelligente (Bluetooth)",
                 if (smartStartEnabled) "Attivo: musica/nav all'arrivo del telefono" else "Spento: avvia musica e nav quando colleghi il telefono", onOpenSmartStart)
             SettingRow("App radio (ripiego esterno)", describe(settings.radioApp), onPickRadio)
