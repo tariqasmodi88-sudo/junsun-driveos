@@ -295,6 +295,20 @@ private fun CarTopView(state: VehicleOverviewState, modifier: Modifier) {
             drawRoundRect(Color.White, Offset(tailR.x, tailR.y), Size(tailSize.width * 0.45f, tailSize.height), CornerRadius(8f))
         }
 
+        // Sedili anteriori: quello del guidatore (sinistra) lampeggia in rosso se la cintura e' slacciata,
+        // altrimenti resta neutro. Il passeggero non ha un segnale cintura noto: sempre neutro.
+        fun seat(cx: Float, belt: Boolean?) {
+            val sw = w * 0.20f; val sh = h * 0.075f
+            val y = top + h * 0.385f
+            val unbuckled = belt == false
+            val col = if (unbuckled) Warn.copy(alpha = 0.35f + 0.65f * pulse) else Color.White.copy(alpha = if (belt == null) 0.25f else 0.6f)
+            drawRoundRect(col, Offset(cx - sw / 2, y), Size(sw, sh * 0.62f), CornerRadius(8f))               // seduta
+            drawRoundRect(col, Offset(cx - sw / 2, y + sh * 0.68f), Size(sw, sh * 0.32f), CornerRadius(6f))  // schienale
+            if (unbuckled) drawLine(col, Offset(cx - sw * 0.35f, y - 4f), Offset(cx + sw * 0.35f, y + sh), strokeWidth = 5f, cap = StrokeCap.Round)
+        }
+        seat(left + w * 0.30f, state.belt)
+        seat(left + w * 0.70f, null)
+
         // Portiere: linee di separazione; se aperta, portiere evidenziate e "spalancate"
         drawDoors(left, top, w, h, state.openDoors, state.doorOpen == true, closedColor = outline, openColor = Warn.copy(alpha = pulse))
     }
