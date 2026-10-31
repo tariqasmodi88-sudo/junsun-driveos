@@ -310,7 +310,7 @@ class MainActivity : ComponentActivity() {
             val br = driveApp.tsBridge
             br.radioCall { it.OpenRadioCh(); it.onRadioFM() }
             // riprende l'ultima stazione scelta
-            val last = s.lastRadioKhz
+            val last = driveApp.settingsRepository.settings.first().lastRadioKhz
             var savedKhz = last
             if (last > 0) {
                 kotlinx.coroutines.delay(700)
