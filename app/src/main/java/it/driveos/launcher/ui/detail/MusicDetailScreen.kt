@@ -2,6 +2,7 @@ package it.driveos.launcher.ui.detail
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -60,6 +61,10 @@ fun MusicDetailScreen(
     onLaunch: (AppKey) -> Unit,
     onBack: () -> Unit,
     onSeek: (Long) -> Unit = {},
+    shuffle: Boolean = false,
+    repeat: Int = 0,
+    onShuffle: () -> Unit = {},
+    onRepeat: () -> Unit = {},
 ) {
     val colors = MaterialTheme.colorScheme
     Column(Modifier.fillMaxSize()) {
@@ -121,6 +126,11 @@ fun MusicDetailScreen(
                                 }
                                 Spacer(Modifier.height(12.dp))
                             }
+                            Row(Modifier.fillMaxWidth(0.8f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                ModeChip(if (shuffle) "Casuale: sì" else "Casuale: no", shuffle, onShuffle, Modifier.weight(1f))
+                                ModeChip(when (repeat) { 1 -> "Ripeti tutto"; 2 -> "Ripeti brano"; else -> "Ripeti: no" }, repeat != 0, onRepeat, Modifier.weight(1f))
+                            }
+                            Spacer(Modifier.height(10.dp))
                             TransportControls(media.isPlaying, onPlayPause, onNext, onPrevious, height = 72.dp, modifier = Modifier.fillMaxWidth(0.8f))
                         }
                     }
@@ -148,5 +158,17 @@ fun MusicDetailScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ModeChip(label: String, active: Boolean, onClick: () -> Unit, modifier: Modifier) {
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        onClick = onClick, modifier = modifier.height(48.dp), shape = RoundedCornerShape(24.dp),
+        color = if (active) colors.primary else colors.surfaceVariant,
+        contentColor = if (active) colors.onPrimary else colors.onSurface,
+    ) {
+        Box(contentAlignment = Alignment.Center) { Text(label, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 1) }
     }
 }

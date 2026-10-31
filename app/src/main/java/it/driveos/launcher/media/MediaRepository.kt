@@ -149,18 +149,78 @@ class MediaRepository(context: Context) {
             lastArtSource = artSource
             lastArt = artSource?.let { runCatching { downscale(it).asImageBitmap() }.getOrNull() }
         }
+        var art = lastArt
+        if (art == null) {
+            // niente copertina dal lettore: la ricaviamo dal file stesso (immagine incorporata nel flac/mp3…)
+            val keyUri = listOf(
+                MediaMetadata.METADATA_KEY_MEDIA_URI, MediaMetadata.METADATA_KEY_ALBUM_ART_URI,
+                MediaMetadata.METADATA_KEY_ART_URI, MediaMetadata.METADATA_KEY_DISPLAY_ICON_URI,
+            ).firstNotNullOfOrNull { k -> md?.getString(k)?.takeIf { it.isNotBlank() } }
+            val key = keyUri ?: title.takeIf { it.isNotBlank() }
+            if (key != null) {
+                if (key == fileArtKey) art = fileArt
+                else if (key != fileArtLoading) loadFileArt(key, keyUri != null, title)
+            }
+        }
         _media.value = MediaInfo(
             packageName = c.packageName,
             title = title,
             artist = artist,
             album = album,
-            art = lastArt,
+            art = art,
             isPlaying = st?.state == PlaybackState.STATE_PLAYING,
             durationMs = md?.getLong(MediaMetadata.METADATA_KEY_DURATION) ?: 0L,
             positionMs = st?.position ?: 0L,
             positionUpdateTime = st?.lastPositionUpdateTime ?: SystemClock.elapsedRealtime(),
             speed = st?.playbackSpeed ?: 1f,
         )
+    }
+
+    private var fileArtKey: String? = null
+    private var fileArt: ImageBitmap? = null
+    @Volatile private var fileArtLoading: String? = null
+
+    private fun loadFileArt(key: String, isUri: Boolean, title: String) {
+        fileArtLoading = key
+        Thread {
+            val bmp: Bitmap? = runCatching {
+                if (isUri) fromUri(android.net.Uri.parse(key)) else fromMediaStore(title)
+            }.getOrNull() ?: if (isUri) runCatching { fromMediaStore(title) }.getOrNull() else null
+            handler.post {
+                fileArtLoading = null
+                fileArtKey = key
+                fileArt = bmp?.let { runCatching { downscale(it).asImageBitmap() }.getOrNull() }
+                publish()
+            }
+        }.start()
+    }
+
+    private fun fromUri(uri: android.net.Uri): Bitmap? {
+        // 1) immagine incorporata nel file audio
+        runCatching {
+            val r = android.media.MediaMetadataRetriever()
+            try {
+                r.setDataSource(app, uri)
+                r.embeddedPicture?.let { return android.graphics.BitmapFactory.decodeByteArray(it, 0, it.size) }
+            } finally { runCatching { r.release() } }
+        }
+        // 2) l'indirizzo e' direttamente un'immagine
+        return runCatching { app.contentResolver.openInputStream(uri)?.use { android.graphics.BitmapFactory.decodeStream(it) } }.getOrNull()
+    }
+
+    /** Cerca il file per nome in MediaStore (serve il permesso audio; se manca, niente copertina). */
+    private fun fromMediaStore(title: String): Bitmap? {
+        val name = title.trim()
+        if (name.isEmpty()) return null
+        val coll = android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+        app.contentResolver.query(
+            coll, arrayOf(android.provider.MediaStore.Audio.Media._ID),
+            "${android.provider.MediaStore.Audio.Media.DISPLAY_NAME} = ? OR ${android.provider.MediaStore.Audio.Media.TITLE} = ?",
+            arrayOf(name, name), null,
+        )?.use { c ->
+            if (c.moveToFirst()) return fromUri(android.content.ContentUris.withAppendedId(coll, c.getLong(0)))
+        }
+        return null
     }
 
     private fun downscale(b: Bitmap): Bitmap {
@@ -182,6 +242,33 @@ class MediaRepository(context: Context) {
     fun pauseIfPlaying() {
         val c = controller ?: return
         if (c.playbackState?.state == PlaybackState.STATE_PLAYING) runCatching { c.transportControls.pause() }
+    }
+
+    private val _shuffle = MutableStateFlow(false)
+    val shuffle: StateFlow<Boolean> = _shuffle.asStateFlow()
+    /** 0 = no, 1 = tutto, 2 = singolo */
+    private val _repeat = MutableStateFlow(0)
+    val repeat: StateFlow<Int> = _repeat.asStateFlow()
+
+    private fun customAction(vararg words: String): PlaybackState.CustomAction? =
+        controller?.playbackState?.customActions.orEmpty().firstOrNull { a ->
+            words.any { w -> a.action.contains(w, true) || a.name.toString().contains(w, true) }
+        }
+
+    /** Casuale on/off. false se il lettore non espone questo comando. */
+    fun toggleShuffle(): Boolean {
+        val a = customAction("shuffle", "random", "casual") ?: return false
+        runCatching { controller?.transportControls?.sendCustomAction(a, null) }
+        _shuffle.value = !_shuffle.value
+        return true
+    }
+
+    /** Ripeti: no → tutto → singolo. false se il lettore non espone il comando. */
+    fun cycleRepeat(): Boolean {
+        val a = customAction("repeat", "loop", "ripet") ?: return false
+        runCatching { controller?.transportControls?.sendCustomAction(a, null) }
+        _repeat.value = (_repeat.value + 1) % 3
+        return true
     }
 
     fun playPause() {
