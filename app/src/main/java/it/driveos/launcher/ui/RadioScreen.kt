@@ -188,11 +188,14 @@ private fun PresetTile(slot: Int, p: RadioPreset, selected: Boolean, onTune: (Ra
     Surface(onClick = { onTune(p) }, shape = RoundedCornerShape(20.dp),
         color = if (selected) colors.primary.copy(alpha = 0.22f) else colors.surface,
         modifier = Modifier.fillMaxSize()) {
-        Box(Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 10.dp)) {
-            Column(Modifier.align(Alignment.CenterStart)) {
-                Text("P$slot", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (selected) colors.primary else colors.onSurfaceVariant)
-                Text(p.displayFrequency(), fontSize = 28.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
-                Text(p.name, fontSize = 14.sp, color = colors.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Box(Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 6.dp)) {
+            Column(Modifier.align(Alignment.CenterStart).padding(end = 22.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("P$slot", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (selected) colors.primary else colors.onSurfaceVariant)
+                    Spacer(Modifier.width(8.dp))
+                    Text(p.name, fontSize = 13.sp, color = colors.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                Text(p.displayFrequency(), fontSize = 26.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
             }
             Box(Modifier.align(Alignment.TopEnd).size(30.dp).clickable { onRemove(p) }, contentAlignment = Alignment.Center) {
                 Icon(Icons.Filled.Close, "Rimuovi", tint = colors.onSurfaceVariant, modifier = Modifier.size(16.dp))
