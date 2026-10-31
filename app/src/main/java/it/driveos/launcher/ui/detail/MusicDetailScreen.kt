@@ -56,10 +56,10 @@ fun MusicDetailScreen(
     onPlayPause: () -> Unit,
     onNext: () -> Unit,
     onPrevious: () -> Unit,
-    onSeek: (Long) -> Unit = {},
     onOpenSource: () -> Unit,
     onLaunch: (AppKey) -> Unit,
     onBack: () -> Unit,
+    onSeek: (Long) -> Unit = {},
 ) {
     val colors = MaterialTheme.colorScheme
     Column(Modifier.fillMaxSize()) {
