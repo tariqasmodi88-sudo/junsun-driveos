@@ -121,7 +121,7 @@ fun MusicDetailScreen(
                                 }
                                 Spacer(Modifier.height(12.dp))
                             }
-                            TransportControls(media.isPlaying, onPlayPause, onNext, onPrevious, height = 112.dp, modifier = Modifier.fillMaxWidth())
+                            TransportControls(media.isPlaying, onPlayPause, onNext, onPrevious, height = 72.dp, modifier = Modifier.fillMaxWidth(0.8f))
                         }
                     }
                 }

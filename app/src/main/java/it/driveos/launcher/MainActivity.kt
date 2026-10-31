@@ -1048,7 +1048,7 @@ class MainActivity : ComponentActivity() {
                         onVehicle = { overviewAuto = false; screen = Screen.OVERVIEW },
                         onNav = { openOrPick(s.navApp, PickerTarget.NAV) },
                         onRadio = { openRadio() },
-                        onMusic = { openOrPick(s.musicApp, PickerTarget.MUSIC) },
+                        onMusic = { screen = Screen.MUSIC },
                         onPhone = { openOrPick(s.phoneApp, PickerTarget.PHONE) },
                         onApps = { screen = Screen.APPS },
                     )
