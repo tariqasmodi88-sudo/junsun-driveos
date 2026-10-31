@@ -372,8 +372,9 @@ class MainActivity : ComponentActivity() {
         }
         var showFolders by remember { mutableStateOf(false) }
         var pendingFolders by remember { mutableStateOf(false) }
-        if (showFolders) it.driveos.launcher.ui.detail.FolderPickerDialog(
-            onPick = { showFolders = false; driveApp.mediaRepository.playFolder(it) },
+        if (showFolders) it.driveos.launcher.ui.detail.FileBrowserDialog(
+            start = driveApp.mediaRepository.lastFolder()?.takeIf { it.startsWith("/") },
+            onPlay = { files, i, folder -> showFolders = false; driveApp.mediaRepository.playFiles(files, i, folder) },
             onDismiss = { showFolders = false },
         )
         val storagePermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->

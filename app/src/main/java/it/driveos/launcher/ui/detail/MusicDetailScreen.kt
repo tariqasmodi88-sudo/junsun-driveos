@@ -20,6 +20,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.RepeatOne
+import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material3.Slider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -72,8 +82,8 @@ fun MusicDetailScreen(
     Column(Modifier.fillMaxSize()) {
         ScreenHeader("Musica", onBack) {
             val app = sourceEntry ?: musicApp
-            if (onPickFolder != null) CardButton("Scegli cartella", Icons.Filled.PlayArrow, onPickFolder, Modifier.widthIn(max = 320.dp), height = 56.dp)
-            if (app != null) CardButton("Apri ${app.label}", Icons.Filled.PlayArrow, onOpenSource, Modifier.widthIn(max = 320.dp), height = 56.dp)
+            if (onPickFolder != null) CardButton("Scegli musica", Icons.Filled.Folder, onPickFolder, Modifier.widthIn(max = 320.dp), height = 56.dp)
+            if (app != null && onPickFolder == null) CardButton("Apri ${app.label}", Icons.Filled.PlayArrow, onOpenSource, Modifier.widthIn(max = 320.dp), height = 56.dp)
         }
         Column(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 20.dp)) {
             when {
@@ -98,15 +108,16 @@ fun MusicDetailScreen(
                 }
 
                 else -> BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
-                    val art = minOf(maxHeight, maxWidth * 0.4f)
+                    val art = minOf(maxHeight, maxWidth * 0.42f)
+                    val local = media.packageName == LocalContext.current.packageName
                     Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-                        AlbumArt(media, sourceEntry, Modifier.size(art), corner = 24.dp)
-                        Spacer(Modifier.width(24.dp))
+                        AlbumArt(media, if (local) null else sourceEntry, Modifier.size(art), corner = 28.dp)
+                        Spacer(Modifier.width(28.dp))
                         Column(Modifier.weight(1f)) {
                             Text(media.title, fontSize = 30.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis, color = colors.onSurface)
-                            Text(media.artist, fontSize = 22.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, color = colors.onSurfaceVariant)
+                            if (media.artist.isNotBlank()) Text(media.artist, fontSize = 22.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, color = colors.onSurfaceVariant)
                             if (media.album.isNotBlank()) Text(media.album, fontSize = 17.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, color = colors.onSurfaceVariant)
-                            Spacer(Modifier.height(16.dp))
+                            Spacer(Modifier.height(14.dp))
                             if (media.durationMs > 0) {
                                 val pos by produceState(media.positionNow(), media) {
                                     while (true) {
@@ -131,14 +142,15 @@ fun MusicDetailScreen(
                                     Spacer(Modifier.weight(1f))
                                     Text(PlaybackMath.format(media.durationMs), fontSize = 15.sp, color = colors.onSurfaceVariant)
                                 }
-                                Spacer(Modifier.height(12.dp))
+                                Spacer(Modifier.height(14.dp))
                             }
-                            Row(Modifier.fillMaxWidth(0.8f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                ModeChip(if (shuffle) "Casuale: sì" else "Casuale: no", shuffle, onShuffle, Modifier.weight(1f))
-                                ModeChip(when (repeat) { 1 -> "Ripeti tutto"; 2 -> "Ripeti brano"; else -> "Ripeti: no" }, repeat != 0, onRepeat, Modifier.weight(1f))
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+                                RoundButton(Icons.Filled.Shuffle, "Casuale", 60.dp, active = shuffle, onClick = onShuffle)
+                                RoundButton(Icons.Filled.SkipPrevious, "Precedente", 72.dp, onClick = onPrevious)
+                                RoundButton(if (media.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow, "Play", 92.dp, primary = true, onClick = onPlayPause)
+                                RoundButton(Icons.Filled.SkipNext, "Successivo", 72.dp, onClick = onNext)
+                                RoundButton(if (repeat == 2) Icons.Filled.RepeatOne else Icons.Filled.Repeat, "Ripeti", 60.dp, active = repeat != 0, onClick = onRepeat)
                             }
-                            Spacer(Modifier.height(10.dp))
-                            TransportControls(media.isPlaying, onPlayPause, onNext, onPrevious, height = 72.dp, modifier = Modifier.fillMaxWidth(0.8f))
                         }
                     }
                 }
@@ -165,6 +177,19 @@ fun MusicDetailScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun RoundButton(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, size: androidx.compose.ui.unit.Dp, active: Boolean = false, primary: Boolean = false, onClick: () -> Unit) {
+    val c = MaterialTheme.colorScheme
+    Surface(
+        onClick = onClick, shape = CircleShape,
+        color = when { primary -> c.primary; active -> c.primary.copy(alpha = 0.25f); else -> c.surfaceVariant },
+        contentColor = when { primary -> c.onPrimary; active -> c.primary; else -> c.onSurface },
+        modifier = Modifier.size(size),
+    ) {
+        Box(contentAlignment = Alignment.Center) { Icon(icon, label, Modifier.size(size * 0.5f)) }
     }
 }
 

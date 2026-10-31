@@ -70,6 +70,19 @@ class LocalPlayer(context: Context, private val onChange: (MediaInfo?) -> Unit) 
         }
     }
 
+    /** Brani scelti dal navigatore file: parte da [start] e prosegue con gli altri della cartella. */
+    fun playFiles(files: List<java.io.File>, start: Int, folder: String) {
+        if (files.isEmpty()) return
+        prefs.edit().putString("folder", folder).apply()
+        val items = files.map { val u = Uri.fromFile(it); MediaItem.Builder().setUri(u).setMediaId(u.toString()).build() }
+        hasItems = true
+        player.setMediaItems(items, start.coerceIn(0, items.lastIndex), 0L)
+        player.prepare()
+        player.play()
+        loadMeta(player.currentMediaItem)
+        publish()
+    }
+
     fun playLastFolder(): Boolean { val f = lastFolder ?: return false; playFolder(f); return true }
 
     private fun loadMeta(item: MediaItem?) {

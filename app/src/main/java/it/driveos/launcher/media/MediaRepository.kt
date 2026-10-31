@@ -138,6 +138,12 @@ class MediaRepository(context: Context) {
         localActive = true
         local.playFolder(folder)
     }
+    fun playFiles(files: List<java.io.File>, start: Int, folder: String) = handler.post {
+        runCatching { controller?.transportControls?.pause() }
+        localActive = true
+        local.playFiles(files, start, folder)
+    }
+    fun isLocal(): Boolean = localActive
     fun lastFolder(): String? = local.lastFolder
     fun playLastFolder() = handler.post {
         runCatching { controller?.transportControls?.pause() }
