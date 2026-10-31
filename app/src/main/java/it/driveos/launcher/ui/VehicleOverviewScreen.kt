@@ -111,7 +111,7 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onDebug: () -> Unit) {
             Box(Modifier.weight(0.3f).fillMaxHeight(), contentAlignment = Alignment.Center) {
                 CarTopView(state, Modifier.fillMaxSize())
                 if (rearSensors(state) && state.rearRaw != null)
-                    Text(state.rearRaw.joinToString("  "), Modifier.align(Alignment.BottomCenter), fontSize = 14.sp, color = c.onSurfaceVariant)
+                    Text("sensori: " + state.rearRaw.joinToString(" - "), Modifier.align(Alignment.Center).background(c.background.copy(alpha = 0.85f), RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 6.dp), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = c.onBackground)
                 Column(Modifier.align(Alignment.TopCenter), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(state.speedKmh?.let { "${it.toInt()} km/h" } ?: "— km/h",
                         fontSize = 30.sp, fontWeight = FontWeight.Bold, color = c.onBackground)
