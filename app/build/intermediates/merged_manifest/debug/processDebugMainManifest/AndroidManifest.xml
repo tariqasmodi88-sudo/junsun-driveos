@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="it.driveos.launcher"
+    android:versionCode="42"
+    android:versionName="0.9.22" >
+
+    <uses-sdk
+        android:minSdkVersion="29"
+        android:targetSdkVersion="34" />
+
+    <!-- Lettura del calendario, chiesto solo quando tocchi "Collega calendario". -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+
+    <!--
+         Luminosità di sistema: permesso speciale, chiesto solo se attivi "Luminosità di sistema".
+         Senza di esso DriveOS regola solo la luminosità della propria finestra.
+    -->
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+
+    <!--
+         Elenco delle app per trovare i canali dati CAN/radio (schermata Veicolo).
+         Sul dispositivo (Android 10) non ha effetto; serve se il firmware fosse aggiornato a 11+.
+    -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+
+    <!-- Avvio intelligente: rileva rete e stato del Bluetooth (nessuna richiesta a runtime su Android 10). -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
+    <!-- Registrazione continua dei dati del veicolo in background (servizio in primo piano). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+
+    <!--
+         Lettura del registro di sistema per ricavare portiere/sensori/radio dall'app Junsun.
+         Permesso riservato: si concede una volta via ADB (nessun root):
+         adb shell pm grant it.driveos.launcher android.permission.READ_LOGS
+    -->
+    <uses-permission android:name="android.permission.READ_LOGS" />
+    <!-- "Mostra sopra altre app" (la dai tu): permette a DriveOS di tornare davanti quando una finestra Junsun si apre. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+    <!-- Musica del dispositivo (lettore interno): solo file audio, mai video. -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+
+    <!--
+         Velocità GPS per capire quando l'auto è ferma (schermata veicolo automatica).
+         Chiesto solo quando attivi la funzione; la posizione non viene salvata né inviata.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- Visibilita' dei pacchetti (rilevante da Android 11; su Android 10 non ha effetto). -->
+    <queries>
+        <package android:name="com.ts.MainUI" />
+        <package android:name="com.ts.car.client" />
+        <package android:name="com.ts.dvdplayer" />
+
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+
+            <category android:name="android.intent.category.HOME" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+
+            <data android:scheme="geo" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+
+            <data android:scheme="google.navigation" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+
+            <data
+                android:host="waze.com"
+                android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+        <intent>
+            <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
+        </intent>
+        <intent>
+            <action android:name="android.media.browse.MediaBrowserService" />
+        </intent>
+    </queries>
+
+    <permission
+        android:name="it.driveos.launcher.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+        android:protectionLevel="signature" />
+
+    <uses-permission android:name="it.driveos.launcher.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+
+    <application
+        android:name="it.driveos.launcher.DriveOSApp"
+        android:allowBackup="false"
+        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+        android:debuggable="true"
+        android:extractNativeLibs="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.DriveOS" >
+        <activity
+            android:name="it.driveos.launcher.MainActivity"
+            android:clearTaskOnLaunch="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation|uiMode|density"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:resumeWhilePausing="true"
+            android:stateNotNeeded="true"
+            android:windowSoftInputMode="adjustResize" >
+
+            <!-- HOME: permette di sceglierlo come schermata iniziale (mai imposto automaticamente). -->
+            <!-- LAUNCHER: compare anche nell'elenco app, per provarlo senza renderlo predefinito. -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Registrazione continua dei dati del veicolo (foreground service). -->
+        <service
+            android:name="it.driveos.launcher.vehicle.VehicleLogService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <!-- Lettore musica interno (tutti i brani del dispositivo, in ordine casuale). -->
+        <service
+            android:name="it.driveos.launcher.media.LocalMusicService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
+        <!--
+             Accesso alle notifiche (concesso dall'utente nelle impostazioni di Android):
+             brano in riproduzione e indicazioni dell'app di navigazione.
+        -->
+        <service
+            android:name="it.driveos.launcher.notifications.DriveNotificationListener"
+            android:exported="false"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" >
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
+        <!--
+             Accessibilità (la attivi tu in Impostazioni): sa quale finestra si apre (portiere,
+             radar, retromarcia, CarPlay) e riporta la Home DriveOS davanti. Non legge i contenuti.
+        -->
+        <service
+            android:name="it.driveos.launcher.vehicle.DriveAccessibilityService"
+            android:exported="false"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" >
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service" />
+        </service>
+
+        <activity
+            android:name="androidx.activity.ComponentActivity"
+            android:exported="true" />
+
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="it.driveos.launcher.androidx-startup"
+            android:exported="false" >
+            <meta-data
+                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+                android:value="androidx.startup" />
+            <meta-data
+                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+                android:value="androidx.startup" />
+            <meta-data
+                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+                android:value="androidx.startup" />
+        </provider>
+
+        <receiver
+            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+            android:directBootAware="false"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.DUMP" >
+            <intent-filter>
+                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+            </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>

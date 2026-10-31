@@ -1,0 +1,20 @@
+{
+  "version": 3,
+  "artifactType": {
+    "type": "PROCESSED_RES",
+    "kind": "Directory"
+  },
+  "applicationId": "it.driveos.launcher",
+  "variantName": "debug",
+  "elements": [
+    {
+      "type": "SINGLE",
+      "filters": [],
+      "attributes": [],
+      "versionCode": 42,
+      "versionName": "0.9.22",
+      "outputFile": "resources-debug.ap_"
+    }
+  ],
+  "elementType": "File"
+}

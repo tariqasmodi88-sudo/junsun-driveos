@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="it.driveos.launcher.ScreenshotTest2" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-10-31T16:11:03" hostname="runnervm48cm3" time="2.027">
+  <properties/>
+  <testcase name="musica" classname="it.driveos.launcher.ScreenshotTest2" time="0.215"/>
+  <testcase name="home_giorno" classname="it.driveos.launcher.ScreenshotTest2" time="0.232"/>
+  <testcase name="controlli" classname="it.driveos.launcher.ScreenshotTest2" time="0.164"/>
+  <testcase name="nav" classname="it.driveos.launcher.ScreenshotTest2" time="0.241"/>
+  <testcase name="info" classname="it.driveos.launcher.ScreenshotTest2" time="0.109"/>
+  <testcase name="impostazioni" classname="it.driveos.launcher.ScreenshotTest2" time="0.185"/>
+  <testcase name="radio" classname="it.driveos.launcher.ScreenshotTest2" time="0.152"/>
+  <testcase name="smart" classname="it.driveos.launcher.ScreenshotTest2" time="0.118"/>
+  <testcase name="calendario" classname="it.driveos.launcher.ScreenshotTest2" time="0.124"/>
+  <testcase name="appDrawer" classname="it.driveos.launcher.ScreenshotTest2" time="0.148"/>
+  <testcase name="home_notte" classname="it.driveos.launcher.ScreenshotTest2" time="0.138"/>
+  <testcase name="orologio" classname="it.driveos.launcher.ScreenshotTest2" time="0.084"/>
+  <testcase name="home_spie" classname="it.driveos.launcher.ScreenshotTest2" time="0.116"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

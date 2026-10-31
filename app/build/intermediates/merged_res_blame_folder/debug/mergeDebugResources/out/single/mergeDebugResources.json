@@ -1,0 +1,14 @@
+[
+    {
+        "merged": "it.driveos.launcher.app-debug-45:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "it.driveos.launcher.app-main-47:/drawable/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "it.driveos.launcher.app-debug-45:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "it.driveos.launcher.app-main-47:/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "it.driveos.launcher.app-debug-45:/xml_accessibility_service.xml.flat",
+        "source": "it.driveos.launcher.app-main-47:/xml/accessibility_service.xml"
+    }
+]

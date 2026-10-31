@@ -1,0 +1,390 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="it.driveos.launcher"
+4    android:versionCode="42"
+5    android:versionName="0.9.22" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="29"
+9        android:targetSdkVersion="34" />
+10
+11    <!-- Lettura del calendario, chiesto solo quando tocchi "Collega calendario". -->
+12    <uses-permission android:name="android.permission.READ_CALENDAR" />
+12-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:6:5-72
+12-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:6:22-69
+13
+14    <!--
+15         Luminosità di sistema: permesso speciale, chiesto solo se attivi "Luminosità di sistema".
+16         Senza di esso DriveOS regola solo la luminosità della propria finestra.
+17    -->
+18    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+18-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:10:5-109
+18-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:10:22-70
+19
+20    <!--
+21         Elenco delle app per trovare i canali dati CAN/radio (schermata Veicolo).
+22         Sul dispositivo (Android 10) non ha effetto; serve se il firmware fosse aggiornato a 11+.
+23    -->
+24    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+24-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:14:5-119
+24-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:14:22-74
+25
+26    <!-- Avvio intelligente: rileva rete e stato del Bluetooth (nessuna richiesta a runtime su Android 10). -->
+27    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+27-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:17:5-79
+27-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:17:22-76
+28    <uses-permission
+28-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:18:5-95
+29        android:name="android.permission.BLUETOOTH"
+29-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:18:22-65
+30        android:maxSdkVersion="30" />
+30-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:18:66-92
+31    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+31-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:19:5-76
+31-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:19:22-73
+32
+33    <!-- Registrazione continua dei dati del veicolo in background (servizio in primo piano). -->
+34    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+34-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:22:5-77
+34-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:22:22-74
+35    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+35-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:23:5-87
+35-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:23:22-84
+36
+37    <!--
+38         Lettura del registro di sistema per ricavare portiere/sensori/radio dall'app Junsun.
+39         Permesso riservato: si concede una volta via ADB (nessun root):
+40         adb shell pm grant it.driveos.launcher android.permission.READ_LOGS
+41    -->
+42    <uses-permission android:name="android.permission.READ_LOGS" />
+42-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:28:5-104
+42-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:28:22-65
+43    <!-- "Mostra sopra altre app" (la dai tu): permette a DriveOS di tornare davanti quando una finestra Junsun si apre. -->
+44    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+44-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:30:5-78
+44-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:30:22-75
+45
+46    <!-- Musica del dispositivo (lettore interno): solo file audio, mai video. -->
+47    <uses-permission
+47-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:33:5-107
+48        android:name="android.permission.READ_EXTERNAL_STORAGE"
+48-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:33:22-77
+49        android:maxSdkVersion="32" />
+49-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:33:78-104
+50    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+50-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:34:5-75
+50-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:34:22-72
+51
+52    <!--
+53         Velocità GPS per capire quando l'auto è ferma (schermata veicolo automatica).
+54         Chiesto solo quando attivi la funzione; la posizione non viene salvata né inviata.
+55    -->
+56    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+56-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:38:5-79
+56-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:38:22-76
+57    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+57-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:39:5-81
+57-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:39:22-78
+58
+59    <!-- Visibilita' dei pacchetti (rilevante da Android 11; su Android 10 non ha effetto). -->
+60    <queries>
+60-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:42:5-75:15
+61        <package android:name="com.ts.MainUI" />
+61-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:43:9-49
+61-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:43:18-46
+62        <package android:name="com.ts.car.client" />
+62-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:44:9-53
+62-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:44:18-50
+63        <package android:name="com.ts.dvdplayer" />
+63-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:45:9-52
+63-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:45:18-49
+64
+65        <intent>
+65-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:46:9-49:18
+66            <action android:name="android.intent.action.MAIN" />
+66-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:47:13-65
+66-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:47:21-62
+67
+68            <category android:name="android.intent.category.LAUNCHER" />
+68-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:48:13-73
+68-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:48:23-70
+69        </intent>
+70        <intent>
+70-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:50:9-53:18
+71            <action android:name="android.intent.action.MAIN" />
+71-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:47:13-65
+71-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:47:21-62
+72
+73            <category android:name="android.intent.category.HOME" />
+73-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:52:13-69
+73-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:52:23-66
+74        </intent>
+75        <intent>
+75-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:54:9-57:18
+76            <action android:name="android.intent.action.VIEW" />
+76-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:55:13-65
+76-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:55:21-62
+77
+78            <data android:scheme="geo" />
+78-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:56:13-42
+78-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:56:19-39
+79        </intent>
+80        <intent>
+80-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:58:9-61:18
+81            <action android:name="android.intent.action.VIEW" />
+81-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:55:13-65
+81-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:55:21-62
+82
+83            <data android:scheme="google.navigation" />
+83-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:56:13-42
+83-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:56:19-39
+84        </intent>
+85        <intent>
+85-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:62:9-65:18
+86            <action android:name="android.intent.action.VIEW" />
+86-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:55:13-65
+86-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:55:21-62
+87
+88            <data
+88-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:56:13-42
+89                android:host="waze.com"
+89-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:64:42-65
+90                android:scheme="https" />
+90-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:56:19-39
+91        </intent>
+92        <intent>
+92-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:66:9-68:18
+93            <action android:name="android.speech.RecognitionService" />
+93-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:67:13-72
+93-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:67:21-69
+94        </intent>
+95        <intent>
+95-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:69:9-71:18
+96            <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
+96-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:70:13-77
+96-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:70:21-74
+97        </intent>
+98        <intent>
+98-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:72:9-74:18
+99            <action android:name="android.media.browse.MediaBrowserService" />
+99-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:73:13-79
+99-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:73:21-76
+100        </intent>
+101    </queries>
+102
+103    <permission
+103-->[androidx.core:core:1.13.1] /home/runner/.gradle/caches/8.9/transforms/5cd7ad6226c423e75c5a3b7e2c03e406/transformed/core-1.13.1/AndroidManifest.xml:22:5-24:47
+104        android:name="it.driveos.launcher.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+104-->[androidx.core:core:1.13.1] /home/runner/.gradle/caches/8.9/transforms/5cd7ad6226c423e75c5a3b7e2c03e406/transformed/core-1.13.1/AndroidManifest.xml:23:9-81
+105        android:protectionLevel="signature" />
+105-->[androidx.core:core:1.13.1] /home/runner/.gradle/caches/8.9/transforms/5cd7ad6226c423e75c5a3b7e2c03e406/transformed/core-1.13.1/AndroidManifest.xml:24:9-44
+106
+107    <uses-permission android:name="it.driveos.launcher.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+107-->[androidx.core:core:1.13.1] /home/runner/.gradle/caches/8.9/transforms/5cd7ad6226c423e75c5a3b7e2c03e406/transformed/core-1.13.1/AndroidManifest.xml:26:5-97
+107-->[androidx.core:core:1.13.1] /home/runner/.gradle/caches/8.9/transforms/5cd7ad6226c423e75c5a3b7e2c03e406/transformed/core-1.13.1/AndroidManifest.xml:26:22-94
+108
+109    <application
+109-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:77:5-143:19
+110        android:name="it.driveos.launcher.DriveOSApp"
+110-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:78:9-35
+111        android:allowBackup="false"
+111-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:79:9-36
+112        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+112-->[androidx.core:core:1.13.1] /home/runner/.gradle/caches/8.9/transforms/5cd7ad6226c423e75c5a3b7e2c03e406/transformed/core-1.13.1/AndroidManifest.xml:28:18-86
+113        android:debuggable="true"
+114        android:extractNativeLibs="false"
+115        android:icon="@mipmap/ic_launcher"
+115-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:80:9-43
+116        android:label="@string/app_name"
+116-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:81:9-41
+117        android:supportsRtl="true"
+117-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:82:9-35
+118        android:theme="@style/Theme.DriveOS" >
+118-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:83:9-45
+119        <activity
+119-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:85:9-103:20
+120            android:name="it.driveos.launcher.MainActivity"
+120-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:86:13-41
+121            android:clearTaskOnLaunch="true"
+121-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:87:13-45
+122            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation|uiMode|density"
+122-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:88:13-141
+123            android:excludeFromRecents="true"
+123-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:89:13-46
+124            android:exported="true"
+124-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:90:13-36
+125            android:launchMode="singleTask"
+125-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:91:13-44
+126            android:resumeWhilePausing="true"
+126-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:92:13-46
+127            android:stateNotNeeded="true"
+127-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:93:13-42
+128            android:windowSoftInputMode="adjustResize" >
+128-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:94:13-55
+129
+130            <!-- HOME: permette di sceglierlo come schermata iniziale (mai imposto automaticamente). -->
+131            <!-- LAUNCHER: compare anche nell'elenco app, per provarlo senza renderlo predefinito. -->
+132            <intent-filter>
+132-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:97:13-102:29
+133                <action android:name="android.intent.action.MAIN" />
+133-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:47:13-65
+133-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:47:21-62
+134
+135                <category android:name="android.intent.category.HOME" />
+135-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:52:13-69
+135-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:52:23-66
+136                <category android:name="android.intent.category.DEFAULT" />
+136-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:100:17-76
+136-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:100:27-73
+137                <category android:name="android.intent.category.LAUNCHER" />
+137-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:48:13-73
+137-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:48:23-70
+138            </intent-filter>
+139        </activity>
+140
+141        <!-- Registrazione continua dei dati del veicolo (foreground service). -->
+142        <service
+142-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:106:9-109:56
+143            android:name="it.driveos.launcher.vehicle.VehicleLogService"
+143-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:107:13-54
+144            android:exported="false"
+144-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:108:13-37
+145            android:foregroundServiceType="dataSync" />
+145-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:109:13-53
+146
+147        <!-- Lettore musica interno (tutti i brani del dispositivo, in ordine casuale). -->
+148        <service
+148-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:112:9-115:61
+149            android:name="it.driveos.launcher.media.LocalMusicService"
+149-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:113:13-52
+150            android:exported="false"
+150-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:114:13-37
+151            android:foregroundServiceType="mediaPlayback" />
+151-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:115:13-58
+152
+153        <!--
+154             Accesso alle notifiche (concesso dall'utente nelle impostazioni di Android):
+155             brano in riproduzione e indicazioni dell'app di navigazione.
+156        -->
+157        <service
+157-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:119:9-127:19
+158            android:name="it.driveos.launcher.notifications.DriveNotificationListener"
+158-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:120:13-68
+159            android:exported="false"
+159-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:121:13-37
+160            android:label="@string/app_name"
+160-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:122:13-45
+161            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" >
+161-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:123:13-87
+162            <intent-filter>
+162-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:124:13-126:29
+163                <action android:name="android.service.notification.NotificationListenerService" />
+163-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:125:17-99
+163-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:125:25-96
+164            </intent-filter>
+165        </service>
+166
+167        <!--
+168             Accessibilità (la attivi tu in Impostazioni): sa quale finestra si apre (portiere,
+169             radar, retromarcia, CarPlay) e riporta la Home DriveOS davanti. Non legge i contenuti.
+170        -->
+171        <service
+171-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:131:9-142:19
+172            android:name="it.driveos.launcher.vehicle.DriveAccessibilityService"
+172-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:132:13-62
+173            android:exported="false"
+173-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:133:13-37
+174            android:label="@string/app_name"
+174-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:134:13-45
+175            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" >
+175-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:135:13-79
+176            <intent-filter>
+176-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:136:13-138:29
+177                <action android:name="android.accessibilityservice.AccessibilityService" />
+177-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:137:17-92
+177-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:137:25-89
+178            </intent-filter>
+179
+180            <meta-data
+180-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:139:13-141:65
+181                android:name="android.accessibilityservice"
+181-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:140:17-60
+182                android:resource="@xml/accessibility_service" />
+182-->/home/runner/work/junsun-driveos/junsun-driveos/app/src/main/AndroidManifest.xml:141:17-62
+183        </service>
+184
+185        <activity
+185-->[androidx.compose.ui:ui-test-manifest:1.7.0] /home/runner/.gradle/caches/8.9/transforms/6d90ea80eabc7cd08e3bbfbae6e8e4b1/transformed/ui-test-manifest-1.7.0/AndroidManifest.xml:23:9-25:39
+186            android:name="androidx.activity.ComponentActivity"
+186-->[androidx.compose.ui:ui-test-manifest:1.7.0] /home/runner/.gradle/caches/8.9/transforms/6d90ea80eabc7cd08e3bbfbae6e8e4b1/transformed/ui-test-manifest-1.7.0/AndroidManifest.xml:24:13-63
+187            android:exported="true" />
+187-->[androidx.compose.ui:ui-test-manifest:1.7.0] /home/runner/.gradle/caches/8.9/transforms/6d90ea80eabc7cd08e3bbfbae6e8e4b1/transformed/ui-test-manifest-1.7.0/AndroidManifest.xml:25:13-36
+188
+189        <provider
+189-->[androidx.emoji2:emoji2:1.3.0] /home/runner/.gradle/caches/8.9/transforms/91dafd708a8ee95ef95fa36639d5817a/transformed/emoji2-1.3.0/AndroidManifest.xml:24:9-32:20
+190            android:name="androidx.startup.InitializationProvider"
+190-->[androidx.emoji2:emoji2:1.3.0] /home/runner/.gradle/caches/8.9/transforms/91dafd708a8ee95ef95fa36639d5817a/transformed/emoji2-1.3.0/AndroidManifest.xml:25:13-67
+191            android:authorities="it.driveos.launcher.androidx-startup"
+191-->[androidx.emoji2:emoji2:1.3.0] /home/runner/.gradle/caches/8.9/transforms/91dafd708a8ee95ef95fa36639d5817a/transformed/emoji2-1.3.0/AndroidManifest.xml:26:13-68
+192            android:exported="false" >
+192-->[androidx.emoji2:emoji2:1.3.0] /home/runner/.gradle/caches/8.9/transforms/91dafd708a8ee95ef95fa36639d5817a/transformed/emoji2-1.3.0/AndroidManifest.xml:27:13-37
+193            <meta-data
+193-->[androidx.emoji2:emoji2:1.3.0] /home/runner/.gradle/caches/8.9/transforms/91dafd708a8ee95ef95fa36639d5817a/transformed/emoji2-1.3.0/AndroidManifest.xml:29:13-31:52
+194                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+194-->[androidx.emoji2:emoji2:1.3.0] /home/runner/.gradle/caches/8.9/transforms/91dafd708a8ee95ef95fa36639d5817a/transformed/emoji2-1.3.0/AndroidManifest.xml:30:17-75
+195                android:value="androidx.startup" />
+195-->[androidx.emoji2:emoji2:1.3.0] /home/runner/.gradle/caches/8.9/transforms/91dafd708a8ee95ef95fa36639d5817a/transformed/emoji2-1.3.0/AndroidManifest.xml:31:17-49
+196            <meta-data
+196-->[androidx.lifecycle:lifecycle-process:2.8.6] /home/runner/.gradle/caches/8.9/transforms/e902c3dc4e89450113db2af2b96c4dc6/transformed/lifecycle-process-2.8.6/AndroidManifest.xml:29:13-31:52
+197                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+197-->[androidx.lifecycle:lifecycle-process:2.8.6] /home/runner/.gradle/caches/8.9/transforms/e902c3dc4e89450113db2af2b96c4dc6/transformed/lifecycle-process-2.8.6/AndroidManifest.xml:30:17-78
+198                android:value="androidx.startup" />
+198-->[androidx.lifecycle:lifecycle-process:2.8.6] /home/runner/.gradle/caches/8.9/transforms/e902c3dc4e89450113db2af2b96c4dc6/transformed/lifecycle-process-2.8.6/AndroidManifest.xml:31:17-49
+199            <meta-data
+199-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/runner/.gradle/caches/8.9/transforms/540be8a05d5cf66a6c12ec8c5625a117/transformed/profileinstaller-1.3.1/AndroidManifest.xml:29:13-31:52
+200                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+200-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/runner/.gradle/caches/8.9/transforms/540be8a05d5cf66a6c12ec8c5625a117/transformed/profileinstaller-1.3.1/AndroidManifest.xml:30:17-85
+201                android:value="androidx.startup" />
+201-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/runner/.gradle/caches/8.9/transforms/540be8a05d5cf66a6c12ec8c5625a117/transformed/profileinstaller-1.3.1/AndroidManifest.xml:31:17-49
+202        </provider>
+203
+204        <receiver
+204-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/runner/.gradle/caches/8.9/transforms/540be8a05d5cf66a6c12ec8c5625a117/transformed/profileinstaller-1.3.1/AndroidManifest.xml:34:9-52:20
+205            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+205-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/runner/.gradle/caches/8.9/transforms/540be8a05d5cf66a6c12ec8c5625a117/transformed/profileinstaller-1.3.1/AndroidManifest.xml:35:13-76
+206            android:directBootAware="false"
+206-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/runner/.gradle/caches/8.9/transforms/540be8a05d5cf66a6c12ec8c5625a117/transformed/profileinstaller-1.3.1/AndroidManifest.xml:36:13-44
+207            android:enabled="true"
+207-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/runner/.gradle/caches/8.9/transforms/540be8a05d5cf66a6c12ec8c5625a117/transformed/profileinstaller-1.3.1/AndroidManifest.xml:37:13-35
+208            android:exported="true"
+208-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/runner/.gradle/caches/8.9/transforms/540be8a05d5cf66a6c12ec8c5625a117/transformed/profileinstaller-1.3.1/AndroidManifest.xml:38:13-36
+209            android:permission="android.permission.DUMP" >
+209-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/runner/.gradle/caches/8.9/transforms/540be8a05d5cf66a6c12ec8c5625a117/transformed/profileinstaller-1.3.1/AndroidManifest.xml:39:13-57
+210            <intent-filter>
+210-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/runner/.gradle/caches/8.9/transforms/540be8a05d5cf66a6c12ec8c5625a117/transformed/profileinstaller-1.3.1/AndroidManifest.xml:40:13-42:29
+211                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+211-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/runner/.gradle/caches/8.9/transforms/540be8a05d5cf66a6c12ec8c5625a117/transformed/profileinstaller-1.3.1/AndroidManifest.xml:41:17-91
+211-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/runner/.gradle/caches/8.9/transforms/540be8a05d5cf66a6c12ec8c5625a117/transformed/profileinstaller-1.3.1/AndroidManifest.xml:41:25-88
+212            </intent-filter>
+213            <intent-filter>
+213-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/runner/.gradle/caches/8.9/transforms/540be8a05d5cf66a6c12ec8c5625a117/transformed/profileinstaller-1.3.1/AndroidManifest.xml:43:13-45:29
+214                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+214-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/runner/.gradle/caches/8.9/transforms/540be8a05d5cf66a6c12ec8c5625a117/transformed/profileinstaller-1.3.1/AndroidManifest.xml:44:17-85
+214-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/runner/.gradle/caches/8.9/transforms/540be8a05d5cf66a6c12ec8c5625a117/transformed/profileinstaller-1.3.1/AndroidManifest.xml:44:25-82
+215            </intent-filter>
+216            <intent-filter>
+216-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/runner/.gradle/caches/8.9/transforms/540be8a05d5cf66a6c12ec8c5625a117/transformed/profileinstaller-1.3.1/AndroidManifest.xml:46:13-48:29
+217                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+217-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/runner/.gradle/caches/8.9/transforms/540be8a05d5cf66a6c12ec8c5625a117/transformed/profileinstaller-1.3.1/AndroidManifest.xml:47:17-88
+217-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/runner/.gradle/caches/8.9/transforms/540be8a05d5cf66a6c12ec8c5625a117/transformed/profileinstaller-1.3.1/AndroidManifest.xml:47:25-85
+218            </intent-filter>
+219            <intent-filter>
+219-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/runner/.gradle/caches/8.9/transforms/540be8a05d5cf66a6c12ec8c5625a117/transformed/profileinstaller-1.3.1/AndroidManifest.xml:49:13-51:29
+220                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+220-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/runner/.gradle/caches/8.9/transforms/540be8a05d5cf66a6c12ec8c5625a117/transformed/profileinstaller-1.3.1/AndroidManifest.xml:50:17-95
+220-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/runner/.gradle/caches/8.9/transforms/540be8a05d5cf66a6c12ec8c5625a117/transformed/profileinstaller-1.3.1/AndroidManifest.xml:50:25-92
+221            </intent-filter>
+222        </receiver>
+223    </application>
+224
+225</manifest>
