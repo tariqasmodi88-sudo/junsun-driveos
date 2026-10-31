@@ -183,7 +183,7 @@ object CanDecoder {
 
 /**
  * Ascolta /dev/ttyS1 (sola lettura, in primo piano o in background) e pubblica le variazioni.
- * Se la porta non si apre (permessi, altro firmware) riprova ogni 30 s senza fare danni.
+ * Se la porta non si apre (permessi, altro firmware) riprova ogni 2 s senza fare danni; se tace per 20 s la riapre.
  */
 class CanSerialReader(private val path: String = "/dev/ttyS1") {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -192,6 +192,7 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
     @Volatile private var stream: FileInputStream? = null
     @Volatile var framesSeen: Long = 0
         private set
+    @Volatile private var lastByteAt = 0L
 
     fun addSink(s: (Map<String, String>) -> Unit) { if (!sinks.contains(s)) sinks.add(s) }
     fun removeSink(s: (Map<String, String>) -> Unit) { sinks.remove(s) }
@@ -204,11 +205,22 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
                 try {
                     FileInputStream(path).use { ins ->
                         stream = ins
+                        last.clear() // dopo una riapertura si ripubblica lo stato corrente
+                        lastByteAt = System.currentTimeMillis()
+                        // Guardiano: se la porta tace per 20 s (lettura bloccata dopo un ciclo del quadro, ecc.)
+                        // la si chiude: la lettura fallisce e riparte da capo.
+                        val dog = launch {
+                            while (isActive) {
+                                delay(5_000)
+                                if (System.currentTimeMillis() - lastByteAt > 20_000) { runCatching { ins.close() }; break }
+                            }
+                        }
                         val parser = CanStreamParser()
                         val buf = ByteArray(512)
                         while (isActive) {
                             val n = ins.read(buf)
                             if (n < 0) break
+                            lastByteAt = System.currentTimeMillis()
                             val changes = LinkedHashMap<String, String>()
                             for (f in parser.feed(buf, n)) {
                                 framesSeen++
@@ -220,10 +232,11 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
                             }
                             if (changes.isNotEmpty()) sinks.forEach { runCatching { it(changes) } }
                         }
+                        dog.cancel()
                     }
                 } catch (_: Throwable) { }
                 stream = null
-                if (isActive) delay(30_000)
+                if (isActive) delay(2_000)
             }
         }
     }
