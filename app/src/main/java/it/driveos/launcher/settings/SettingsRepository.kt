@@ -48,6 +48,8 @@ data class DriveSettings(
     val latitude: Double = 0.0,
     val longitude: Double = 0.0,
     val radioPresets: List<RadioPreset> = emptyList(),
+    /** Ultima frequenza FM ascoltata (kHz), 0 se mai. */
+    val lastRadioKhz: Int = 0,
     // Avvio intelligente alla connessione Bluetooth (sostituisce AutoLink).
     val smartStartEnabled: Boolean = true,
     val smartStartMusic: Boolean = true,
@@ -90,6 +92,7 @@ class SettingsRepository(context: Context) {
         val LAT = stringPreferencesKey("latitude")
         val LON = stringPreferencesKey("longitude")
         val PRESETS = stringPreferencesKey("radio_presets")
+        val LAST_KHZ = stringPreferencesKey("radio_last_khz")
         val SS_ENABLED = stringPreferencesKey("ss_enabled")
         val SS_MUSIC = stringPreferencesKey("ss_music")
         val SS_NAV = stringPreferencesKey("ss_nav")
@@ -128,6 +131,7 @@ class SettingsRepository(context: Context) {
                 latitude = p[Keys.LAT]?.toDoubleOrNull() ?: 0.0,
                 longitude = p[Keys.LON]?.toDoubleOrNull() ?: 0.0,
                 radioPresets = RadioPresetCodec.decode(p[Keys.PRESETS]),
+                lastRadioKhz = p[Keys.LAST_KHZ]?.toIntOrNull() ?: 0,
                 smartStartEnabled = p[Keys.SS_ENABLED] != "0",
                 smartStartMusic = p[Keys.SS_MUSIC] != "0",
                 smartStartNav = p[Keys.SS_NAV] == "1",
@@ -193,6 +197,8 @@ class SettingsRepository(context: Context) {
     suspend fun setLocation(lat: Double, lon: Double) {
         store.edit { it[Keys.LAT] = lat.toString(); it[Keys.LON] = lon.toString() }
     }
+
+    suspend fun setLastRadioKhz(khz: Int) { store.edit { it[Keys.LAST_KHZ] = khz.toString() } }
 
     suspend fun setRadioPresets(presets: List<RadioPreset>) {
         store.edit { it[Keys.PRESETS] = RadioPresetCodec.encode(presets) }

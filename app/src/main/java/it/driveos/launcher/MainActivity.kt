@@ -307,10 +307,20 @@ class MainActivity : ComponentActivity() {
             if (screen != Screen.RADIO) return@LaunchedEffect
             // entrando in Radio: ferma i file/lo streaming e accendi il sintonizzatore
             driveApp.mediaRepository.pauseIfPlaying()
-            driveApp.tsBridge.radioCall { it.OpenRadioCh(); it.onRadioFM() }
+            val br = driveApp.tsBridge
+            br.radioCall { it.OpenRadioCh(); it.onRadioFM() }
+            // riprende l'ultima stazione scelta
+            val last = s.lastRadioKhz
+            var savedKhz = last
+            if (last > 0) {
+                kotlinx.coroutines.delay(700)
+                val now = br.radioInfo()?.takeIf { it.second < 3 }?.let { TsBridge.toKhz(it.first) }
+                if (now != last) { br.tuneFm(last); kotlinx.coroutines.delay(700) }
+            }
             while (true) {
                 val info = driveApp.tsBridge.radioInfo()
                 bridgeKhz = if (info != null && info.second < 3) TsBridge.toKhz(info.first) else null
+                bridgeKhz?.let { k -> if (k != savedKhz) { savedKhz = k; driveApp.settingsRepository.setLastRadioKhz(k) } }
                 kotlinx.coroutines.delay(1000)
             }
         }
