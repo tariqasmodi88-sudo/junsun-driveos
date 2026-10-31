@@ -71,6 +71,8 @@ fun RadioScreen(
     stationName: String? = null,
     /** Pressione lunga su P1…P6: registra la stazione attuale in quel posto. */
     onSaveSlot: ((Int) -> Unit)? = null,
+    /** false = DriveOS non puo' leggere il registro di sistema, da cui arriva il nome RDS. */
+    logsGranted: Boolean = true,
 ) {
     val colors = MaterialTheme.colorScheme
     val khz = state?.khz ?: currentKhz
@@ -109,6 +111,8 @@ fun RadioScreen(
                             Text(name ?: "—", fontSize = 20.sp, fontWeight = FontWeight.SemiBold,
                                 color = if (name != null) colors.primary else colors.onSurfaceVariant,
                                 maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            if (!logsGranted && stationName == null)
+                                Text("Nome RDS non leggibile: manca il permesso ai log (vedi istruzioni in chat)", fontSize = 12.sp, color = colors.onSurfaceVariant)
                         }
                         Dial(khz)
                     }

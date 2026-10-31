@@ -1044,6 +1044,7 @@ class MainActivity : ComponentActivity() {
                                     if (!ok) openOrPick(s.radioApp, PickerTarget.RADIO)
                                 },
                                 stationName = (bridgeKhz ?: logKhz)?.let { stationNames[it] } ?: logName,
+                                logsGranted = driveApp.logcatReader.available(),
                                 onBack = { screen = Screen.SETTINGS },
                             )
 
