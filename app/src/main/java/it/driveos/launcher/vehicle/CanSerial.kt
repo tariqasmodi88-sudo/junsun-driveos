@@ -146,22 +146,20 @@ object CanDecoder {
     private fun hex(b: ByteArray, from: Int) = (from until b.size).joinToString(" ") { "%02x".format(b[it]) }
 
     /**
-     * Livelli 0..3 dei 4 sensori (0 = libero, 3 = ostacolo vicinissimo). La scala grezza del firmware non e'
-     * documentata: lontano il valore e' alto e scende avvicinandosi. Il valore "libero" e quello piu' vicino
-     * si imparano dai dati (massimo e minimo visti), senza fissare numeri.
+     * Livelli 0..3 dei 4 sensori (0 = libero/bianco, 1 = giallo, 2 = arancio, 3 = rosso). Valori grezzi 0 e 1 =
+     * nessun ostacolo; salgono avvicinandosi. La scala esatta del firmware non e' ancora nota: i numeri grezzi
+     * sono mostrati sotto l'auto per tararla.
      */
-    private val scales = mutableMapOf<String, IntArray>() // [massimo, minimo]
-
-    fun resetSensorScale() = scales.clear()
+    fun resetSensorScale() {}
 
     fun sensorLevels(signals: Map<String, String>, key: String): List<Int>? {
+        val raw = sensorRaw(signals, key) ?: return null
+        return raw.map { (it - 1).coerceIn(0, 3) }
+    }
+
+    fun sensorRaw(signals: Map<String, String>, key: String): List<Int>? {
         val raw = signals[key]?.split(" ")?.mapNotNull { it.toIntOrNull() } ?: return null
-        if (raw.size != 4) return null
-        val sc = scales.getOrPut(key) { intArrayOf(raw.max(), raw.min()) }
-        sc[0] = maxOf(sc[0], raw.max())
-        sc[1] = minOf(sc[1], raw.min())
-        val span = (sc[0] - sc[1]).coerceAtLeast(1)
-        return raw.map { v -> Math.ceil(3.0 * (sc[0] - v) / span).toInt().coerceIn(0, 3) }
+        return raw.takeIf { it.size == 4 }
     }
 
     /** Etichette leggibili delle porte aperte, es. ["anteriore sinistra", "baule"]. */

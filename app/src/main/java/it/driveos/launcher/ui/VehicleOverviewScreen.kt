@@ -69,6 +69,8 @@ data class VehicleOverviewState(
     /** Livello di vicinanza 0..3 dei 4 sensori posteriori (sinistra→destra); null = dato non disponibile. */
     val rearLevels: List<Int>? = null,
     val frontLevels: List<Int>? = null,
+    /** Numeri grezzi dei sensori posteriori, mostrati piccoli per tarare i colori. */
+    val rearRaw: List<Int>? = null,
 )
 
 private val DRAWN_ALERTS = setOf("Retromarcia", "Portiera", "Sensori parcheggio")
@@ -108,6 +110,8 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onDebug: () -> Unit) {
             // --- Centro: l'auto ---
             Box(Modifier.weight(0.3f).fillMaxHeight(), contentAlignment = Alignment.Center) {
                 CarTopView(state, Modifier.fillMaxSize())
+                if (rearSensors(state) && state.rearRaw != null)
+                    Text(state.rearRaw.joinToString("  "), Modifier.align(Alignment.BottomCenter), fontSize = 14.sp, color = c.onSurfaceVariant)
                 Column(Modifier.align(Alignment.TopCenter), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(state.speedKmh?.let { "${it.toInt()} km/h" } ?: "— km/h",
                         fontSize = 30.sp, fontWeight = FontWeight.Bold, color = c.onBackground)

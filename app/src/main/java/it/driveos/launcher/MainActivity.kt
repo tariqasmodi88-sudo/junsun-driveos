@@ -1046,6 +1046,7 @@ class MainActivity : ComponentActivity() {
                                     batteryV = vehicleSignals[CanDecoder.BATTERY_V],
                                     belt = vehicleSignals[CanDecoder.BELT]?.let { it == "1" },
                                     rearLevels = CanDecoder.sensorLevels(vehicleSignals, CanDecoder.REAR_SENSORS),
+                                    rearRaw = CanDecoder.sensorRaw(vehicleSignals, CanDecoder.REAR_SENSORS),
                                     frontLevels = CanDecoder.sensorLevels(vehicleSignals, CanDecoder.FRONT_SENSORS),
                                     parking = vehicleSignals[LogcatParser.PARKING]?.let { v -> v == "1" },
                                     phone = KnownVehicleSignals.phoneConnected(vehicleSignals),
