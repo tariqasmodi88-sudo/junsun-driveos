@@ -123,11 +123,13 @@ class MediaRepository(context: Context) {
     }
 
     // --- Lettore interno (cartella di file) ---
-    private val local by lazy {
-        LocalPlayer(app) { info ->
+    private val local: LocalPlayer by lazy {
+        lateinit var lp: LocalPlayer
+        lp = LocalPlayer(app) { info ->
             _media.value = info
-            if (info != null) { _shuffle.value = local.shuffle; _repeat.value = local.repeat }
+            if (info != null) { _shuffle.value = lp.shuffle; _repeat.value = lp.repeat }
         }
+        lp
     }
     @Volatile private var localActive = false
 
