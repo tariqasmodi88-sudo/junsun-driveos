@@ -74,6 +74,16 @@ class DriveOSApp : Application() {
         }
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         scope.launch { settingsRepository.settings.collect { keyMapper.bindings = it.keyBindings } }
+        scope.launch {
+            logcatReader.names.collect { m ->
+                val cur = settingsRepository.settings.first().radioPresets
+                val upd = cur.map { p ->
+                    val n = m[p.khz]
+                    if (n != null && p.khz > 0 && n != p.name && (logcatReader.readingNames || p.name.isBlank() || p.name.startsWith("FM "))) p.copy(name = n) else p
+                }
+                if (upd != cur) settingsRepository.setRadioPresets(upd)
+            }
+        }
         keyMapper.onLearned = { b ->
             scope.launch {
                 val cur = settingsRepository.settings.first().keyBindings

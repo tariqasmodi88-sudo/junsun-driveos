@@ -9,6 +9,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
@@ -45,6 +47,15 @@ class LogcatReader(context: Context, private val repo: VehicleRepository) {
     }
 
     private var nameSeq = 0L
+    private val _names = MutableStateFlow<Map<Int, String>>(emptyMap())
+    /** Nomi RDS letti, per frequenza (kHz): il nome e' legato alla frequenza dello stesso registro. */
+    val names: StateFlow<Map<Int, String>> = _names
+    /** true durante "Leggi nomi": i nomi letti sostituiscono quelli gia' salvati. */
+    @Volatile var readingNames = false
+    private var tunedKhz: Int? = null
+    private var tunedHasName = false
+    private val setFreq = Regex("setfreq=(\\d{4,5})")
+    fun clearNames() { _names.value = emptyMap(); tunedKhz = null }
     private var parkingClear: Job? = null
 
     /** Il log dice solo "sensori attivi": se tace per [LogcatParser.PARKING_TIMEOUT_MS], li segna spenti. */
@@ -67,7 +78,12 @@ class LogcatReader(context: Context, private val repo: VehicleRepository) {
             BufferedReader(InputStreamReader(p.inputStream)).use { reader ->
                 while (scope.isActive) {
                     val line = reader.readLine() ?: break
+                    setFreq.find(line)?.let { m -> tunedKhz = m.groupValues[1].toInt() * 10; tunedHasName = false }
                     LogcatParser.parse(line)?.let { (id, value) ->
+                        // il primo nome dopo una sintonia e' quello di quella stazione (poi lo scorrimento del testo lo spezzerebbe)
+                        if (id == LogcatParser.RADIO_NAME) tunedKhz?.let { k ->
+                            if (!tunedHasName) { tunedHasName = true; _names.value = _names.value + (k to value) }
+                        }
                         if (id == LogcatParser.RADIO_NAME) repo.ingest(mapOf(id to value, LogcatParser.RADIO_NAME_SEQ to (++nameSeq).toString()))
                         else repo.ingest(mapOf(id to value))
                         if (id == LogcatParser.PARKING && value == "1") armParkingClear()
