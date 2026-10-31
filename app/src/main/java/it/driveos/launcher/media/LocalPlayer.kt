@@ -80,7 +80,16 @@ class LocalPlayer(context: Context, private val onChange: (MediaInfo?) -> Unit) 
             val r = MediaMetadataRetriever()
             val meta = runCatching {
                 r.setDataSource(app, Uri.parse(id))
-                val art = r.embeddedPicture?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
+                var art = r.embeddedPicture?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
+                if (art == null) {
+                    // niente immagine nel file: cerca cover/folder.jpg nella stessa cartella
+                    Uri.parse(id).path?.takeIf { Uri.parse(id).scheme == "file" }?.let { path ->
+                        val dir = java.io.File(path).parentFile
+                        val names = listOf("cover", "folder", "front", "album", "albumart")
+                        val img = dir?.listFiles()?.firstOrNull { f -> names.any { n -> f.name.lowercase().let { x -> x.startsWith(n) && (x.endsWith(".jpg") || x.endsWith(".jpeg") || x.endsWith(".png")) } } }
+                        if (img != null) art = BitmapFactory.decodeFile(img.path)
+                    }
+                }
                 Meta(
                     title = r.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE).orEmpty(),
                     artist = r.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST).orEmpty(),
