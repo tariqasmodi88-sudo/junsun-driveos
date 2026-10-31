@@ -1,5 +1,6 @@
 package it.driveos.launcher.ui
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,19 +28,26 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import it.driveos.launcher.radio.RadioBand
 import it.driveos.launcher.radio.RadioPreset
+import it.driveos.launcher.radio.RadioPresetLogic
 import it.driveos.launcher.radio.RadioState
 import it.driveos.launcher.ui.icons.PauseIcon
 
 /**
- * Radio INTEGRATA in DriveOS: resta qui, non apre l'app Junsun. Mostra la frequenza solo
- * se il firmware la pubblica (niente valori finti); i comandi sono best-effort finché non
- * abbiamo i parametri esatti di questa radio (si ricavano dall'export).
+ * Radio INTEGRATA in DriveOS. Mostra solo ciò che si legge davvero (frequenza dal sistema, nome dai
+ * preferiti salvati); i comandi sono best-effort finché non conosciamo i parametri esatti di questa radio.
+ * Sei posti fissi (P1…P6): un posto vuoto salva la stazione in ascolto.
  */
 @Composable
 fun RadioScreen(
@@ -58,91 +66,100 @@ fun RadioScreen(
     onRemove: (RadioPreset) -> Unit,
     onOpenExternal: () -> Unit,
     onBack: () -> Unit,
+    /** Nome RDS, se il firmware lo pubblica. */
+    stationName: String? = null,
 ) {
     val colors = MaterialTheme.colorScheme
-    val freqText = state?.khz?.let { RadioPreset(it, "").displayFrequency() } ?: "—"
+    val khz = state?.khz ?: currentKhz
+    val freqText = khz?.let { RadioPreset(it, "").displayFrequency() } ?: "—"
     val playing = state?.playing == true
+    val current = presets.firstOrNull { it.khz == khz }
+    val name = stationName ?: current?.name
 
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Radio", onBack)
-        Column(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 4.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)) {
-
-            // Display frequenza
-            Surface(shape = RoundedCornerShape(22.dp), color = colors.surface, modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.fillMaxWidth().padding(vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text(freqText, fontSize = 56.sp, fontWeight = FontWeight.Bold, color = colors.onSurface)
-                        Spacer(Modifier.width(8.dp))
-                        Text("MHz", fontSize = 20.sp, color = colors.onSurfaceVariant, modifier = Modifier.padding(bottom = 10.dp))
+        ScreenHeader("Radio", onBack) {
+            Surface(onClick = onOpenExternal, shape = RoundedCornerShape(14.dp), color = colors.surfaceVariant, contentColor = colors.onSurface) {
+                Text("Radio Junsun", fontSize = 14.sp, fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp))
+            }
+        }
+        Row(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            // --- Sintonizzatore ---
+            Column(Modifier.weight(0.52f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Surface(shape = RoundedCornerShape(24.dp), color = colors.surface, modifier = Modifier.fillMaxWidth().weight(1f)) {
+                    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 14.dp), verticalArrangement = Arrangement.SpaceBetween) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(shape = RoundedCornerShape(10.dp), color = colors.primary.copy(alpha = 0.18f)) {
+                                Text("FM", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = colors.primary,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                            }
+                            Spacer(Modifier.weight(1f))
+                            Text(if (detected) (if (playing) "In ascolto" else "In pausa") else "Frequenza dal sistema",
+                                fontSize = 13.sp, color = colors.onSurfaceVariant)
+                        }
+                        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Row(verticalAlignment = Alignment.Bottom) {
+                                Text(freqText, fontSize = 64.sp, fontWeight = FontWeight.Light, color = colors.onSurface)
+                                Spacer(Modifier.width(8.dp))
+                                Text("MHz", fontSize = 18.sp, color = colors.onSurfaceVariant, modifier = Modifier.padding(bottom = 14.dp))
+                            }
+                            Text(name ?: "—", fontSize = 20.sp, fontWeight = FontWeight.SemiBold,
+                                color = if (name != null) colors.primary else colors.onSurfaceVariant,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                        Dial(khz)
                     }
-                    Text(
-                        if (detected) (if (playing) "In riproduzione" else "In pausa")
-                        else "Sintonizzatore non ancora rilevato su questo firmware",
-                        fontSize = 14.sp, color = if (detected) colors.primary else colors.onSurfaceVariant,
-                    )
                 }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    CtrlButton(null, "Cerca giù", Modifier.weight(1f), onSeekDown, textIcon = "«")
+                    CtrlButton(null, "Passo giù", Modifier.weight(0.8f), onStepDown, textIcon = "‹")
+                    CtrlButton(if (playing) PauseIcon else Icons.Filled.PlayArrow, "Play/Pausa", Modifier.weight(1f), onPlayPause, highlighted = true)
+                    CtrlButton(null, "Passo su", Modifier.weight(0.8f), onStepUp, textIcon = "›")
+                    CtrlButton(null, "Cerca su", Modifier.weight(1f), onSeekUp, textIcon = "»")
+                }
+                Spacer(Modifier.height(4.dp))
             }
 
-            // Comandi
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                CtrlButton(null, "Cerca giù", Modifier.weight(1f), onSeekDown, textIcon = "«")
-                CtrlButton(null, "Passo giù", Modifier.weight(0.7f), onStepDown, textIcon = "‹")
-                CtrlButton(if (playing) PauseIcon else Icons.Filled.PlayArrow, "Play/Pausa", Modifier.weight(1f), onPlayPause, highlighted = true)
-                CtrlButton(null, "Passo su", Modifier.weight(0.7f), onStepUp, textIcon = "›")
-                CtrlButton(null, "Cerca su", Modifier.weight(1f), onSeekUp, textIcon = "»")
-            }
-
-            if (!detected) {
-                Surface(shape = RoundedCornerShape(14.dp), color = colors.surfaceVariant, modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(14.dp)) {
-                        Text("DriveOS non riceve ancora lo stato della radio da questo firmware. " +
-                            "I comandi qui sopra provano i protocolli più comuni; se non funzionano, " +
-                            "esporta i dati (Veicolo → Esporta) così li adattiamo a questa radio esatta.",
-                            fontSize = 14.sp, color = colors.onSurfaceVariant)
-                        Spacer(Modifier.height(10.dp))
-                        Surface(onClick = onOpenExternal, shape = RoundedCornerShape(12.dp),
-                            color = colors.surface, contentColor = colors.onSurface, modifier = Modifier.fillMaxWidth().height(46.dp)) {
-                            Box(contentAlignment = Alignment.Center) { Text("Apri l'app radio Junsun (ripiego)", fontSize = 15.sp) }
+            // --- Preferiti: 6 posti fissi ---
+            Column(Modifier.weight(0.48f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("PREFERITI", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.5.sp, color = colors.primary)
+                for (row in 0 until 3) {
+                    Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        for (col in 0 until 2) {
+                            val i = row * 2 + col
+                            val p = presets.getOrNull(i)
+                            Box(Modifier.weight(1f).fillMaxHeight()) {
+                                if (p != null) PresetTile(i + 1, p, selected = khz == p.khz, onTune, onRemove)
+                                else EmptyTile(i + 1, canSave = onSaveCurrent != null && khz != null,
+                                    onClick = { if (onSaveCurrent != null && khz != null) onSaveCurrent() else onAdd() })
+                            }
                         }
                     }
                 }
+                Spacer(Modifier.height(4.dp))
             }
+        }
+    }
+}
 
-            // Preset
-            Text("CANALI MEMORIZZATI", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.2.sp,
-                color = colors.primary, modifier = Modifier.padding(top = 4.dp))
-            if (presets.isEmpty()) {
-                Text("Nessun canale salvato. Tocca «Aggiungi canale».", fontSize = 15.sp, color = colors.onSurfaceVariant)
-            } else {
-                LazyVerticalGrid(columns = GridCells.Adaptive(140.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.fillMaxWidth().weight(1f, fill = false)) {
-                    items(presets, key = { "${it.band}${it.khz}" }) { p ->
-                        PresetTile(p, selected = currentKhz == p.khz, onTune, onRemove)
-                    }
-                }
-            }
-
-            if (onSaveCurrent != null && state?.khz != null) {
-                Surface(onClick = onSaveCurrent, shape = RoundedCornerShape(16.dp), color = colors.surfaceVariant, contentColor = colors.onSurface,
-                    modifier = Modifier.fillMaxWidth().height(54.dp)) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text("Salva questa stazione come preferita ($freqText MHz) · max 6", fontSize = 16.sp, fontWeight = FontWeight.Medium,
-                            maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    }
-                }
-            }
-            Surface(onClick = onAdd, shape = RoundedCornerShape(16.dp), color = colors.primary, contentColor = colors.onPrimary,
-                modifier = Modifier.fillMaxWidth().height(54.dp)) {
-                Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                    Icon(Icons.Filled.Add, null, modifier = Modifier.size(22.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Aggiungi canale (frequenza attuale: $freqText)", fontSize = 16.sp, fontWeight = FontWeight.Medium,
-                        maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-            }
-            Spacer(Modifier.height(8.dp))
+/** Scala di sintonia 87,5–108 MHz con l'indicatore sulla frequenza attuale. */
+@Composable
+private fun Dial(khz: Int?) {
+    val colors = MaterialTheme.colorScheme
+    val tick = colors.onSurfaceVariant.copy(alpha = 0.55f)
+    val accent = colors.primary
+    Canvas(Modifier.fillMaxWidth().height(34.dp)) {
+        val lo = RadioPresetLogic.FM_MIN_KHZ; val hi = RadioPresetLogic.FM_MAX_KHZ
+        val n = (hi - lo) / 100
+        for (i in 0..n step 2) {
+            val x = size.width * i / n
+            val major = i % 10 == 0
+            val h = if (major) size.height * 0.55f else size.height * 0.3f
+            drawLine(tick, Offset(x, size.height - h), Offset(x, size.height), strokeWidth = if (major) 3f else 2f, cap = StrokeCap.Round)
+        }
+        if (khz != null && khz in lo..hi) {
+            val x = size.width * (khz - lo).toFloat() / (hi - lo)
+            drawRoundRect(accent, Offset(x - 3f, 0f), Size(6f, size.height), CornerRadius(3f))
         }
     }
 }
@@ -153,7 +170,7 @@ private fun CtrlButton(
     highlighted: Boolean = false, textIcon: String? = null,
 ) {
     val colors = MaterialTheme.colorScheme
-    Surface(onClick = onClick, shape = RoundedCornerShape(16.dp),
+    Surface(onClick = onClick, shape = RoundedCornerShape(18.dp),
         color = if (highlighted) colors.primary else colors.surfaceVariant,
         contentColor = if (highlighted) colors.onPrimary else colors.onSurface,
         modifier = modifier.height(64.dp)) {
@@ -165,25 +182,33 @@ private fun CtrlButton(
 }
 
 @Composable
-private fun PresetTile(p: RadioPreset, selected: Boolean, onTune: (RadioPreset) -> Unit, onRemove: (RadioPreset) -> Unit) {
+private fun PresetTile(slot: Int, p: RadioPreset, selected: Boolean, onTune: (RadioPreset) -> Unit, onRemove: (RadioPreset) -> Unit) {
     val colors = MaterialTheme.colorScheme
-    Surface(onClick = { onTune(p) }, shape = RoundedCornerShape(18.dp),
-        color = if (selected) colors.primary.copy(alpha = 0.20f) else colors.surface,
-        modifier = Modifier.height(92.dp)) {
-        Box(Modifier.fillMaxSize().padding(14.dp)) {
-            Column {
-                Row(verticalAlignment = Alignment.Bottom) {
-                    Text(p.displayFrequency(), fontSize = 26.sp, fontWeight = FontWeight.Bold, color = colors.onSurface)
-                    if (p.displayUnit().isNotBlank()) {
-                        Spacer(Modifier.width(4.dp))
-                        Text(p.displayUnit(), fontSize = 13.sp, color = colors.onSurfaceVariant, modifier = Modifier.padding(bottom = 4.dp))
-                    }
-                }
-                Text(p.name, fontSize = 15.sp, color = colors.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    Surface(onClick = { onTune(p) }, shape = RoundedCornerShape(20.dp),
+        color = if (selected) colors.primary.copy(alpha = 0.22f) else colors.surface,
+        modifier = Modifier.fillMaxSize()) {
+        Box(Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 10.dp)) {
+            Column(Modifier.align(Alignment.CenterStart)) {
+                Text("P$slot", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (selected) colors.primary else colors.onSurfaceVariant)
+                Text(p.displayFrequency(), fontSize = 28.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
+                Text(p.name, fontSize = 14.sp, color = colors.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            Box(Modifier.align(Alignment.TopEnd).size(28.dp).clickable { onRemove(p) }, contentAlignment = Alignment.Center) {
-                Icon(Icons.Filled.Close, "Rimuovi", tint = colors.onSurfaceVariant, modifier = Modifier.size(18.dp))
+            Box(Modifier.align(Alignment.TopEnd).size(30.dp).clickable { onRemove(p) }, contentAlignment = Alignment.Center) {
+                Icon(Icons.Filled.Close, "Rimuovi", tint = colors.onSurfaceVariant, modifier = Modifier.size(16.dp))
             }
+        }
+    }
+}
+
+@Composable
+private fun EmptyTile(slot: Int, canSave: Boolean, onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    Surface(onClick = onClick, shape = RoundedCornerShape(20.dp), color = colors.surface.copy(alpha = 0.5f),
+        modifier = Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Text("P$slot", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = colors.onSurfaceVariant)
+            Icon(Icons.Filled.Add, null, tint = colors.onSurfaceVariant, modifier = Modifier.size(26.dp))
+            Text(if (canSave) "Salva questa" else "Aggiungi", fontSize = 12.sp, color = colors.onSurfaceVariant)
         }
     }
 }

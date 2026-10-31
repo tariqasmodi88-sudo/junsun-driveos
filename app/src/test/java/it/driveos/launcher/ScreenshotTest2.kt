@@ -125,7 +125,7 @@ class ScreenshotTest2 {
         AppDrawerScreen(apps, true, listOf(waze.key.encode(), spotify.key.encode()), {}, {}, {}, {}) } } }
     @Test fun radio() { on(); shot("19_radio") { WithBar(Screen.RADIO) {
         RadioScreen(RadioState(khz = 97900, playing = true), true,
-            listOf(RadioPreset(97900, "Radio Deejay"), RadioPreset(101500, "RTL 102.5"), RadioPreset(103300, "Radio 105")),
+            listOf(RadioPreset(92000, "VIVA FM"), RadioPreset(97900, "Radio Deejay"), RadioPreset(101500, "RTL 102.5"), RadioPreset(104500, "R101")),
             97900, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}) } } }
     @Test fun smart() { on(); shot("20_avvio_intelligente") { WithBar(Screen.SETTINGS) {
         SmartStartScreen(settings, { k -> apps.firstOrNull { it.key == k }?.label }, true, true, true,
