@@ -29,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
@@ -129,7 +130,7 @@ fun BottomBar(
             BigButton("Radio", it.driveos.launcher.ui.icons.RadioIcon, onRadio, m, selected = current == Screen.RADIO)
             BigButton("Musica", Icons.Filled.PlayArrow, onMusic, m, selected = current == Screen.MUSIC)
             BigButton("Telefono", Icons.Filled.Phone, onPhone, m)
-            BigButton("Clima", androidx.compose.material.icons.Icons.Filled.AcUnit, onClimate, m, selected = current == Screen.CLIMATE)
+            BigButton("Clima", Icons.Filled.AcUnit, onClimate, m, selected = current == Screen.CLIMATE)
             BigButton("App", Icons.Filled.Menu, onApps, m, selected = current == Screen.APPS)
         }
     }
