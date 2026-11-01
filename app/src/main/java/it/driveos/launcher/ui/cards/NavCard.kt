@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.PlayArrow
@@ -48,11 +49,12 @@ fun NavCard(
     onWork: () -> Unit,
     onDestination: (String) -> Unit,
     modifier: Modifier = Modifier,
+    onStop: (() -> Unit)? = null,
 ) {
     DashCard("Navigazione", Icons.Filled.Place, onOpenDetail, modifier, trailing = navEntry?.label) { size, wide ->
         when {
             navEntry == null -> NotConfigured(configured, size, onChooseApp)
-            guidance != null -> Guidance(guidance, navEntry, size, onResume)
+            guidance != null -> Guidance(guidance, navEntry, size, onResume, onStop)
             else -> Idle(size, wide, recent, onOpenDetail, onHome, onWork, onDestination)
         }
     }
@@ -75,7 +77,7 @@ private fun ColumnScope.NotConfigured(configured: Boolean, size: CardSize, onCho
 }
 
 @Composable
-private fun ColumnScope.Guidance(g: NavGuidance, navEntry: AppEntry, size: CardSize, onResume: () -> Unit) {
+private fun ColumnScope.Guidance(g: NavGuidance, navEntry: AppEntry, size: CardSize, onResume: () -> Unit, onStop: (() -> Unit)?) {
     val colors = MaterialTheme.colorScheme
     val compact = size == CardSize.COMPACT
     val iconSize = when (size) {
@@ -116,7 +118,10 @@ private fun ColumnScope.Guidance(g: NavGuidance, navEntry: AppEntry, size: CardS
             Text(g.subText, fontSize = 18.sp, color = colors.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         Spacer(Modifier.weight(1f))
-        CardButton("Torna alla guida", Icons.Filled.PlayArrow, onResume, Modifier.fillMaxWidth(), height = 72.dp, primary = true)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            CardButton("Torna alla guida", Icons.Filled.PlayArrow, onResume, Modifier.weight(1.4f), height = 72.dp, primary = true)
+            if (onStop != null) CardButton("Termina", Icons.Filled.Close, onStop, Modifier.weight(1f), height = 72.dp)
+        }
     }
 }
 

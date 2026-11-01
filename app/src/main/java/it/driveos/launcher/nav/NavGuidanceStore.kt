@@ -14,6 +14,8 @@ data class NavGuidance(
     val text: String,
     val subText: String,
     val icon: ImageBitmap?,
+    /** Azione "termina navigazione" offerta dalla notifica (Maps: Esci, Waze: Stop/Spegni), se c'e'. */
+    val stopAction: android.app.PendingIntent? = null,
 )
 
 /**
@@ -38,6 +40,12 @@ object NavGuidanceStore {
 
     fun remove(packageName: String, key: String) = _guidance.update { current ->
         if (current[packageName]?.key == key) current - packageName else current
+    }
+
+    /** Termina la navigazione con il pulsante della notifica dell'app. false se l'app non lo offre. */
+    fun stop(g: NavGuidance): Boolean {
+        val pi = g.stopAction ?: return false
+        return runCatching { pi.send(); remove(g.packageName, g.key); true }.getOrDefault(false)
     }
 
     fun clear() {

@@ -54,6 +54,8 @@ class DriveNotificationListener : NotificationListenerService() {
             n.getLargeIcon()?.loadDrawable(this)?.toBitmap(160, 160)?.asImageBitmap()
         }.getOrNull()
 
-        NavGuidanceStore.update(NavGuidance(sbn.packageName, sbn.key, title, text, sub, icon))
+        val stopWords = listOf("esci", "exit", "stop", "termina", "interrompi", "spegni", "chiudi", "end", "quit", "fine", "turn off")
+        val stop = n.actions?.firstOrNull { a -> val t = a.title?.toString()?.lowercase().orEmpty(); stopWords.any { t.contains(it) } }?.actionIntent
+        NavGuidanceStore.update(NavGuidance(sbn.packageName, sbn.key, title, text, sub, icon, stop))
     }
 }

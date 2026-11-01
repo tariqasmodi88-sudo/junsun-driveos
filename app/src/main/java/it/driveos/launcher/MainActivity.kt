@@ -879,6 +879,7 @@ class MainActivity : ComponentActivity() {
                                         onHome = { goHome() },
                                         onWork = { goWork() },
                                         onDestination = { navigateTo(it) },
+                                        onStop = { guidance?.let { g -> if (!NavGuidanceStore.stop(g)) message("L'app di navigazione non offre il comando per terminare: aprila e chiudi il percorso da lì.") } },
                                     )
                                     CardType.MUSIC -> MusicCard(
                                         access = mediaAccess,
