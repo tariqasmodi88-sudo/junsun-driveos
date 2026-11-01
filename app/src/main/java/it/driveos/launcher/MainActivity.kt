@@ -510,7 +510,7 @@ class MainActivity : ComponentActivity() {
 
         // Lettore musica locale della radio Junsun (USB/SD): non ha sessione media, si apre l'attività.
         val junsunLocalPlayer = true // lettore interno di DriveOS (LocalMusicService)
-        fun hasLocalMusic() = s.offlineMusicApp != null || junsunLocalPlayer
+        fun hasLocalMusic() = true // c'e' sempre il lettore interno di DriveOS
         // Riporta DriveOS davanti (CarPlay/Android Auto o il lettore restano attivi in secondo piano).
         fun bringHomeToFront() {
             if (WindowWatcher.goHome()) return
