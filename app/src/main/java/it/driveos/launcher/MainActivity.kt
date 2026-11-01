@@ -450,7 +450,7 @@ class MainActivity : ComponentActivity() {
         )
         val storagePermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted && pendingFolders) { pendingFolders = false; showFolders = true }
-            else if (granted) it.driveos.launcher.media.LocalMusicService.start(context)
+            else if (granted) driveApp.mediaRepository.let { mr -> if (mr.lastFolder() != null) mr.playLastFolder() else mr.playFolder("") }
             else message("Senza accesso ai file audio la musica del dispositivo non parte.")
         }
         val calendarPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -533,7 +533,9 @@ class MainActivity : ComponentActivity() {
                 storagePermission.launch(it.driveos.launcher.media.LocalMusicService.permission())
                 return
             }
-            it.driveos.launcher.media.LocalMusicService.start(context)
+            // lettore interno di DriveOS: riprende l'ultima cartella, altrimenti tutti i brani
+            val mr = driveApp.mediaRepository
+            if (mr.lastFolder() != null) mr.playLastFolder() else mr.playFolder("")
         }
 
         fun runSmartStart() {
@@ -669,7 +671,7 @@ class MainActivity : ComponentActivity() {
                 val cur = settingsNow
                 val config = SmartStartConfig(
                     enabled = cur.smartStartEnabled, playMusic = cur.smartStartMusic,
-                    hasOfflineMusic = cur.offlineMusicApp != null || junsunLocalPlayer,
+                    hasOfflineMusic = true, // c'e' sempre il lettore interno di DriveOS
                     projectionActive = projectionNow,
                 )
                 if (SmartStart.planWithoutPhone(config, playingNow).isNotEmpty()) playLocalMusic()
