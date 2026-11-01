@@ -46,6 +46,7 @@ class OfflineVoice(context: Context) {
     fun installed() = File(dir, "DONE").exists()
     /** Nome del modello installato per la lingua attiva (es. vosk-model-small-it-0.22). */
     fun installedModel(): String? = runCatching { File(dir, "DONE").readText().trim().ifEmpty { null } }.getOrNull()
+        ?.let { if (it == "ok") VoiceLanguages.of(language).fallbackModel else it } // installazioni precedenti
 
     /**
      * Modello piu' recente per la lingua attiva, dall'elenco ufficiale Vosk (model-list.json):
@@ -70,7 +71,7 @@ class OfflineVoice(context: Context) {
     /** true se c'e' un modello piu' nuovo di quello installato (serve internet). */
     suspend fun updateAvailable(): Boolean = withContext(Dispatchers.IO) {
         val cur = installedModel() ?: return@withContext false
-        latestModel().first != cur && cur != "ok"
+        latestModel().first != cur
     }
 
     init { _state.value = if (installed()) State.Ready else State.NotInstalled }
