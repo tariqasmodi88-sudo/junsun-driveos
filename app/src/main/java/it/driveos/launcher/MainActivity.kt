@@ -2,6 +2,10 @@ package it.driveos.launcher
 
 import kotlinx.coroutines.flow.first
 import android.Manifest
+import androidx.compose.material3.Text
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.clickable
 import it.driveos.launcher.voice.VoiceCommand
 import it.driveos.launcher.voice.VoiceCommands
 import android.content.ActivityNotFoundException
@@ -115,7 +119,7 @@ private enum class PickerTarget(val title: String) {
     OFFLINE_MUSIC("App musica offline (locale)"),
 }
 
-private enum class TextTarget { HOME_ADDRESS, WORK_ADDRESS, LOCATION }
+private enum class TextTarget { HOME_ADDRESS, WORK_ADDRESS, LOCATION, SEARCH }
 
 // App di proiezione telefono presenti su questi firmware: Android Auto e il dongle SpeedPlay.
 private val PROJECTION_PKGS = listOf("com.google.android.projection.gearhead", "com.suding.speedplay")
@@ -832,11 +836,30 @@ class MainActivity : ComponentActivity() {
 
         // --- Comandi vocali offline (Vosk) ---
         var voiceOpen by remember { mutableStateOf(false) }
+        var langDialog by remember { mutableStateOf(false) }
+        LaunchedEffect(s.voiceLang) { driveApp.voice.language = s.voiceLang }
+        if (langDialog) androidx.compose.material3.AlertDialog(
+            onDismissRequest = { langDialog = false },
+            title = { Text("Lingua comandi vocali") },
+            text = {
+                Column {
+                    it.driveos.launcher.voice.VoiceLanguages.all.forEach { l ->
+                        Text((if (l.code == s.voiceLang) "● " else "○ ") + l.label, fontSize = 22.sp,
+                            modifier = Modifier.fillMaxWidth().clickable {
+                                langDialog = false
+                                scope.launch { repo.setVoiceLang(l.code) }
+                            }.padding(vertical = 12.dp))
+                    }
+                    Text("La nuova lingua si scarica (circa 40-50 MB) la prima volta che premi Voce.", fontSize = 14.sp)
+                }
+            },
+            confirmButton = { androidx.compose.material3.TextButton(onClick = { langDialog = false }) { Text("Chiudi") } },
+        )
         var voiceHeard by remember { mutableStateOf<String?>(null) }
         val voiceState by driveApp.voice.state.collectAsStateWithLifecycle()
         var voiceForNav by remember { mutableStateOf(false) }
         fun handleVoice(text: String) {
-            val cmd = VoiceCommands.parse(text).let { c ->
+            val cmd = VoiceCommands.parse(text, s.voiceLang).let { c ->
                 // dal tasto microfono della ricerca: una frase "libera" e' una destinazione
                 if (voiceForNav && c is VoiceCommand.Unknown) VoiceCommand.Navigate(text) else c
             }
@@ -976,7 +999,7 @@ class MainActivity : ComponentActivity() {
                                         configured = s.navApp != null,
                                         guidance = guidance,
                                         recent = s.recentDestinations,
-                                        onOpenDetail = { openOrPick(s.navApp, PickerTarget.NAV) },
+                                        onOpenDetail = { textDialog = TextTarget.SEARCH },
                                         onChooseApp = { picker = PickerTarget.NAV },
                                         onResume = { openOrPick(s.navApp, PickerTarget.NAV) },
                                         onHome = { goHome() },
@@ -1128,6 +1151,17 @@ class MainActivity : ComponentActivity() {
                                 onEditLocation = { textDialog = TextTarget.LOCATION },
                                 onHomeSettings = { report(Launcher.openSystemSettings(context, Settings.ACTION_HOME_SETTINGS)) },
                                 onAndroidSettings = { report(Launcher.openSystemSettings(context, Settings.ACTION_SETTINGS)) },
+                                voiceLanguage = it.driveos.launcher.voice.VoiceLanguages.of(s.voiceLang).label,
+                                voiceModel = driveApp.voice.installedModel(),
+                                onVoiceLanguage = { langDialog = true },
+                                onVoiceUpdate = {
+                                    scope.launch {
+                                        if (!driveApp.voice.installed()) { startOfflineVoice(); return@launch }
+                                        message("Controllo se c'e' una voce piu' recente…")
+                                        if (driveApp.voice.updateAvailable()) { voiceOpen = true; driveApp.voice.install() }
+                                        else message("La voce e' gia' la piu' recente.")
+                                    }
+                                },
                                 onDeviceInfo = { screen = Screen.DEVICE_INFO },
                                 onBack = { screen = Screen.DASHBOARD },
                             )
@@ -1342,6 +1376,15 @@ class MainActivity : ComponentActivity() {
             }
 
             when (textDialog) {
+                TextTarget.SEARCH -> TextInputDialog(
+                    title = "Dove andiamo?",
+                    initial = "",
+                    placeholder = "Indirizzo o luogo",
+                    confirmLabel = "Vai",
+                    onConfirm = { value -> textDialog = null; if (value.isNotBlank()) navigateTo(value) },
+                    onDismiss = { textDialog = null },
+                )
+
                 TextTarget.HOME_ADDRESS -> TextInputDialog(
                     title = "Indirizzo di casa",
                     initial = s.homeAddress,

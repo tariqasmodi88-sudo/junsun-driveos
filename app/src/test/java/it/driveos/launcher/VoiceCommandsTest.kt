@@ -24,3 +24,15 @@ class VoiceCommandsTest {
         assertEquals(VoiceCommand.Climate, VoiceCommands.parse("apri il clima"))
     }
 }
+
+class VoiceCommandsMultiTest {
+    @Test fun english() {
+        assertEquals(VoiceCommand.GoHome, VoiceCommands.parse("take me home", "en"))
+        assertEquals(VoiceCommand.Navigate("london bridge"), VoiceCommands.parse("navigate to London Bridge", "en"))
+        assertEquals(VoiceCommand.VolumeUp, VoiceCommands.parse("volume up", "en"))
+    }
+    @Test fun french() {
+        assertEquals(VoiceCommand.Navigate("paris"), VoiceCommands.parse("emmène moi à Paris", "fr"))
+        assertEquals(VoiceCommand.Next, VoiceCommands.parse("chanson suivante", "fr"))
+    }
+}

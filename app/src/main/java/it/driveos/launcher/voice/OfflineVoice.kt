@@ -34,13 +34,46 @@ class OfflineVoice(context: Context) {
 
     private val app = context.applicationContext
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val dir = File(app.filesDir, "vosk-it")
-    private val _state = MutableStateFlow<State>(if (installed()) State.Ready else State.NotInstalled)
+    /** Lingua attiva (codice DriveOS: it, en, fr, de, es, pt). Ogni lingua ha la sua cartella. */
+    @Volatile var language: String = "it"
+        set(v) { if (v != field) { field = v; model = null; _state.value = if (installed()) State.Ready else State.NotInstalled } }
+    private val dir get() = File(app.filesDir, "vosk-$language")
+    private val _state = MutableStateFlow<State>(State.NotInstalled)
     val state: StateFlow<State> = _state
     @Volatile private var model: Model? = null
     @Volatile private var service: SpeechService? = null
 
     fun installed() = File(dir, "DONE").exists()
+    /** Nome del modello installato per la lingua attiva (es. vosk-model-small-it-0.22). */
+    fun installedModel(): String? = runCatching { File(dir, "DONE").readText().trim().ifEmpty { null } }.getOrNull()
+
+    /**
+     * Modello piu' recente per la lingua attiva, dall'elenco ufficiale Vosk (model-list.json):
+     * tipo "small", non obsoleto, versione piu' alta. Se l'elenco non e' raggiungibile, quello di riserva.
+     */
+    fun latestModel(): Pair<String, String> {
+        val lang = VoiceLanguages.of(language)
+        runCatching {
+            val c = URL(LIST_URL).openConnection() as HttpURLConnection
+            c.connectTimeout = 10000; c.readTimeout = 15000
+            val arr = org.json.JSONArray(c.inputStream.bufferedReader().use { it.readText() })
+            val best = (0 until arr.length()).map { arr.getJSONObject(it) }
+                .filter { it.optString("lang") == lang.vosk && it.optString("type") == "small" && it.optString("obsolete") != "true" }
+                .maxWithOrNull(compareBy<org.json.JSONObject>({ versionKey(it.optString("version")) }))
+            if (best != null) return best.getString("name") to best.getString("url")
+        }
+        return lang.fallbackModel to "https://alphacephei.com/vosk/models/${lang.fallbackModel}.zip"
+    }
+
+    private fun versionKey(v: String): String = v.split('.', '-').joinToString(".") { p -> p.toIntOrNull()?.let { "%06d".format(it) } ?: p }
+
+    /** true se c'e' un modello piu' nuovo di quello installato (serve internet). */
+    suspend fun updateAvailable(): Boolean = withContext(Dispatchers.IO) {
+        val cur = installedModel() ?: return@withContext false
+        latestModel().first != cur && cur != "ok"
+    }
+
+    init { _state.value = if (installed()) State.Ready else State.NotInstalled }
 
     /** Scarica e installa il modello italiano (serve internet solo questa volta). */
     fun install(onDone: (Boolean) -> Unit = {}) {
@@ -48,7 +81,8 @@ class OfflineVoice(context: Context) {
         scope.launch {
             val ok = runCatching {
                 _state.value = State.Downloading(0)
-                val c = URL(MODEL_URL).openConnection() as HttpURLConnection
+                val (modelName, modelUrl) = latestModel()
+                val c = URL(modelUrl).openConnection() as HttpURLConnection
                 c.connectTimeout = 15000; c.readTimeout = 30000
                 val total = c.contentLengthLong.coerceAtLeast(1)
                 dir.deleteRecursively(); dir.mkdirs()
@@ -60,18 +94,19 @@ class OfflineVoice(context: Context) {
                         return r
                     }
                 }
+                val target = dir
                 ZipInputStream(counting.buffered()).use { zip ->
                     while (true) {
                         val e = zip.nextEntry ?: break
                         // il contenuto e' in una cartella "vosk-model-small-it-0.22/": la togliamo
                         val name = e.name.substringAfter('/', "")
                         if (name.isEmpty()) continue
-                        val out = File(dir, name)
-                        if (!out.canonicalPath.startsWith(dir.canonicalPath)) continue
+                        val out = File(target, name)
+                        if (!out.canonicalPath.startsWith(target.canonicalPath)) continue
                         if (e.isDirectory) out.mkdirs() else { out.parentFile?.mkdirs(); out.outputStream().use { zip.copyTo(it) } }
                     }
                 }
-                File(dir, "DONE").writeText("ok")
+                File(dir, "DONE").writeText(modelName)
             }.isSuccess
             _state.value = if (ok) State.Ready else State.Error("Download del modello non riuscito: controlla la connessione e riprova.")
             if (!ok) dir.deleteRecursively()
@@ -129,6 +164,6 @@ class OfflineVoice(context: Context) {
     fun dismissError() { if (_state.value is State.Error) _state.value = if (installed()) State.Ready else State.NotInstalled }
 
     companion object {
-        const val MODEL_URL = "https://alphacephei.com/vosk/models/vosk-model-small-it-0.22.zip"
+        const val LIST_URL = "https://alphacephei.com/vosk/models/model-list.json"
     }
 }

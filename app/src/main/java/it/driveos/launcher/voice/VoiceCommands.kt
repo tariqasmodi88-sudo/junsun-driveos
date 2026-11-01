@@ -39,7 +39,52 @@ object VoiceCommands {
         "centosei" to 106, "centosette" to 107, "centootto" to 108, "centotto" to 108,
     )
 
-    fun normalize(s: String) = s.lowercase().replace(Regex("[^a-z0-9àèéìòù ]"), " ").replace(Regex("\\s+"), " ").trim()
+    fun normalize(s: String) = s.lowercase().replace(Regex("[^\\p{L}0-9 ]"), " ").replace(Regex("\\s+"), " ").trim()
+
+    /** Comandi nella lingua scelta: italiano con le regole complete, le altre con parole chiave. */
+    fun parse(raw: String, lang: String): VoiceCommand {
+        if (lang == "it") return parse(raw)
+        val lx = Lexicons.map[lang] ?: return parse(raw)
+        val t = normalize(raw)
+        if (t.isEmpty()) return VoiceCommand.Unknown(raw)
+        fun has(words: List<String>) = words.any { w -> Regex("\\b" + Regex.escape(w) + "\\b").containsMatchIn(t) }
+        if (has(lx.stopNav) && has(lx.navWords)) return VoiceCommand.StopNav
+        lx.navPrefix.find(t)?.let { m ->
+            val d = m.groupValues[1].trim()
+            return when {
+                lx.home.any { d == it || d.endsWith(it) } -> VoiceCommand.GoHome
+                lx.work.any { d == it || d.endsWith(it) } -> VoiceCommand.GoWork
+                d.isNotEmpty() -> VoiceCommand.Navigate(d)
+                else -> VoiceCommand.Unknown(raw)
+            }
+        }
+        Regex("(\\d{2,3})[ .,](\\d)\\b").find(t)?.let { m ->
+            val khz = m.groupValues[1].toInt() * 1000 + m.groupValues[2].toInt() * 100
+            if (khz in 87500..108000) return VoiceCommand.Frequency(khz)
+        }
+        lx.putOn.find(t)?.let { m ->
+            val n = m.groupValues[1].trim()
+            if (lx.music.any { n == it }) return VoiceCommand.Music
+            if (lx.radio.any { n == it }) return VoiceCommand.Radio
+            return VoiceCommand.Station(n)
+        }
+        return when {
+            has(lx.volUp) -> VoiceCommand.VolumeUp
+            has(lx.volDown) -> VoiceCommand.VolumeDown
+            has(lx.mute) -> VoiceCommand.Mute
+            has(lx.next) -> VoiceCommand.Next
+            has(lx.prev) -> VoiceCommand.Previous
+            has(lx.pause) -> VoiceCommand.Pause
+            has(lx.play) -> VoiceCommand.Play
+            has(lx.radio) -> VoiceCommand.Radio
+            has(lx.music) -> VoiceCommand.Music
+            has(lx.climate) -> VoiceCommand.Climate
+            has(lx.vehicle) -> VoiceCommand.Vehicle
+            has(lx.phone) -> VoiceCommand.Phone
+            has(lx.homeScreen) -> VoiceCommand.Home
+            else -> VoiceCommand.Unknown(raw)
+        }
+    }
 
     fun parse(raw: String): VoiceCommand {
         val t = normalize(raw)

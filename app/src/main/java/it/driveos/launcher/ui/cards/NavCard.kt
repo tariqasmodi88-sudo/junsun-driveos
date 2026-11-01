@@ -53,7 +53,7 @@ fun NavCard(
     modifier: Modifier = Modifier,
     onStop: (() -> Unit)? = null,
 ) {
-    DashCard("Navigazione", Icons.Filled.Place, onOpenDetail, modifier, trailing = navEntry?.label) { size, wide ->
+    DashCard("Navigazione", Icons.Filled.Place, {}, modifier, trailing = navEntry?.label) { size, wide ->
         when {
             navEntry == null -> NotConfigured(configured, size, onChooseApp)
             guidance != null -> Guidance(guidance, navEntry, size, onResume, onStop)

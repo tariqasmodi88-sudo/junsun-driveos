@@ -79,6 +79,10 @@ fun SettingsScreen(
     onAndroidSettings: () -> Unit,
     onDeviceInfo: () -> Unit,
     onBack: () -> Unit,
+    voiceLanguage: String = "Italiano",
+    voiceModel: String? = null,
+    onVoiceLanguage: () -> Unit = {},
+    onVoiceUpdate: () -> Unit = {},
 ) {
     fun describe(key: AppKey?): String =
         if (key == null) "Non configurata" else appLabel(key) ?: "App non trovata (${key.packageName})"
@@ -119,7 +123,7 @@ fun SettingsScreen(
             SettingRow("Resta sulla Home DriveOS",
                 if (keepHome) "Sì: portiere, radar, retromarcia e CarPlay non coprono lo schermo"
                 else "No: le finestre Junsun restano sopra. Tocca per attivare", onToggleKeepHome)
-            SettingRow("Veicolo (dati tecnici)", "Segnali, registrazione continua, export", onOpenVehicle)
+            SettingRow("Veicolo", "Seriale auto, sensori anteriori, limite tocchi, tasti volante", onOpenVehicle)
             SettingRow("Radio integrata", "Sintonizzatore e canali memorizzati" + (settings.radioPresets.count { it.khz > 0 }.let { if (it > 0) " ($it)" else "" }), onOpenRadio)
             SettingRow("Avvio intelligente (Bluetooth)",
                 if (smartStartEnabled) "Attivo: musica/nav all'arrivo del telefono" else "Spento: avvia musica e nav quando colleghi il telefono", onOpenSmartStart)
@@ -131,6 +135,8 @@ fun SettingsScreen(
             SettingRow("Indirizzo di lavoro", settings.workAddress.ifBlank { "Non impostato" }, onEditWork)
             SettingRow("Musica", describe(settings.musicApp), onPickMusic)
             SettingRow("Telefono", describe(settings.phoneApp), onPickPhone)
+            SettingRow("Lingua comandi vocali", voiceLanguage, onVoiceLanguage)
+            SettingRow("Aggiorna voce", voiceModel?.let { "Installata: $it · tocca per cercare una versione nuova" } ?: "Non ancora scaricata", onVoiceUpdate)
 
             SectionTitle("Aspetto")
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
