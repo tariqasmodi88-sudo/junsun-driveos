@@ -332,14 +332,33 @@ class MainActivity : ComponentActivity() {
             // entrando in Radio: ferma i file/lo streaming e accendi il sintonizzatore
             driveApp.mediaRepository.pauseIfPlaying()
             val br = driveApp.tsBridge
-            br.radioCall { it.OpenRadioCh(); it.onRadioFM() }
-            // riprende l'ultima stazione scelta
+            // Accensione pulita: la radio riparte dall'ultima stazione che ricorda LEI, che puo' non essere
+            // quella scelta in DriveOS. Si sintonizza prima, con l'audio muto, e si apre il canale solo quando
+            // la frequenza e' giusta: niente "lampo" di un'altra stazione.
             val last = driveApp.settingsRepository.settings.first().lastRadioKhz
             var savedKhz = last
-            if (last > 0) {
-                kotlinx.coroutines.delay(700)
-                val now = br.radioInfo()?.takeIf { it.second < 3 }?.let { TsBridge.toKhz(it.first) }
-                if (now != last) { br.tuneFm(last); kotlinx.coroutines.delay(700) }
+            fun cur(i: Pair<Int, Int>?) = i?.takeIf { it.second < 3 }?.let { TsBridge.toKhz(it.first) }
+            val alreadyOn = br.workMode() == 1 && (last <= 0 || cur(br.radioInfo()) == last)
+            if (!alreadyOn) {
+                val wasMuted = br.isMuted() ?: true
+                if (!wasMuted) br.setMuted(true)
+                try {
+                    if (last > 0) br.radioNow { it.TurnBandAndFq(0, TsBridge.fromKhz(last, br.rawSample)) }
+                    else br.radioNow { it.onRadioFM() }
+                    kotlinx.coroutines.delay(150)
+                    br.radioNow { it.OpenRadioCh() }
+                    if (last > 0) {
+                        for (i in 0 until 10) {
+                            kotlinx.coroutines.delay(150)
+                            val now = cur(br.radioInfo())
+                            if (now == last) break
+                            if (i == 2 || i == 6) br.radioNow { it.TurnBandAndFq(0, TsBridge.fromKhz(last, br.rawSample)) }
+                        }
+                    }
+                    kotlinx.coroutines.delay(150)
+                } finally {
+                    if (!wasMuted) br.setMuted(false)
+                }
             }
             while (true) {
                 val info = driveApp.tsBridge.radioInfo()

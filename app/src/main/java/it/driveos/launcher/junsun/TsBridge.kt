@@ -114,6 +114,25 @@ class TsBridge(context: Context) {
     fun tuneFm(khz: Int): Boolean { val raw = fromKhz(khz, rawSample); return radioCall { it.TurnBandAndFq(0, raw) } }
 
     /** Frequenza grezza e banda grezza della radio, o null se non collegata. */
+    /** Chiamate radio/funzioni che aspettano la fine (servono in sequenza). */
+    suspend fun radioNow(block: (ITsSpeechRadio) -> Unit): Boolean {
+        val r = radio ?: run { connect(); return false }
+        return withContext(Dispatchers.IO) { runCatching { block(r) }.isSuccess }
+    }
+    suspend fun isMuted(): Boolean? {
+        val f = function ?: return null
+        return withContext(Dispatchers.IO) { runCatching { f.isVolumeMute() }.getOrNull() }
+    }
+    suspend fun setMuted(on: Boolean) {
+        val f = function ?: return
+        withContext(Dispatchers.IO) { runCatching { if (on) f.onVolumeMute() else f.onVolumeUnmute() } }
+    }
+    /** 0 nessuna, 1 radio, 4 musica, 5 musica bluetooth. */
+    suspend fun workMode(): Int? {
+        val f = function ?: return null
+        return withContext(Dispatchers.IO) { runCatching { f.getWorkMode() }.getOrNull() }
+    }
+
     suspend fun radioInfo(): Pair<Int, Int>? {
         val r = radio ?: run { connect(); return null }
         return withContext(Dispatchers.IO) { runCatching { r.GetRaidoFreq() to r.getRadioBand() }.getOrNull() }
