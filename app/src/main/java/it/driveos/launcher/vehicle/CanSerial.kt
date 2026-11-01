@@ -120,6 +120,33 @@ object CanDecoder {
     const val OUT_TEMP = "can:out_temp"
     const val ODOMETER_KM = "can:odometer_km"
     const val FUEL_L = "can:fuel_l"
+    // Clima (C 0x21) e sedili riscaldati (C 0x28), schema da libcan59.so CCanVolkswagen::HandleCanCmd
+    const val AC_POWER = "can:ac_power"
+    const val AC_COMP = "can:ac_ac"
+    const val AC_RECIRC = "can:ac_recirc"
+    const val AC_AUTO = "can:ac_auto"
+    const val AC_DUAL = "can:ac_dual"
+    const val AC_MAXDEF = "can:ac_maxdef"
+    const val AC_REARDEF = "can:ac_reardef"
+    const val AC_AIR_UP = "can:ac_air_up"
+    const val AC_AIR_MID = "can:ac_air_mid"
+    const val AC_AIR_DOWN = "can:ac_air_down"
+    const val AC_FAN = "can:ac_fan"
+    const val AC_TEMP_L = "can:ac_temp_l"
+    const val AC_TEMP_R = "can:ac_temp_r"
+    const val SEAT_HEAT_L = "can:seat_heat_l"
+    const val SEAT_HEAT_R = "can:seat_heat_r"
+
+    /** Temperatura impostata: 0 = LO, 31 = HI, altrimenti 18 °C + mezzi gradi. */
+    fun acTemp(raw: String?): String? {
+        val v = raw?.toIntOrNull() ?: return null
+        return when (v) {
+            0 -> "LO"
+            0x1F -> "HI"
+            else -> { val t = 18 + (v - 1) * 0.5; if (t % 1.0 == 0.0) t.toInt().toString() else String.format(java.util.Locale.ITALY, "%.1f", t) }
+        }
+    }
+
     /** Byte della seriale che non sono un messaggio noto (probabili tasti dell'autoradio). */
     const val RAW_BYTES = "can:X"
 
@@ -158,6 +185,23 @@ object CanDecoder {
                 out[LOWBEAM] = if ((v and 0x20) != 0) "1" else "0"
                 out[FOG] = if ((v and 0x04) != 0) "1" else "0"
                 return out // le frecce lampeggiano: niente riga grezza
+            }
+            id == 0x21 && len >= 4 -> {
+                val a = sub; val w = v
+                fun b(x: Int, m: Int) = if ((x and m) != 0) "1" else "0"
+                out[AC_POWER] = b(a, 0x80); out[AC_COMP] = b(a, 0x40); out[AC_RECIRC] = b(a, 0x20)
+                out[AC_AUTO] = when { (a and 0x10) != 0 -> "2"; (a and 0x08) != 0 -> "1"; else -> "0" }
+                out[AC_DUAL] = b(a, 0x04); out[AC_MAXDEF] = b(a, 0x02); out[AC_REARDEF] = b(a, 0x01)
+                out[AC_AIR_UP] = b(w, 0x80); out[AC_AIR_MID] = b(w, 0x40); out[AC_AIR_DOWN] = b(w, 0x20)
+                out[AC_FAN] = (w and 0x07).toString()
+                out[AC_TEMP_L] = (d[2].toInt() and 0xFF).toString()
+                out[AC_TEMP_R] = (d[3].toInt() and 0xFF).toString()
+                return out
+            }
+            id == 0x28 && len >= 1 -> {
+                out[SEAT_HEAT_L] = ((sub shr 3) and 0x07).toString()
+                out[SEAT_HEAT_R] = (sub and 0x07).toString()
+                return out
             }
             id == 0x41 && sub == 0x02 && len >= 13 -> {
                 // Schema letto dalla libreria della radio (libcan59.so, CCanVolkswagen::DealCarInfo):

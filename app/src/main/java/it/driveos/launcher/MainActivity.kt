@@ -102,7 +102,7 @@ import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.ZoneId
 
-enum class Screen { DASHBOARD, APPS, SETTINGS, DEVICE_INFO, NAV, MUSIC, CALENDAR, CLOCK, VEHICLE, RADIO, SMART_START, OVERVIEW, KEYS }
+enum class Screen { DASHBOARD, APPS, SETTINGS, DEVICE_INFO, NAV, MUSIC, CALENDAR, CLOCK, VEHICLE, RADIO, SMART_START, OVERVIEW, KEYS, CLIMATE }
 
 private enum class PickerTarget(val title: String) {
     NAV("App di navigazione"),
@@ -302,6 +302,25 @@ class MainActivity : ComponentActivity() {
         // nomi RDS ricevuti, per frequenza: restano visibili anche se il log non li ripete
         val stationNames by driveApp.logcatReader.names.collectAsStateWithLifecycle()
         val rdsState by driveApp.logcatReader.rds.collectAsStateWithLifecycle()
+        // Clima: quando cambi un comando dell'auto si apre la schermata Clima (come fa la radio nativa)
+        // e dopo qualche secondo senza modifiche si torna dove eri.
+        var climateAuto by remember { mutableStateOf(false) }
+        var climateBack by remember { mutableStateOf<Screen?>(null) }
+        val climateSig = listOf(CanDecoder.AC_POWER, CanDecoder.AC_COMP, CanDecoder.AC_RECIRC, CanDecoder.AC_AUTO, CanDecoder.AC_DUAL,
+            CanDecoder.AC_MAXDEF, CanDecoder.AC_REARDEF, CanDecoder.AC_AIR_UP, CanDecoder.AC_AIR_MID, CanDecoder.AC_AIR_DOWN,
+            CanDecoder.AC_FAN, CanDecoder.AC_TEMP_L, CanDecoder.AC_TEMP_R, CanDecoder.SEAT_HEAT_L, CanDecoder.SEAT_HEAT_R)
+            .joinToString(",") { vehicleSignals[it] ?: "" }
+        val climateSeen = remember { arrayOfNulls<String>(1) }
+        LaunchedEffect(climateSig) {
+            val prev = climateSeen[0]
+            climateSeen[0] = climateSig
+            if (prev == null || prev.all { it == ',' } || prev == climateSig) return@LaunchedEffect
+            if (screen != Screen.CLIMATE && screen != Screen.OVERVIEW) { climateBack = screen; climateAuto = true; screen = Screen.CLIMATE }
+            if (climateAuto) {
+                kotlinx.coroutines.delay(6000)
+                if (screen == Screen.CLIMATE && climateAuto) { climateAuto = false; screen = climateBack ?: Screen.DASHBOARD }
+            }
+        }
         val logName = vehicleSignals[LogcatParser.RADIO_NAME]
         val logKhz = vehicleSignals[LogcatParser.RADIO_FREQ]?.toIntOrNull()
         LaunchedEffect(screen) {
@@ -1115,6 +1134,11 @@ class MainActivity : ComponentActivity() {
                                 onBack = { screen = Screen.SETTINGS },
                             )
 
+                            Screen.CLIMATE -> it.driveos.launcher.ui.ClimateScreen(
+                                signals = vehicleSignals,
+                                onBack = { climateAuto = false; screen = Screen.DASHBOARD },
+                            )
+
                             Screen.OVERVIEW -> VehicleOverviewScreen(
                                 state = VehicleOverviewState(
                                     lightsOn = lightsResolved,
@@ -1170,6 +1194,7 @@ class MainActivity : ComponentActivity() {
                         onMusic = { screen = Screen.MUSIC },
                         onPhone = { openOrPick(s.phoneApp, PickerTarget.PHONE) },
                         onApps = { screen = Screen.APPS },
+                        onClimate = { climateAuto = false; screen = Screen.CLIMATE },
                     )
                 }
             }

@@ -110,6 +110,7 @@ fun BottomBar(
     onMusic: () -> Unit,
     onPhone: () -> Unit,
     onApps: () -> Unit,
+    onClimate: () -> Unit = {},
 ) {
     Row(
         Modifier.fillMaxWidth().height(92.dp).padding(horizontal = 10.dp, vertical = 8.dp),
@@ -128,6 +129,7 @@ fun BottomBar(
             BigButton("Radio", it.driveos.launcher.ui.icons.RadioIcon, onRadio, m, selected = current == Screen.RADIO)
             BigButton("Musica", Icons.Filled.PlayArrow, onMusic, m, selected = current == Screen.MUSIC)
             BigButton("Telefono", Icons.Filled.Phone, onPhone, m)
+            BigButton("Clima", androidx.compose.material.icons.Icons.Filled.AcUnit, onClimate, m, selected = current == Screen.CLIMATE)
             BigButton("App", Icons.Filled.Menu, onApps, m, selected = current == Screen.APPS)
         }
     }
