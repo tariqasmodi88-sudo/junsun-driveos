@@ -30,6 +30,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AcUnit
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
@@ -112,6 +113,7 @@ fun BottomBar(
     onPhone: () -> Unit,
     onApps: () -> Unit,
     onClimate: () -> Unit = {},
+    onVoice: () -> Unit = {},
 ) {
     Row(
         Modifier.fillMaxWidth().height(92.dp).padding(horizontal = 10.dp, vertical = 8.dp),
@@ -121,6 +123,7 @@ fun BottomBar(
         val fixed = Modifier.width(116.dp).fillMaxHeight()
         BigButton("Home", Icons.Filled.Home, onHome, fixed, selected = current == Screen.DASHBOARD)
         BigButton("Veicolo", it.driveos.launcher.ui.icons.CarIcon, onVehicle, fixed, selected = current == Screen.OVERVIEW)
+        BigButton("Voce", Icons.Filled.Mic, onVoice, Modifier.width(100.dp).fillMaxHeight())
         Row(
             Modifier.weight(1f).fillMaxHeight().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(10.dp),

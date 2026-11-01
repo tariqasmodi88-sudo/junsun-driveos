@@ -2,6 +2,8 @@ package it.driveos.launcher
 
 import kotlinx.coroutines.flow.first
 import android.Manifest
+import it.driveos.launcher.voice.VoiceCommand
+import it.driveos.launcher.voice.VoiceCommands
 import android.content.ActivityNotFoundException
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -818,17 +820,75 @@ class MainActivity : ComponentActivity() {
             else calendarPermission.launch(Manifest.permission.READ_CALENDAR)
         }
 
-        fun startVoice() {
-            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-                .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                .putExtra(RecognizerIntent.EXTRA_LANGUAGE, "it-IT")
-                .putExtra(RecognizerIntent.EXTRA_PROMPT, "Dove vuoi andare?")
-            try {
-                voiceLauncher.launch(intent)
-            } catch (e: ActivityNotFoundException) {
-                message("Riconoscimento vocale non disponibile.")
+        // --- Comandi vocali offline (Vosk) ---
+        var voiceOpen by remember { mutableStateOf(false) }
+        var voiceHeard by remember { mutableStateOf<String?>(null) }
+        val voiceState by driveApp.voice.state.collectAsStateWithLifecycle()
+        var voiceForNav by remember { mutableStateOf(false) }
+        fun handleVoice(text: String) {
+            val cmd = VoiceCommands.parse(text).let { c ->
+                // dal tasto microfono della ricerca: una frase "libera" e' una destinazione
+                if (voiceForNav && c is VoiceCommand.Unknown) VoiceCommand.Navigate(text) else c
             }
+            voiceForNav = false
+            fun tuneTo(khz: Int) {
+                scope.launch { driveApp.settingsRepository.setLastRadioKhz(khz) }
+                if (screen == Screen.RADIO) driveApp.tsBridge.tuneFm(khz) else screen = Screen.RADIO
+            }
+            when (cmd) {
+                is VoiceCommand.Navigate -> navigateTo(cmd.destination)
+                VoiceCommand.GoHome -> goHome()
+                VoiceCommand.GoWork -> goWork()
+                VoiceCommand.StopNav -> { it.driveos.launcher.nav.NavRoute.stop(); guidance?.let { g -> NavGuidanceStore.stop(g) } }
+                VoiceCommand.Radio -> openRadio()
+                is VoiceCommand.Station -> {
+                    val q = VoiceCommands.normalize(cmd.name).replace(" ", "")
+                    val preset = s.radioPresets.firstOrNull { p -> p.khz > 0 && VoiceCommands.normalize(p.name).replace(" ", "").let { n -> n.isNotEmpty() && (n.contains(q) || q.contains(n)) } }
+                    val learned = driveApp.logcatReader.names.value.entries.firstOrNull { e -> VoiceCommands.normalize(e.value).replace(" ", "").let { n -> n.isNotEmpty() && (n.contains(q) || q.contains(n)) } }?.key
+                    val khz = preset?.khz ?: learned
+                    if (khz != null) tuneTo(khz) else { openRadio(); message("Non trovo la stazione \"${cmd.name}\" tra quelle conosciute.") }
+                }
+                is VoiceCommand.Frequency -> tuneTo(cmd.khz)
+                VoiceCommand.Music -> { screen = Screen.MUSIC; if (driveApp.mediaRepository.media.value?.isPlaying != true && driveApp.mediaRepository.lastFolder() != null) driveApp.mediaRepository.playLastFolder() }
+                VoiceCommand.Next -> if (screen == Screen.RADIO) driveApp.tsBridge.radioCall { r -> r.SeekUp() } else driveApp.mediaRepository.next()
+                VoiceCommand.Previous -> if (screen == Screen.RADIO) driveApp.tsBridge.radioCall { r -> r.SeekDn() } else driveApp.mediaRepository.previous()
+                VoiceCommand.Pause -> if (driveApp.mediaRepository.media.value?.isPlaying == true) driveApp.mediaRepository.playPause()
+                VoiceCommand.Play -> if (driveApp.mediaRepository.media.value?.isPlaying != true) driveApp.mediaRepository.playPause()
+                VoiceCommand.VolumeUp -> driveApp.tsBridge.functionCall { f -> f.onVolumeUp(); f.onVolumeUp() }
+                VoiceCommand.VolumeDown -> driveApp.tsBridge.functionCall { f -> f.onVolumeDown(); f.onVolumeDown() }
+                VoiceCommand.Mute -> driveApp.tsBridge.functionCall { f -> if (f.isVolumeMute()) f.onVolumeUnmute() else f.onVolumeMute() }
+                VoiceCommand.Climate -> screen = Screen.CLIMATE
+                VoiceCommand.Vehicle -> { overviewAuto = false; screen = Screen.OVERVIEW }
+                VoiceCommand.Home -> screen = Screen.DASHBOARD
+                VoiceCommand.Phone -> openOrPick(s.phoneApp, PickerTarget.PHONE)
+                is VoiceCommand.Unknown -> { voiceHeard = text.ifBlank { null }; return }
+            }
+            voiceOpen = false
         }
+        fun listenNow() {
+            voiceHeard = null
+            driveApp.voice.listen { text -> if (text.isBlank()) voiceHeard = null else handleVoice(text) }
+        }
+        val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) listenNow() else { voiceOpen = false; message("Senza il permesso del microfono i comandi vocali non funzionano.") }
+        }
+        fun startOfflineVoice(forNav: Boolean = false) {
+            voiceForNav = forNav
+            voiceOpen = true
+            if (!driveApp.voice.installed()) return // la finestra propone il download
+            if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED)
+                micPermission.launch(Manifest.permission.RECORD_AUDIO)
+            else listenNow()
+        }
+        if (voiceOpen) it.driveos.launcher.ui.VoiceOverlay(
+            state = voiceState,
+            lastHeard = voiceHeard,
+            onInstall = { driveApp.voice.install { ok -> if (ok) startOfflineVoice(voiceForNav) } },
+            onRetry = { driveApp.voice.dismissError(); startOfflineVoice(voiceForNav) },
+            onClose = { driveApp.voice.stop(); voiceOpen = false },
+        )
+
+        fun startVoice() = startOfflineVoice(forNav = true)
 
         fun openSource() {
             val pkg = sourceEntry?.key?.packageName ?: s.musicApp?.packageName
@@ -848,6 +908,7 @@ class MainActivity : ComponentActivity() {
                     KeyAction.NAV -> openOrPick(s.navApp, PickerTarget.NAV)
                     KeyAction.PHONE -> openOrPick(s.phoneApp, PickerTarget.PHONE)
                     KeyAction.MUSIC -> openOrPick(s.musicApp, PickerTarget.MUSIC)
+                    KeyAction.VOICE -> startOfflineVoice()
                     else -> {}
                 }
             }
@@ -1233,6 +1294,7 @@ class MainActivity : ComponentActivity() {
                         onPhone = { openOrPick(s.phoneApp, PickerTarget.PHONE) },
                         onApps = { screen = Screen.APPS },
                         onClimate = { climateAuto = false; screen = Screen.CLIMATE },
+                        onVoice = { startOfflineVoice() },
                     )
                 }
             }

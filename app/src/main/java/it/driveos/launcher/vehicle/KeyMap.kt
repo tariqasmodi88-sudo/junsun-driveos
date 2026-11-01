@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 enum class KeyAction(val label: String) {
     VOL_UP("Volume +"), VOL_DOWN("Volume −"), MUTE("Muto"),
     NEXT("Avanti (brano / stazione)"), PREV("Indietro (brano / stazione)"), PLAY_PAUSE("Play / pausa"),
-    HOME("Home DriveOS"), RADIO("Radio"), NAV("Navigatore"), PHONE("Telefono"), MUSIC("Musica"),
+    HOME("Home DriveOS"), RADIO("Radio"), NAV("Navigatore"), PHONE("Telefono"), MUSIC("Musica"), VOICE("Comandi vocali"),
 }
 
 /** Un tasto "imparato": quando il segnale [signal] della seriale assume [value], si esegue [action]. */

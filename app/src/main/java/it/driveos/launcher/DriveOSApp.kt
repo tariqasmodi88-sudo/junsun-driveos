@@ -49,6 +49,8 @@ class DriveOSApp : Application() {
         private set
     lateinit var canReader: CanSerialReader
         private set
+    lateinit var voice: it.driveos.launcher.voice.OfflineVoice
+        private set
     lateinit var keyMapper: KeyMapper
         private set
 
@@ -67,6 +69,7 @@ class DriveOSApp : Application() {
         radioController = RadioController(this)
         logcatReader = LogcatReader(this, vehicleRepository)
         speedWatcher = SpeedWatcher(this)
+        voice = it.driveos.launcher.voice.OfflineVoice(this)
         keyMapper = KeyMapper(this).also { it.bridge = tsBridge }
         canReader = CanSerialReader().also { r ->
             r.addSink { vehicleRepository.ingest(it) }
