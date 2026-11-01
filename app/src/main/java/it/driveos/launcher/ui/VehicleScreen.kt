@@ -62,6 +62,8 @@ fun VehicleScreen(
     frontSensorsOn: Boolean = false,
     onToggleFrontSensors: (Boolean) -> Unit = {},
     touchLimitOn: Boolean = true,
+    rearCameraOn: Boolean = false,
+    onToggleRearCamera: (Boolean) -> Unit = {},
     onToggleTouchLimit: (Boolean) -> Unit = {},
 ) {
     var showAll by remember { mutableStateOf(false) }
@@ -93,6 +95,18 @@ fun VehicleScreen(
                             fontSize = 13.sp, color = colors.onSurfaceVariant)
                     }
                     androidx.compose.material3.Switch(checked = canSerialOn, onCheckedChange = onToggleCanSerial)
+                }
+            }
+
+            Surface(shape = RoundedCornerShape(16.dp), color = if (rearCameraOn) colors.primary.copy(alpha = 0.14f) else colors.surface,
+                modifier = Modifier.fillMaxWidth()) {
+                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Telecamera posteriore", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
+                        Text(if (rearCameraOn) "Montata: in retromarcia DriveOS mostra immagine, linee guida e sensori." else "Non montata: in retromarcia solo i sensori.",
+                            fontSize = 14.sp, color = colors.onSurfaceVariant)
+                    }
+                    androidx.compose.material3.Switch(checked = rearCameraOn, onCheckedChange = onToggleRearCamera)
                 }
             }
 

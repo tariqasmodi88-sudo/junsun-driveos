@@ -108,7 +108,7 @@ import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.ZoneId
 
-enum class Screen { DASHBOARD, APPS, SETTINGS, DEVICE_INFO, NAV, MUSIC, CALENDAR, CLOCK, VEHICLE, RADIO, SMART_START, OVERVIEW, KEYS, CLIMATE }
+enum class Screen { DASHBOARD, APPS, SETTINGS, DEVICE_INFO, NAV, MUSIC, CALENDAR, CLOCK, VEHICLE, RADIO, SMART_START, OVERVIEW, KEYS, CLIMATE, REAR_CAM }
 
 private enum class PickerTarget(val title: String) {
     NAV("App di navigazione"),
@@ -441,6 +441,7 @@ class MainActivity : ComponentActivity() {
             if (granted) driveApp.speedWatcher.start()
             else message("Senza posizione la schermata veicolo si apre solo quando apri una portiera.")
         }
+        val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
         var showFolders by remember { mutableStateOf(false) }
         var pendingFolders by remember { mutableStateOf(false) }
         if (showFolders) it.driveos.launcher.ui.detail.FileBrowserDialog(
@@ -642,12 +643,14 @@ class MainActivity : ComponentActivity() {
         LaunchedEffect(reverseNow) {
             if (reverseNow) {
                 reverseOpened = true
-                if (screen != Screen.OVERVIEW && screen != Screen.VEHICLE) { overviewAuto = true; screen = Screen.OVERVIEW }
+                // schermata retromarcia (telecamera o solo sensori)
+                if (screen != Screen.REAR_CAM && screen != Screen.VEHICLE) { overviewAuto = true; screen = Screen.REAR_CAM }
                 WindowWatcher.goHome()
             } else if (reverseOpened) {
                 reverseOpened = false
                 kotlinx.coroutines.delay(1500)
-                if (!parkedNow && screen == Screen.OVERVIEW) { screen = Screen.DASHBOARD; overviewAuto = false }
+                if (screen == Screen.REAR_CAM) { screen = if (parkedNow) Screen.OVERVIEW else Screen.DASHBOARD; overviewAuto = false }
+                else if (!parkedNow && screen == Screen.OVERVIEW) { screen = Screen.DASHBOARD; overviewAuto = false }
             }
         }
         val overlayGranted = remember(a11yOn, screen) { android.provider.Settings.canDrawOverlays(context) }
@@ -1192,6 +1195,11 @@ class MainActivity : ComponentActivity() {
                                 frontSensorsOn = s.frontSensors,
                                 onToggleFrontSensors = { on -> scope.launch { driveApp.settingsRepository.setFrontSensors(on) } },
                                 touchLimitOn = s.touchLimit,
+                                rearCameraOn = s.rearCamera,
+                                onToggleRearCamera = { on ->
+                                    scope.launch { driveApp.settingsRepository.setRearCamera(on) }
+                                    if (on && context.checkSelfPermission(Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED) cameraPermission.launch(Manifest.permission.CAMERA)
+                                },
                                 onToggleTouchLimit = { on -> scope.launch { driveApp.settingsRepository.setTouchLimit(on) } },
                                 onOpenKeys = { screen = Screen.KEYS },
                                 onExportLog = {
@@ -1277,6 +1285,13 @@ class MainActivity : ComponentActivity() {
                                 onBack = { screen = Screen.SETTINGS },
                             )
 
+                            Screen.REAR_CAM -> it.driveos.launcher.ui.RearCameraScreen(
+                                rearLevels = CanDecoder.sensorLevels(vehicleSignals, CanDecoder.REAR_SENSORS),
+                                rearRaw = CanDecoder.sensorRaw(vehicleSignals, CanDecoder.REAR_SENSORS),
+                                cameraEnabled = s.rearCamera,
+                                onHome = { overviewAuto = false; screen = Screen.DASHBOARD },
+                            )
+
                             Screen.CLIMATE -> it.driveos.launcher.ui.ClimateScreen(
                                 signals = vehicleSignals,
                                 onBack = { climateAuto = false; screen = Screen.DASHBOARD },
@@ -1329,7 +1344,7 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     }
-                    if (screen != Screen.OVERVIEW) BottomBar(
+                    if (screen != Screen.OVERVIEW && screen != Screen.REAR_CAM) BottomBar(
                         current = screen,
                         onHome = { screen = Screen.DASHBOARD },
                         onVehicle = { overviewAuto = false; screen = Screen.OVERVIEW },
