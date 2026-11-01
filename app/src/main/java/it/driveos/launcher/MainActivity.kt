@@ -1236,6 +1236,7 @@ class MainActivity : ComponentActivity() {
                                     odometerKm = vehicleSignals[CanDecoder.ODOMETER_KM],
                                     outTemp = vehicleSignals[CanDecoder.OUT_TEMP],
                                     belt = vehicleSignals[CanDecoder.BELT]?.let { it == "1" },
+                                    beltPassenger = vehicleSignals[CanDecoder.BELT_PASSENGER]?.let { it == "1" },
                                     rearLevels = CanDecoder.sensorLevels(vehicleSignals, CanDecoder.REAR_SENSORS),
                                     rearRaw = CanDecoder.sensorRaw(vehicleSignals, CanDecoder.REAR_SENSORS),
                                     frontLevels = if (s.frontSensors) CanDecoder.sensorLevels(vehicleSignals, CanDecoder.FRONT_SENSORS) else null,

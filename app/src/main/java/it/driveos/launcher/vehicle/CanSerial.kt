@@ -111,6 +111,8 @@ object CanDecoder {
     const val LOWBEAM = "can:lowbeam"
     const val FOG = "can:fog"
     const val BELT = "can:belt"
+    /** Passeggero anteriore: "0" = seduto con cintura slacciata (avviso), "1" = ok (allacciata o sedile vuoto). */
+    const val BELT_PASSENGER = "can:belt_passenger"
     const val REAR_SENSORS = "can:rear"
     const val FRONT_SENSORS = "can:front"
     // Dati motore (C 0x41 sotto-tipo 02): la centralina li manda SOLO su richiesta, vedi [CanQuery].
@@ -215,7 +217,11 @@ object CanDecoder {
                 out[FUEL_L] = (d[12].toInt() and 0xFF).toString()
                 return out // cambiano di continuo: niente riga grezza
             }
-            id == 0x7D && sub == 0x06 && v >= 0 -> out[BELT] = if ((v and 0x20) != 0) "1" else "0"
+            id == 0x7D && sub == 0x06 && v >= 0 -> {
+                out[BELT] = if ((v and 0x20) != 0) "1" else "0"
+                // verificato in auto (1/11): bit 0x10 acceso = passeggero seduto senza cintura
+                out[BELT_PASSENGER] = if ((v and 0x10) != 0) "0" else "1"
+            }
             id == 0x7D && sub == 0x0B && len >= 3 -> {
                 val mv = (d[1].toInt() and 0xFF) or ((d[2].toInt() and 0xFF) shl 8)
                 out[BATTERY_V] = "%.1f".format(java.util.Locale.US, mv / 1000.0)

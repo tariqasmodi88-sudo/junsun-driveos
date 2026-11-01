@@ -134,7 +134,7 @@ class KeyMapper(context: Context) {
         private val STATE_KEYS = setOf(
             CanDecoder.DOOR_FL, CanDecoder.DOOR_FR, CanDecoder.DOOR_RL, CanDecoder.DOOR_RR, CanDecoder.TRUNK,
             CanDecoder.DOORS_MASK, CanDecoder.HANDBRAKE, CanDecoder.REVERSE, CanDecoder.BATTERY_V,
-            CanDecoder.LIGHTS, CanDecoder.LOWBEAM, CanDecoder.FOG, CanDecoder.BELT,
+            CanDecoder.LIGHTS, CanDecoder.LOWBEAM, CanDecoder.FOG, CanDecoder.BELT, CanDecoder.BELT_PASSENGER,
             CanDecoder.REAR_SENSORS, CanDecoder.FRONT_SENSORS, "can:frames",
             CanDecoder.RPM, CanDecoder.SPEED, CanDecoder.VOLTAGE, CanDecoder.OUT_TEMP, CanDecoder.ODOMETER_KM, CanDecoder.FUEL_L,
         )

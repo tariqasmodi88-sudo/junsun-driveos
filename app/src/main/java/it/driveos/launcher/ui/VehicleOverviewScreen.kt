@@ -105,6 +105,7 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onDebug: () -> Unit /* = 
                 // Fari, portiere, baule, retromarcia e sensori sono già disegnati sull'auto: qui solo il resto.
                 StatusRow("Freno a mano", state.handbrake?.let { if (it) "tirato" else "giù" }, state.handbrake == true, Amber)
                 state.belt?.let { StatusRow("Cintura guida", if (it) "allacciata" else "slacciata", false, Ok) }
+                if (state.beltPassenger == false) StatusRow("Cintura passeggero", "slacciata", false, Ok)
                 StatusRow("Telefono", state.phone?.let { if (it) "collegato" else "scollegato" }, state.phone == true, Ok)
                 StatusRow("CarPlay/AA", if (state.projection) "attivo" else "no", state.projection, Ok)
                 StatusRow("Radio", state.radioKhz?.let { "%.1f MHz".format(it / 1000.0) }, false, c.primary)
