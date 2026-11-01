@@ -62,6 +62,9 @@ data class VehicleOverviewState(
     val odometerKm: String? = null,
     val outTemp: String? = null,
     val belt: Boolean? = null,
+    /** Cintura passeggero anteriore e posteriori (sx, centro, dx): null = segnale non disponibile. */
+    val beltPassenger: Boolean? = null,
+    val beltRear: List<Boolean?> = listOf(null, null, null),
     val parking: Boolean?,
     val phone: Boolean?,
     val projection: Boolean,
@@ -308,9 +311,8 @@ private fun CarTopView(state: VehicleOverviewState, modifier: Modifier) {
 
         // Sedili anteriori: quello del guidatore (sinistra) lampeggia in rosso se la cintura e' slacciata,
         // altrimenti resta neutro. Il passeggero non ha un segnale cintura noto: sempre neutro.
-        fun seat(cx: Float, belt: Boolean?) {
-            val sw = w * 0.20f; val sh = h * 0.075f
-            val y = top + h * 0.385f
+        fun seat(cx: Float, belt: Boolean?, y: Float = top + h * 0.385f, sw: Float = w * 0.20f) {
+            val sh = h * 0.075f
             val unbuckled = belt == false
             val col = if (unbuckled) Warn.copy(alpha = 0.35f + 0.65f * pulse) else Color.White.copy(alpha = if (belt == null) 0.25f else 0.6f)
             drawRoundRect(col, Offset(cx - sw / 2, y), Size(sw, sh * 0.62f), CornerRadius(8f))               // seduta
@@ -318,7 +320,11 @@ private fun CarTopView(state: VehicleOverviewState, modifier: Modifier) {
             if (unbuckled) drawLine(col, Offset(cx - sw * 0.35f, y - 4f), Offset(cx + sw * 0.35f, y + sh), strokeWidth = 5f, cap = StrokeCap.Round)
         }
         seat(left + w * 0.30f, state.belt)
-        seat(left + w * 0.70f, null)
+        seat(left + w * 0.70f, state.beltPassenger)
+        // divanetto posteriore: 3 posti
+        listOf(0.24f, 0.50f, 0.76f).forEachIndexed { i, fx ->
+            seat(left + w * fx, state.beltRear.getOrNull(i), y = top + h * 0.60f, sw = w * 0.17f)
+        }
 
         // Portiere: linee di separazione; se aperta, portiere evidenziate e "spalancate"
         drawDoors(left, top, w, h, state.openDoors, state.doorOpen == true, closedColor = outline, openColor = Warn.copy(alpha = pulse))

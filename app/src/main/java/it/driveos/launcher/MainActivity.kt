@@ -954,7 +954,7 @@ class MainActivity : ComponentActivity() {
                                         configured = s.navApp != null,
                                         guidance = guidance,
                                         recent = s.recentDestinations,
-                                        onOpenDetail = { screen = Screen.NAV },
+                                        onOpenDetail = { openOrPick(s.navApp, PickerTarget.NAV) },
                                         onChooseApp = { picker = PickerTarget.NAV },
                                         onResume = { openOrPick(s.navApp, PickerTarget.NAV) },
                                         onHome = { goHome() },
