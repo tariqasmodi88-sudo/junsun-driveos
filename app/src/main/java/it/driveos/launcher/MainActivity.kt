@@ -643,11 +643,13 @@ class MainActivity : ComponentActivity() {
         // Tolta la retro: si torna alla Home, salvo che l'auto sia ferma.
         val parkedNow by androidx.compose.runtime.rememberUpdatedState(parked)
         var reverseOpened by remember { mutableStateOf(false) }
+        val settingsNowRev by androidx.compose.runtime.rememberUpdatedState(s)
         LaunchedEffect(reverseNow) {
             if (reverseNow) {
                 reverseOpened = true
                 // schermata retromarcia (telecamera o solo sensori)
-                if (screen != Screen.REAR_CAM && screen != Screen.VEHICLE) { overviewAuto = true; screen = Screen.REAR_CAM }
+                val target = if (settingsNowRev.rearCamera) Screen.REAR_CAM else Screen.OVERVIEW
+                if (screen != target && screen != Screen.VEHICLE) { overviewAuto = true; screen = target }
                 WindowWatcher.goHome()
             } else if (reverseOpened) {
                 reverseOpened = false
