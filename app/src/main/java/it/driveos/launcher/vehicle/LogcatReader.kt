@@ -67,12 +67,18 @@ class LogcatReader(context: Context, private val repo: VehicleRepository) {
     // da quello che la radio dava al momento del cambio.
     @Volatile private var lastLivePs: String? = null
     @Volatile private var stalePs: String? = null
-    fun onTuned(khz: Int) { if (tracker.onTune(khz)) { stalePs = lastLivePs; _rds.value = tracker.state } }
+    fun onTuned(khz: Int) { if (tracker.onTune(khz)) { if (primed) stalePs = lastLivePs; _rds.value = tracker.state } }
     /** Nome PS letto direttamente dalla radio (binder): stesso percorso dei nomi dal registro. */
+    @Volatile private var primed = false
+    /** Da chiamare quando si torna a leggere il nome: quello che la radio ha in memoria ora puo' essere vecchio. */
+    fun resetLive() { primed = false }
     fun feedPs(ps: String) {
-        val p = ps.trim()
+        val p = ps.filter { it >= ' ' }.trim()
         lastLivePs = p
-        if (p.isEmpty() || p == stalePs?.trim()) return
+        // Prima lettura: non sappiamo a quale stazione appartenga il nome che la radio ha in memoria
+        // (puo' essere di una stazione ascoltata prima): si aspetta che cambi.
+        if (!primed) { primed = true; stalePs = p; return }
+        if (p.isEmpty() || p == stalePs) return
         stalePs = null // la radio ha cambiato nome: da qui in poi e' quello della nuova stazione
         tracker.onPs(p); _rds.value = tracker.state
     }

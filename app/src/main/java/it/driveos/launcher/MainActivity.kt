@@ -328,6 +328,7 @@ class MainActivity : ComponentActivity() {
                 driveApp.tsBridge.radioCall { it.CloseRadioCh() }
             }
             if (screen != Screen.RADIO) return@LaunchedEffect
+            driveApp.logcatReader.resetLive()
             // entrando in Radio: ferma i file/lo streaming e accendi il sintonizzatore
             driveApp.mediaRepository.pauseIfPlaying()
             val br = driveApp.tsBridge
