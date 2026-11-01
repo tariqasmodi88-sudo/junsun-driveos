@@ -974,6 +974,33 @@ class MainActivity : ComponentActivity() {
         }
 
         DriveOSTheme(s.themeMode, s.accentIndex, autoDark) {
+            if (!s.setupDone) {
+                // primo avvio: lingua, avvertenze e preferenze
+                it.driveos.launcher.ui.SetupWizard(
+                    current = it.driveos.launcher.ui.SetupChoices(s.voiceLang, s.rearCamera, s.frontSensors, s.touchLimit, s.canSerial),
+                    onLanguage = { code -> scope.launch { repo.setVoiceLang(code) } },
+                    onPickNav = { picker = PickerTarget.NAV },
+                    navLabel = s.navApp?.let { k -> apps.firstOrNull { a -> a.key == k }?.label },
+                    onFinish = { ch ->
+                        scope.launch {
+                            repo.setRearCamera(ch.rearCamera); repo.setFrontSensors(ch.frontSensors)
+                            repo.setTouchLimit(ch.touchLimit); repo.setCanSerial(ch.canSerial)
+                            repo.setSetupDone(true)
+                        }
+                        if (ch.rearCamera && context.checkSelfPermission(Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED) cameraPermission.launch(Manifest.permission.CAMERA)
+                    },
+                )
+                picker?.let { target ->
+                    AppPickerDialog(
+                        title = target.title,
+                        apps = apps,
+                        selected = s.navApp,
+                        onPick = { app -> scope.launch { repo.setNavApp(app?.key) }; picker = null },
+                        onDismiss = { picker = null },
+                    )
+                }
+                return@DriveOSTheme
+            }
             Scaffold(
                 containerColor = MaterialTheme.colorScheme.background,
                 snackbarHost = { SnackbarHost(snackbar) },
