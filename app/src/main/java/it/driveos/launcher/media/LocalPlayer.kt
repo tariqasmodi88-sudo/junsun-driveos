@@ -31,9 +31,13 @@ class LocalPlayer(context: Context, private val onChange: (MediaInfo?) -> Unit) 
     private val player: ExoPlayer by lazy {
         ExoPlayer.Builder(app)
             .setAudioAttributes(
-                AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(), true,
+                AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(),
+                // NIENTE gestione del "focus audio": su questa radio il sistema Junsun / Android Auto si tiene
+                // il focus e il lettore veniva messo in pausa da solo (e il play non ripartiva).
+                // Radio e musica le alterna gia' DriveOS.
+                false,
             )
-            .setHandleAudioBecomingNoisy(true)
+            .setHandleAudioBecomingNoisy(false)
             .build().also { p ->
                 p.addListener(object : Player.Listener {
                     override fun onEvents(player: Player, events: Player.Events) { publish() }
