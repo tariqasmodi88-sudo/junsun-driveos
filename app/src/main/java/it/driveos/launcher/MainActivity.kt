@@ -846,7 +846,7 @@ class MainActivity : ComponentActivity() {
                         when (screen) {
                             Screen.DASHBOARD -> DashboardScreen(s.layout) { type ->
                                 when (type) {
-                                    CardType.CLOCK -> ClockCard(onClick = { screen = Screen.CLOCK })
+                                    CardType.CLOCK -> ClockCard(onClick = { screen = Screen.CLOCK }, outTemp = vehicleSignals[CanDecoder.OUT_TEMP])
                                     CardType.NAV -> NavCard(
                                         navEntry = navEntry,
                                         configured = s.navApp != null,

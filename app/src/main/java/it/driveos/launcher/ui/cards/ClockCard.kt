@@ -37,7 +37,7 @@ fun formatDate(t: LocalDateTime, locale: Locale = Locale.getDefault()): String =
         .replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
 
 @Composable
-fun ClockCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun ClockCard(onClick: () -> Unit, modifier: Modifier = Modifier, outTemp: String? = null) {
     val now by rememberMinuteClock()
     val time = remember(now) { formatTime(now) }
     val date = remember(now) { formatDate(now) }
@@ -67,6 +67,14 @@ fun ClockCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
                     fontSize = dateSp,
                     maxLines = 2,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                // Temperatura esterna dalla centralina dell'auto (solo se arriva)
+                if (outTemp != null) Text(
+                    "Esterno " + outTemp.replace('.', ',') + " °C",
+                    fontSize = dateSp,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         }
