@@ -62,6 +62,7 @@ data class DriveSettings(
     val canSerial: Boolean = true,
     /** Sensori di parcheggio anteriori montati sull'auto (di default no: non si disegnano). */
     val frontSensors: Boolean = false,
+    val touchLimit: Boolean = true,
     /** Tasti dell'autoradio / volante imparati dalla seriale. */
     val keyBindings: List<KeyBinding> = emptyList(),
     /** Schermata veicolo automatica quando l'auto è ferma (o si apre una portiera). */
@@ -104,6 +105,7 @@ class SettingsRepository(context: Context) {
         val VEH_LOG = stringPreferencesKey("vehicle_logging")
         val CAN_SERIAL = stringPreferencesKey("can_serial")
         val FRONT_SENSORS = stringPreferencesKey("front_sensors")
+        val TOUCH_LIMIT = stringPreferencesKey("touch_limit")
         val KEYMAP = stringPreferencesKey("key_map")
         val THEME_V2 = stringPreferencesKey("theme_auto_default")
         val AUTO_OVERVIEW = stringPreferencesKey("auto_overview")
@@ -144,6 +146,7 @@ class SettingsRepository(context: Context) {
                 vehicleLogging = p[Keys.VEH_LOG] != "0",
                 canSerial = p[Keys.CAN_SERIAL] != "0",
                 frontSensors = p[Keys.FRONT_SENSORS] == "1",
+                touchLimit = p[Keys.TOUCH_LIMIT] != "0",
                 keyBindings = KeyBindingCodec.decode(p[Keys.KEYMAP]),
                 autoOverview = p[Keys.AUTO_OVERVIEW] != "0",
                 keepHome = p[Keys.KEEP_HOME] != "0",
@@ -186,6 +189,7 @@ class SettingsRepository(context: Context) {
         store.edit { it[Keys.KEYMAP] = KeyBindingCodec.encode(list) }
     }
 
+    suspend fun setTouchLimit(on: Boolean) { store.edit { it[Keys.TOUCH_LIMIT] = if (on) "1" else "0" } }
     suspend fun setFrontSensors(on: Boolean) { store.edit { it[Keys.FRONT_SENSORS] = if (on) "1" else "0" } }
 
     suspend fun setCanSerial(on: Boolean) {

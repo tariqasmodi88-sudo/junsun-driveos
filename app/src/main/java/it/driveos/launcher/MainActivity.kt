@@ -148,6 +148,15 @@ class MainActivity : ComponentActivity() {
         setContent { DriveOSRoot() }
     }
 
+    /** Limite tocchi in marcia (come Android Auto): i tocchi oltre la riserva vengono bloccati. */
+    override fun dispatchTouchEvent(ev: android.view.MotionEvent): Boolean {
+        val lock = driveApp.driveLock
+        if (ev.actionMasked == android.view.MotionEvent.ACTION_DOWN) {
+            if (!lock.onTouch()) return true
+        } else if (lock.isLocked()) return true
+        return super.dispatchTouchEvent(ev)
+    }
+
     /**
      * Retromarcia: il firmware porta davanti la sua app (forfan.want2start = com.ts.MainUI). Questo
      * controllo vive nell'Activity (non nella UI Compose, che in secondo piano e' ferma) e riporta
@@ -382,6 +391,17 @@ class MainActivity : ComponentActivity() {
         val loggingOn by VehicleLog.running.collectAsStateWithLifecycle()
         val loggedChanges by VehicleLog.changes.collectAsStateWithLifecycle()
         val speedKmh by driveApp.speedWatcher.speedKmh.collectAsStateWithLifecycle()
+        // velocita' per il limite tocchi: la piu' alta tra GPS e centralina dell'auto
+        val canKmh = vehicleSignals[CanDecoder.SPEED]?.toDoubleOrNull()
+        val lockSpeed = listOfNotNull(speedKmh, canKmh).maxOrNull()
+        LaunchedEffect(lockSpeed, settingsState?.touchLimit) {
+            val lock = driveApp.driveLock
+            lock.enabled = settingsState?.touchLimit != false
+            when {
+                lockSpeed == null || lockSpeed < 3.0 -> lock.onStopped()
+                lockSpeed >= it.driveos.launcher.system.DriveLock.MOVING_KMH -> lock.moving = true
+            }
+        }
         val parked by driveApp.speedWatcher.parked.collectAsStateWithLifecycle()
         var debugFromOverview by remember { mutableStateOf(false) }
         var overviewAuto by remember { mutableStateOf(false) } // aperta in automatico (si richiude da sola)
@@ -1133,6 +1153,8 @@ class MainActivity : ComponentActivity() {
                                 onToggleCanSerial = { on -> scope.launch { driveApp.settingsRepository.setCanSerial(on) } },
                                 frontSensorsOn = s.frontSensors,
                                 onToggleFrontSensors = { on -> scope.launch { driveApp.settingsRepository.setFrontSensors(on) } },
+                                touchLimitOn = s.touchLimit,
+                                onToggleTouchLimit = { on -> scope.launch { driveApp.settingsRepository.setTouchLimit(on) } },
                                 onOpenKeys = { screen = Screen.KEYS },
                                 onExportLog = {
                                     scope.launch {
@@ -1283,6 +1305,10 @@ class MainActivity : ComponentActivity() {
                     )
                 }
             }
+
+            // blocco tocchi in marcia (sopra a tutto)
+            val lockedUntil by driveApp.driveLock.lockedUntil.collectAsStateWithLifecycle()
+            if (lockedUntil > 0L) it.driveos.launcher.ui.DriveLockOverlay(lockedUntil)
 
             picker?.let { target ->
                 AppPickerDialog(

@@ -61,6 +61,8 @@ fun VehicleScreen(
     onBack: () -> Unit,
     frontSensorsOn: Boolean = false,
     onToggleFrontSensors: (Boolean) -> Unit = {},
+    touchLimitOn: Boolean = true,
+    onToggleTouchLimit: (Boolean) -> Unit = {},
 ) {
     var showAll by remember { mutableStateOf(false) }
     val colors = MaterialTheme.colorScheme
@@ -91,6 +93,18 @@ fun VehicleScreen(
                             fontSize = 13.sp, color = colors.onSurfaceVariant)
                     }
                     androidx.compose.material3.Switch(checked = canSerialOn, onCheckedChange = onToggleCanSerial)
+                }
+            }
+
+            Surface(shape = RoundedCornerShape(16.dp), color = if (touchLimitOn) colors.primary.copy(alpha = 0.14f) else colors.surface,
+                modifier = Modifier.fillMaxWidth()) {
+                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Limite tocchi in marcia", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
+                        Text(if (touchLimitOn) "Attivo: oltre i 6 tocchi ravvicinati, schermo bloccato 10 s (come Android Auto)." else "Spento: nessun limite durante la guida.",
+                            fontSize = 14.sp, color = colors.onSurfaceVariant)
+                    }
+                    androidx.compose.material3.Switch(checked = touchLimitOn, onCheckedChange = onToggleTouchLimit)
                 }
             }
 

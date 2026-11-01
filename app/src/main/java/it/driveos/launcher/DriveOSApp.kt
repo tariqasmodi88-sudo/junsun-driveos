@@ -49,6 +49,7 @@ class DriveOSApp : Application() {
         private set
     lateinit var canReader: CanSerialReader
         private set
+    val driveLock = it.driveos.launcher.system.DriveLock()
     lateinit var voice: it.driveos.launcher.voice.OfflineVoice
         private set
     lateinit var keyMapper: KeyMapper
