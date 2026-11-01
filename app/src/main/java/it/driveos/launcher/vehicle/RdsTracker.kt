@@ -35,8 +35,10 @@ class RdsTracker(
     }
 
     /** Riga PS dal registro. Ignorata se non c'e' una frequenza o se non valida. */
-    @Synchronized fun onPs(raw: String) {
+    @Synchronized fun onPs(raw: String, graceMs: Long = 0) {
         if (state.khz == null) return
+        // subito dopo una sintonia la radio puo' ancora restituire il nome della stazione precedente
+        if (graceMs > 0 && now() - tunedAt < graceMs) return
         val ps = clean(raw) ?: return
         when {
             candidate == null -> { candidate = ps; candidateAt = now() }

@@ -40,7 +40,55 @@ class TsBridge(context: Context) {
     }
 
     /** Si collega (o riprova). Sicuro da chiamare più volte. */
+    // --- Servizio principale della radio Junsun (com.ts.main.common.MainUI, interfaccia ITsCommon) ---
+    // Da qui si ottiene il binder interno della radio (ITsRadioCommon) che espone il nome RDS
+    // della stazione corrente: Radio_GetPsName (transazione 30). Ricavato dall'APK MainUI.
+    @Volatile private var common: IBinder? = null
+    @Volatile private var radioCommon: IBinder? = null
+    @Volatile var commonError: String? = null
+        private set
+    private val commonConn = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) { common = service; radioCommon = null }
+        override fun onServiceDisconnected(name: ComponentName?) { common = null; radioCommon = null }
+    }
+
+    private fun bindCommon() {
+        if (common != null) return
+        val ok = runCatching { app.bindService(Intent("android.intent.action.MAIN_UI").setPackage(PKG), commonConn, Context.BIND_AUTO_CREATE) }.getOrDefault(false)
+        if (!ok) runCatching {
+            app.bindService(Intent().setClassName(PKG, "com.ts.main.common.MainUI"), commonConn, Context.BIND_AUTO_CREATE)
+        }.onFailure { commonError = it.message }
+    }
+
+    private fun radioCommonBinder(): IBinder? {
+        radioCommon?.let { if (it.isBinderAlive) return it }
+        val c = common ?: run { bindCommon(); return null }
+        val data = android.os.Parcel.obtain(); val reply = android.os.Parcel.obtain()
+        return try {
+            data.writeInterfaceToken("com.ts.main.common.ITsCommon")
+            data.writeString("Radio")
+            c.transact(55, data, reply, 0) // getSpecialBinder("Radio")
+            reply.readException()
+            reply.readStrongBinder().also { radioCommon = it; commonError = null }
+        } catch (t: Throwable) { commonError = t.message ?: t.javaClass.simpleName; null }
+        finally { data.recycle(); reply.recycle() }
+    }
+
+    /** Nome RDS (PS) della stazione sintonizzata, direttamente dalla radio Junsun. null se non disponibile. */
+    fun psName(): String? {
+        val r = radioCommonBinder() ?: return null
+        val data = android.os.Parcel.obtain(); val reply = android.os.Parcel.obtain()
+        return try {
+            data.writeInterfaceToken("com.ts.main.common.ITsRadioCommon")
+            r.transact(30, data, reply, 0) // Radio_GetPsName
+            reply.readException()
+            reply.readString()
+        } catch (t: Throwable) { commonError = t.message ?: t.javaClass.simpleName; radioCommon = null; null }
+        finally { data.recycle(); reply.recycle() }
+    }
+
     fun connect() {
+        bindCommon()
         if (radio == null) bind(RADIO_ACTION, radioConn)
         if (function == null) bind(FUNCTION_ACTION, functionConn)
     }

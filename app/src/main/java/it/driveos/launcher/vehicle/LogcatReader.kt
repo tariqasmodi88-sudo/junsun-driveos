@@ -63,6 +63,8 @@ class LogcatReader(context: Context, private val repo: VehicleRepository) {
     fun expectName(khz: Int) { tracker.onTune(khz, force = true); _rds.value = tracker.state }
     /** Frequenza letta dalla radio (binder): reset immediato dello stato RDS se e' cambiata. */
     fun onTuned(khz: Int) { if (tracker.onTune(khz)) _rds.value = tracker.state }
+    /** Nome PS letto direttamente dalla radio (binder): stesso percorso dei nomi dal registro. */
+    fun feedPs(ps: String) { tracker.onPs(ps, graceMs = 1500); _rds.value = tracker.state }
     fun clearNames() { _names.value = emptyMap() }
     private fun tick() {
         tracker.tick()?.let { (k, n) ->

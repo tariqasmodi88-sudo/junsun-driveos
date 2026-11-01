@@ -345,6 +345,8 @@ class MainActivity : ComponentActivity() {
                 bridgeKhz = if (info != null && info.second < 3) TsBridge.toKhz(info.first) else null
                 bridgeRds = driveApp.tsBridge.rdsOn()
                 bridgeKhz?.let { driveApp.logcatReader.onTuned(it) }
+                // nome RDS dalla radio Junsun (anche con DriveOS davanti)
+                withContext(kotlinx.coroutines.Dispatchers.IO) { driveApp.tsBridge.psName() }?.let { driveApp.logcatReader.feedPs(it) }
                 bridgeKhz?.let { k -> if (k != savedKhz) { savedKhz = k; driveApp.settingsRepository.setLastRadioKhz(k) } }
                 kotlinx.coroutines.delay(1000)
             }
