@@ -1165,7 +1165,7 @@ class MainActivity : ComponentActivity() {
                                     logsGranted = driveApp.logcatReader.available(),
                                     gpsPermission = driveApp.speedWatcher.hasPermission(),
                                 ),
-                                onDebug = { overviewAuto = false; debugFromOverview = true; screen = Screen.VEHICLE },
+                                onDebug = { overviewAuto = false; screen = Screen.DASHBOARD },
                             )
 
                             Screen.SMART_START -> SmartStartScreen(

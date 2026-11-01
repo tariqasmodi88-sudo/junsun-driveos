@@ -88,12 +88,13 @@ private val Beam = Color(0xFFFFE9A8)
  * sensori; stato a sinistra, spie a destra. Unico comando: Home.
  */
 @Composable
-fun VehicleOverviewScreen(state: VehicleOverviewState, onDebug: () -> Unit) {
+fun VehicleOverviewScreen(state: VehicleOverviewState, onDebug: () -> Unit /* = Home */) {
     val c = MaterialTheme.colorScheme
     Column(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 14.dp)) {
         Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
             // --- Sinistra: stato ---
-            Column(Modifier.weight(0.36f).fillMaxHeight().verticalScroll(rememberScrollState()),
+            Column(Modifier.weight(0.36f).fillMaxHeight()) {
+            Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     SectionTitle("Stato")
@@ -104,6 +105,16 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onDebug: () -> Unit) {
                 StatusRow("Telefono", state.phone?.let { if (it) "collegato" else "scollegato" }, state.phone == true, Ok)
                 StatusRow("CarPlay/AA", if (state.projection) "attivo" else "no", state.projection, Ok)
                 StatusRow("Radio", state.radioKhz?.let { "%.1f MHz".format(it / 1000.0) }, false, c.primary)
+            }
+            // Home: questa schermata non ha la barra in basso
+            Surface(onClick = onDebug, shape = RoundedCornerShape(18.dp), color = c.surfaceVariant, contentColor = c.onSurface,
+                modifier = Modifier.width(140.dp).height(64.dp)) {
+                Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Filled.Home, null, Modifier.size(28.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Home", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                }
+            }
             }
 
             // --- Centro: l'auto ---

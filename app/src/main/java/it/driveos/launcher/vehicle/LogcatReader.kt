@@ -60,11 +60,22 @@ class LogcatReader(context: Context, private val repo: VehicleRepository) {
     private var ticker: Job? = null
     private val setFreq = Regex("setfreq=(\\d{4,5})")
     /** Si aspetta il nome della stazione gia' sintonizzata (radio nativa appena portata davanti). */
-    fun expectName(khz: Int) { tracker.onTune(khz, force = true); _rds.value = tracker.state }
+    fun expectName(khz: Int) { tracker.onTune(khz, force = true); stalePs = null; _rds.value = tracker.state }
     /** Frequenza letta dalla radio (binder): reset immediato dello stato RDS se e' cambiata. */
-    fun onTuned(khz: Int) { if (tracker.onTune(khz)) _rds.value = tracker.state }
+    // La radio Junsun non azzera il nome quando cambi stazione: se la nuova non trasmette RDS
+    // continua a restituire quello della precedente. Si accetta quindi solo un nome DIVERSO
+    // da quello che la radio dava al momento del cambio.
+    @Volatile private var lastLivePs: String? = null
+    @Volatile private var stalePs: String? = null
+    fun onTuned(khz: Int) { if (tracker.onTune(khz)) { stalePs = lastLivePs; _rds.value = tracker.state } }
     /** Nome PS letto direttamente dalla radio (binder): stesso percorso dei nomi dal registro. */
-    fun feedPs(ps: String) { tracker.onPs(ps, graceMs = 1500); _rds.value = tracker.state }
+    fun feedPs(ps: String) {
+        val p = ps.trim()
+        lastLivePs = p
+        if (p.isEmpty() || p == stalePs?.trim()) return
+        stalePs = null // la radio ha cambiato nome: da qui in poi e' quello della nuova stazione
+        tracker.onPs(p); _rds.value = tracker.state
+    }
     fun clearNames() { _names.value = emptyMap() }
     private fun tick() {
         tracker.tick()?.let { (k, n) ->
