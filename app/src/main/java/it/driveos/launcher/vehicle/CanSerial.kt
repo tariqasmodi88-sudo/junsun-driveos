@@ -111,7 +111,7 @@ object CanDecoder {
     const val LOWBEAM = "can:lowbeam"
     const val FOG = "can:fog"
     const val BELT = "can:belt"
-    /** Passeggero anteriore: "0" = seduto con cintura slacciata (avviso), "1" = ok (allacciata o sedile vuoto). */
+    /** Passeggero anteriore: "1" = allacciata, "0" = slacciata. */
     const val BELT_PASSENGER = "can:belt_passenger"
     const val REAR_SENSORS = "can:rear"
     const val FRONT_SENSORS = "can:front"
@@ -219,8 +219,8 @@ object CanDecoder {
             }
             id == 0x7D && sub == 0x06 && v >= 0 -> {
                 out[BELT] = if ((v and 0x20) != 0) "1" else "0"
-                // verificato in auto (1/11): bit 0x10 acceso = passeggero seduto senza cintura
-                out[BELT_PASSENGER] = if ((v and 0x10) != 0) "0" else "1"
+                // passeggero: bit 0x10 acceso = cintura allacciata (corretto dopo la prova in auto del 1/11)
+                out[BELT_PASSENGER] = if ((v and 0x10) != 0) "1" else "0"
             }
             id == 0x7D && sub == 0x0B && len >= 3 -> {
                 val mv = (d[1].toInt() and 0xFF) or ((d[2].toInt() and 0xFF) shl 8)
