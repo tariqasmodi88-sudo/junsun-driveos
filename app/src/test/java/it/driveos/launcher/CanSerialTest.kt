@@ -96,3 +96,25 @@ class CanSerialJunkTest {
         org.junit.Assert.assertTrue(frames.isEmpty())
     }
 }
+
+class CanQueryTest {
+    private fun hex(b: ByteArray) = b.joinToString(" ") { "%02X".format(it.toInt() and 0xFF) }
+
+    @org.junit.Test fun engineQueryBytes() {
+        // Raise: 2E 90 02 41 02 + NOT(90+02+41+02)=2A ; esterno: 23 43 06 … XOR
+        org.junit.Assert.assertEquals("2E 90 02 41 02 2A", hex(it.driveos.launcher.vehicle.CanQuery.raise(0x90, 0x41, 0x02)))
+        org.junit.Assert.assertEquals("23 43 06 2E 90 02 41 02 2A 90", hex(it.driveos.launcher.vehicle.CanQuery.ENGINE))
+    }
+
+    @org.junit.Test fun engineDataDecoded() {
+        // 0x41/02: giri 850, vel. 0, 14.20 V, 12.5 °C, autonomia 640 km, 38 l
+        val d = byteArrayOf(0x02, 0x03, 0x52, 0x00, 0x00, 0x05, 0x8C.toByte(), 0x00, 0x7D, 0x00, 0x02, 0x80.toByte(), 38)
+        val p = byteArrayOf(0x2E, 0x41, d.size.toByte()) + d
+        val out = it.driveos.launcher.vehicle.CanDecoder.decode(it.driveos.launcher.vehicle.CanFrame('C', p))
+        org.junit.Assert.assertEquals("850", out["can:rpm"])
+        org.junit.Assert.assertEquals("14.2", out["can:voltage"])
+        org.junit.Assert.assertEquals("12.5", out["can:out_temp"])
+        org.junit.Assert.assertEquals("640", out["can:range_km"])
+        org.junit.Assert.assertEquals("38", out["can:fuel_l"])
+    }
+}

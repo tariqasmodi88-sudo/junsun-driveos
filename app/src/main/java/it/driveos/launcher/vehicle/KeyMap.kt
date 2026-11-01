@@ -136,6 +136,7 @@ class KeyMapper(context: Context) {
             CanDecoder.DOORS_MASK, CanDecoder.HANDBRAKE, CanDecoder.REVERSE, CanDecoder.BATTERY_V,
             CanDecoder.LIGHTS, CanDecoder.LOWBEAM, CanDecoder.FOG, CanDecoder.BELT,
             CanDecoder.REAR_SENSORS, CanDecoder.FRONT_SENSORS, "can:frames",
+            CanDecoder.RPM, CanDecoder.SPEED, CanDecoder.VOLTAGE, CanDecoder.OUT_TEMP, CanDecoder.RANGE_KM, CanDecoder.FUEL_L,
         )
         private val STATE_PREFIXES = listOf("can:S", "can:C22/", "can:C23/", "can:C24/", "can:C26/", "can:C41/", "can:C7d/")
 

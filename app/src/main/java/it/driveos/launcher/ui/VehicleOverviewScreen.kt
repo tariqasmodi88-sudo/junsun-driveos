@@ -57,6 +57,10 @@ data class VehicleOverviewState(
     val openDoors: List<String>? = null,
     val handbrake: Boolean? = null,
     val batteryV: String? = null,
+    val rpm: String? = null,
+    val fuelL: String? = null,
+    val rangeKm: String? = null,
+    val outTemp: String? = null,
     val belt: Boolean? = null,
     val parking: Boolean?,
     val phone: Boolean?,
@@ -148,12 +152,15 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onDebug: () -> Unit) {
                 Surface(shape = RoundedCornerShape(16.dp), color = c.surface, modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp)) {
                         EngineLine("Batteria", state.batteryV?.let { "$it V" } ?: "—")
-                        EngineLine("Carburante", "—")
-                        EngineLine("Temp. motore", "—")
-                        EngineLine("Giri", "—")
-                        Spacer(Modifier.height(8.dp))
-                        Text("Carburante, temperatura e giri arrivano dalla seriale dell'auto: li stiamo ancora identificando nel registro.",
-                            fontSize = 13.sp, color = c.onSurfaceVariant)
+                        EngineLine("Carburante", state.fuelL?.let { "$it l" } ?: "—")
+                        EngineLine("Autonomia", state.rangeKm?.let { "$it km" } ?: "—")
+                        EngineLine("Giri", state.rpm?.let { "$it giri/min" } ?: "—")
+                        EngineLine("Temp. esterna", state.outTemp?.let { "$it °C" } ?: "—")
+                        if (state.rpm == null) {
+                            Spacer(Modifier.height(8.dp))
+                            Text("In attesa dei dati motore dalla centralina (si chiedono ogni secondo a quadro acceso).",
+                                fontSize = 13.sp, color = c.onSurfaceVariant)
+                        }
                     }
                 }
             }

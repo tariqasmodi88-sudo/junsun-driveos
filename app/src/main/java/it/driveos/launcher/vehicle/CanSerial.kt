@@ -14,6 +14,40 @@ import java.util.concurrent.CopyOnWriteArrayList
 class CanFrame(val type: Char, val payload: ByteArray)
 
 /**
+ * Comandi verso la centralina CAN, con lo stesso formato che usa la radio Junsun
+ * (libts67xhw.so c_SendCanMsg + libcan59.so CCan::MakeCmd):
+ *   esterno: '#', 'C', n, [n byte], XOR di ('C', n, contenuto)
+ *   interno (protocollo Raise): 0x2E, comando, lunghezza, dati, NOT(somma di comando+lunghezza+dati)
+ * La schermata dati auto della radio, all'apertura, chiede 0x90 [0x41, 0x01] e 0x90 [0x41, 0x02].
+ */
+object CanQuery {
+    fun raise(cmd: Int, vararg data: Int): ByteArray {
+        val b = ByteArray(4 + data.size)
+        b[0] = 0x2E; b[1] = cmd.toByte(); b[2] = data.size.toByte()
+        data.forEachIndexed { i, v -> b[3 + i] = v.toByte() }
+        var sum = 0
+        for (i in 1 until 3 + data.size) sum += b[i].toInt() and 0xFF
+        b[3 + data.size] = (sum.inv() and 0xFF).toByte()
+        return b
+    }
+
+    fun frame(payload: ByteArray): ByteArray {
+        val b = ByteArray(payload.size + 4)
+        b[0] = 0x23; b[1] = 'C'.code.toByte(); b[2] = payload.size.toByte()
+        payload.copyInto(b, 3)
+        var x = 0
+        for (i in 1 until 3 + payload.size) x = x xor (b[i].toInt() and 0xFF)
+        b[3 + payload.size] = x.toByte()
+        return b
+    }
+
+    /** Richiesta dati motore (giri, velocita', tensione, temperatura esterna, autonomia, carburante). */
+    val ENGINE: ByteArray = frame(raise(0x90, 0x41, 0x02))
+    /** Richiesta stato/avvisi (riserva, batteria, freno a mano…). */
+    val STATUS: ByteArray = frame(raise(0x90, 0x41, 0x01))
+}
+
+/**
  * Taglia in messaggi il flusso di byte di /dev/ttyS1 (MCU/CAN → radio, registrato il 30/10).
  * Struttura: 0x23 ('#'), 'C' o 'S', n, n byte di contenuto, 1 byte di controllo.
  * Se il flusso inizia a meta' di un messaggio, riparte dal primo '#' valido.
@@ -79,6 +113,13 @@ object CanDecoder {
     const val BELT = "can:belt"
     const val REAR_SENSORS = "can:rear"
     const val FRONT_SENSORS = "can:front"
+    // Dati motore (C 0x41 sotto-tipo 02): la centralina li manda SOLO su richiesta, vedi [CanQuery].
+    const val RPM = "can:rpm"
+    const val SPEED = "can:speed"
+    const val VOLTAGE = "can:voltage"
+    const val OUT_TEMP = "can:out_temp"
+    const val RANGE_KM = "can:range_km"
+    const val FUEL_L = "can:fuel_l"
     /** Byte della seriale che non sono un messaggio noto (probabili tasti dell'autoradio). */
     const val RAW_BYTES = "can:X"
 
@@ -117,6 +158,18 @@ object CanDecoder {
                 out[LOWBEAM] = if ((v and 0x20) != 0) "1" else "0"
                 out[FOG] = if ((v and 0x04) != 0) "1" else "0"
                 return out // le frecce lampeggiano: niente riga grezza
+            }
+            id == 0x41 && sub == 0x02 && len >= 13 -> {
+                // Schema letto dalla libreria della radio (libcan59.so, CCanVolkswagen::DealCarInfo):
+                // giri, velocita' x0.01, tensione x0.01, temp. esterna x0.1 (con segno), autonomia 24 bit, litri.
+                fun u16(i: Int) = ((d[i].toInt() and 0xFF) shl 8) or (d[i + 1].toInt() and 0xFF)
+                out[RPM] = u16(1).toString()
+                out[SPEED] = "%.0f".format(java.util.Locale.US, u16(3) / 100.0)
+                out[VOLTAGE] = "%.1f".format(java.util.Locale.US, u16(5) / 100.0)
+                out[OUT_TEMP] = "%.1f".format(java.util.Locale.US, u16(7).toShort() / 10.0)
+                out[RANGE_KM] = (((d[9].toInt() and 0xFF) shl 16) or ((d[10].toInt() and 0xFF) shl 8) or (d[11].toInt() and 0xFF)).toString()
+                out[FUEL_L] = (d[12].toInt() and 0xFF).toString()
+                return out // cambiano di continuo: niente riga grezza
             }
             id == 0x7D && sub == 0x06 && v >= 0 -> out[BELT] = if ((v and 0x20) != 0) "1" else "0"
             id == 0x7D && sub == 0x0B && len >= 3 -> {
@@ -192,12 +245,17 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
     @Volatile private var stream: FileInputStream? = null
     @Volatile var framesSeen: Long = 0
         private set
+    /** Ultimo errore della richiesta dati motore (null = inviata). */
+    @Volatile var queryError: String? = null
+        private set
+    private var queryJob: Job? = null
     @Volatile private var lastByteAt = 0L
 
     fun addSink(s: (Map<String, String>) -> Unit) { if (!sinks.contains(s)) sinks.add(s) }
     fun removeSink(s: (Map<String, String>) -> Unit) { sinks.remove(s) }
 
     fun start() {
+        startQueries()
         if (job?.isActive == true) return
         job = scope.launch {
             val last = HashMap<String, String>()
@@ -241,7 +299,32 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
         }
     }
 
+    /**
+     * Chiede alla centralina i dati motore ogni [periodMs], come fa la schermata dati auto della radio
+     * quando e' aperta. Senza la richiesta la centralina non li manda.
+     */
+    fun startQueries(periodMs: Long = 1000) {
+        if (queryJob?.isActive == true) return
+        queryJob = scope.launch {
+            var n = 0
+            while (isActive) {
+                try {
+                    java.io.FileOutputStream(path).use { out ->
+                        while (isActive) {
+                            out.write(CanQuery.ENGINE); out.flush()
+                            if (n++ % 5 == 0) { delay(50); out.write(CanQuery.STATUS); out.flush() }
+                            queryError = null
+                            delay(periodMs)
+                        }
+                    }
+                } catch (t: Throwable) { queryError = t.message ?: t.javaClass.simpleName }
+                if (isActive) delay(5_000)
+            }
+        }
+    }
+
     fun stop() {
+        queryJob?.cancel(); queryJob = null
         job?.cancel(); job = null
         runCatching { stream?.close() }
     }
