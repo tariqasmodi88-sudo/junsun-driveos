@@ -80,6 +80,20 @@ class DriveOSApp : Application() {
             r.addSink { vehicleRepository.ingest(it) }
             r.addSink { keyMapper.onChanges(it) }
         }
+        // A quadro spento lo schermo si spegne: DriveOS smette di scrivere alla centralina CAN e di
+        // chiedere dati alla radio, cosi' radio e auto possono andare in standby normalmente.
+        runCatching {
+            registerReceiver(object : android.content.BroadcastReceiver() {
+                override fun onReceive(c: android.content.Context, i: android.content.Intent) {
+                    when (i.action) {
+                        android.content.Intent.ACTION_SCREEN_OFF -> { canReader.stopQueries(); voice.stop() }
+                        android.content.Intent.ACTION_SCREEN_ON -> if (canReader.running) canReader.startQueries()
+                    }
+                }
+            }, android.content.IntentFilter().apply {
+                addAction(android.content.Intent.ACTION_SCREEN_OFF); addAction(android.content.Intent.ACTION_SCREEN_ON)
+            })
+        }
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         scope.launch { settingsRepository.settings.collect { keyMapper.bindings = it.keyBindings } }
         scope.launch {

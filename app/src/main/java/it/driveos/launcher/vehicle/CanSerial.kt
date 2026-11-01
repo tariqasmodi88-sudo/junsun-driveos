@@ -353,6 +353,10 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
      * Chiede alla centralina i dati motore ogni [periodMs], come fa la schermata dati auto della radio
      * quando e' aperta. Senza la richiesta la centralina non li manda.
      */
+    /** Quadro spento / schermo spento: smette di interrogare la centralina (la lascia dormire). */
+    val running: Boolean get() = job?.isActive == true
+    fun stopQueries() { queryJob?.cancel(); queryJob = null }
+
     fun startQueries(periodMs: Long = 1000) {
         if (queryJob?.isActive == true) return
         queryJob = scope.launch {
