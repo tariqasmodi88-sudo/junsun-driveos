@@ -15,7 +15,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import it.driveos.launcher.nav.NavRoute
 import org.osmdroid.config.Configuration
-import org.osmdroid.tileprovider.tilesource.XYZTileSource
+import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
@@ -23,9 +23,9 @@ import org.osmdroid.views.overlay.Polyline
 import java.io.File
 
 /** Mappe CARTO (dati OpenStreetMap): scura per la notte, chiara "Voyager" per il giorno. */
-private fun cartoSource(dark: Boolean): XYZTileSource {
+private fun cartoSource(dark: Boolean): XYTileSource {
     val style = if (dark) "dark_all" else "rastertiles/voyager"
-    return XYZTileSource(
+    return XYTileSource(
         if (dark) "CartoDark" else "CartoVoyager", 0, 20, 256, ".png",
         arrayOf("a", "b", "c", "d").map { "https://$it.basemaps.cartocdn.com/$style/" }.toTypedArray(),
         "© OpenStreetMap © CARTO",
