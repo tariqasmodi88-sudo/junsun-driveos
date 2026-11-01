@@ -29,12 +29,7 @@ object NavRoute {
         val destLat: Double, val destLon: Double,
         val points: List<Pair<Double, Double>>, // lat, lon
         val distanceM: Double, val durationS: Double,
-        /** Manovre da annunciare, in ordine di percorso (vuoto se OSRM non le fornisce). */
-        val steps: List<NavProgress.Step> = emptyList(),
-    ) {
-        /** Distanze progressive lungo [points]. */
-        val cumulative: DoubleArray by lazy { NavProgress.cumulative(points) }
-    }
+    )
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var job: Job? = null
@@ -53,17 +48,15 @@ object NavRoute {
             while (isActive) {
                 val here = location()
                 val r = _route.value
-                // fuori percorso (es. Waze ha scelto un'altra strada): ricalcolo presto, cosi' le indicazioni in Home combaciano
-                val off = here != null && r != null && distanceToRoute(here, r.points) > 80
-                val since = System.currentTimeMillis() - lastCalc
-                if (here != null && (r == null || (off && since > 15_000) || since > 120_000)) {
-                    runCatching { osrm(destination, here, dest) }.getOrNull()?.let {
-                        _route.value = it; lastCalc = System.currentTimeMillis()
+                val off = here != null && r != null && distanceToRoute(here, r.points) > 150
+                if (here != null && (r == null || off || System.currentTimeMillis() - lastCalc > 120_000)) {
+                    runCatching { osrm(here, dest) }.getOrNull()?.let { (pts, d, t) ->
+                        _route.value = Route(destination, dest.first, dest.second, pts, d, t); lastCalc = System.currentTimeMillis()
                     }
                 }
                 // arrivato: a meno di 60 m dalla destinazione si chiude
                 if (here != null && haversine(here, dest) < 60) { stop(); break }
-                delay(5_000)
+                delay(10_000)
             }
         }
     }
@@ -84,34 +77,14 @@ object NavRoute {
         return o.getString("lat").toDouble() to o.getString("lon").toDouble()
     }
 
-    private fun osrm(destination: String, from: Pair<Double, Double>, to: Pair<Double, Double>): Route? {
-        val u = "https://router.project-osrm.org/route/v1/driving/${from.second},${from.first};${to.second},${to.first}" +
-            "?overview=full&geometries=geojson&steps=true"
+    private fun osrm(from: Pair<Double, Double>, to: Pair<Double, Double>): Triple<List<Pair<Double, Double>>, Double, Double>? {
+        val u = "https://router.project-osrm.org/route/v1/driving/${from.second},${from.first};${to.second},${to.first}?overview=full&geometries=geojson"
         val r = JSONObject(get(u)).getJSONArray("routes")
         if (r.length() == 0) return null
         val route = r.getJSONObject(0)
         val c = route.getJSONObject("geometry").getJSONArray("coordinates")
         val pts = (0 until c.length()).map { val p = c.getJSONArray(it); p.getDouble(1) to p.getDouble(0) }
-        val steps = ArrayList<NavProgress.Step>()
-        val legs = route.optJSONArray("legs") ?: JSONArray()
-        var from0 = 0
-        for (l in 0 until legs.length()) {
-            val arr = legs.getJSONObject(l).optJSONArray("steps") ?: continue
-            for (k in 0 until arr.length()) {
-                val st = arr.getJSONObject(k)
-                val m = st.getJSONObject("maneuver")
-                val type = m.optString("type")
-                val mod = m.optString("modifier")
-                val loc = m.getJSONArray("location")
-                val at = NavProgress.nearestIndex(pts, loc.getDouble(1) to loc.getDouble(0), from0)
-                from0 = at
-                if (!NavProgress.isAnnounced(type, mod)) continue
-                val name = st.optString("name").ifBlank { st.optString("ref") }
-                val exit = if (m.has("exit")) m.optInt("exit") else null
-                steps += NavProgress.Step(at, type, mod, name, exit)
-            }
-        }
-        return Route(destination, to.first, to.second, pts, route.getDouble("distance"), route.getDouble("duration"), steps)
+        return Triple(pts, route.getDouble("distance"), route.getDouble("duration"))
     }
 
     fun haversine(a: Pair<Double, Double>, b: Pair<Double, Double>): Double {

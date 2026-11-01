@@ -105,29 +105,6 @@ class ScreenshotTest2 {
         }
     }
 
-    private val liveRoute = it.driveos.launcher.nav.NavRoute.Route(
-        "Stazione Porta Nuova", 45.0625, 7.6785,
-        (0..10).map { 45.050 + it * 0.001 to 7.670 } + (1..8).map { 45.060 to 7.670 + it * 0.001 },
-        2400.0, 420.0,
-        listOf(it.driveos.launcher.nav.NavProgress.Step(10, "turn", "right", "Corso Vittorio Emanuele II"),
-            it.driveos.launcher.nav.NavProgress.Step(12, "roundabout", "right", "Via Sacchi", 2),
-            it.driveos.launcher.nav.NavProgress.Step(18, "arrive", "", "")),
-    )
-    private val liveLoc = android.location.Location("gps").apply { latitude = 45.0565; longitude = 7.670; bearing = 0f; speed = 12f }
-
-    @Composable private fun homeLive() = DashboardScreen(DashboardLayout.DEFAULT) { type ->
-        when (type) {
-            CardType.CLOCK -> ClockCard(onClick = {})
-            CardType.NAV -> NavCard(waze, true, null, settings.recentDestinations, {}, {}, {}, {}, {}, {},
-                onStop = {}, route = liveRoute, routeActive = "Stazione Porta Nuova", location = liveLoc)
-            CardType.MUSIC -> MusicCard(true, media, spotify, spotify, {}, {}, {}, {}, {}, {})
-            CardType.CALENDAR -> CalendarCard(calendar, {}, {})
-        }
-    }
-
-    @Test fun home_guida_notte() { on(); shot("14_home_guida_notte") { WithBar(Screen.DASHBOARD) { homeLive() } } }
-    @Test fun home_guida_giorno() { on(); shot("15_home_guida_giorno", ThemeMode.LIGHT) { WithBar(Screen.DASHBOARD) { homeLive() } } }
-
     @Test fun home_notte() { on(); shot("10_home_notte") { WithBar(Screen.DASHBOARD) { home() } } }
     @Test fun home_giorno() { on(); shot("11_home_giorno", ThemeMode.LIGHT) { WithBar(Screen.DASHBOARD) { home() } } }
     @Test fun home_spie() { on(); shot("12_home_con_spie") {
