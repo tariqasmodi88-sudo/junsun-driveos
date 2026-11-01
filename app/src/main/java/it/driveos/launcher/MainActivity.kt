@@ -335,8 +335,10 @@ class MainActivity : ComponentActivity() {
         val logName = vehicleSignals[LogcatParser.RADIO_NAME]
         val logKhz = vehicleSignals[LogcatParser.RADIO_FREQ]?.toIntOrNull()
         LaunchedEffect(screen) {
-            if (screen == Screen.MUSIC && driveApp.mediaRepository.resumeIfPausedForRadio()) {
-                driveApp.tsBridge.radioCall { it.CloseRadioCh() }
+            if (screen == Screen.MUSIC) {
+                // passando a Musica: spegni la radio e riprendi i brani (se erano stati fermati per la radio)
+                if (driveApp.tsBridge.workMode() == 1) driveApp.tsBridge.radioNow { it.CloseRadioCh() }
+                if (!driveApp.mediaRepository.resumeIfPausedForRadio()) driveApp.mediaRepository.resumeLocalIfIdle()
             }
             if (screen != Screen.RADIO) return@LaunchedEffect
             driveApp.logcatReader.resetLive()

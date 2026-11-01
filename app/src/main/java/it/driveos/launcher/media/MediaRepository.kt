@@ -133,12 +133,18 @@ class MediaRepository(context: Context) {
     }
     @Volatile private var localActive = false
 
+    /** Chiamato prima di far partire la musica: spegne la radio (impostato da DriveOSApp). */
+    @Volatile var beforePlay: (() -> Unit)? = null
+    private fun willPlay() { runCatching { beforePlay?.invoke() } }
+
     fun playFolder(folder: String) = handler.post {
+        willPlay()
         runCatching { controller?.transportControls?.pause() }
         localActive = true
         local.playFolder(folder)
     }
     fun playFiles(files: List<java.io.File>, start: Int, folder: String) = handler.post {
+        willPlay()
         runCatching { controller?.transportControls?.pause() }
         localActive = true
         local.playFiles(files, start, folder)
@@ -146,6 +152,7 @@ class MediaRepository(context: Context) {
     fun isLocal(): Boolean = localActive
     fun lastFolder(): String? = local.lastFolder
     fun playLastFolder() = handler.post {
+        willPlay()
         runCatching { controller?.transportControls?.pause() }
         localActive = true
         local.playLastFolder()
@@ -285,6 +292,7 @@ class MediaRepository(context: Context) {
     fun resumeIfPausedForRadio(): Boolean {
         if (!pausedForRadio) return false
         pausedForRadio = false
+        willPlay()
         if (localActive) { local.play(); return true }
         runCatching { controller?.transportControls?.play() }
         return true
@@ -319,11 +327,15 @@ class MediaRepository(context: Context) {
         return true
     }
 
+    /** Passando a Musica: se il lettore interno ha una coda ferma, riparte. */
+    fun resumeLocalIfIdle() = handler.post { if (localActive && !local.isPlaying) { willPlay(); local.play() } }
+
     fun playPause() {
+        val playingNow = if (localActive) local.isPlaying else controller?.playbackState?.state == PlaybackState.STATE_PLAYING
+        if (!playingNow) willPlay()
         if (localActive) { local.playPause(); return }
         val c = controller ?: return
-        if (c.playbackState?.state == PlaybackState.STATE_PLAYING) c.transportControls.pause()
-        else c.transportControls.play()
+        if (playingNow) c.transportControls.pause() else c.transportControls.play()
     }
 
     fun next() {

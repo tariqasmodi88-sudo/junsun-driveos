@@ -71,6 +71,8 @@ class DriveOSApp : Application() {
         logcatReader = LogcatReader(this, vehicleRepository)
         speedWatcher = SpeedWatcher(this)
         voice = it.driveos.launcher.voice.OfflineVoice(this)
+        // far partire la musica spegne la radio Junsun (altrimenti tiene l'audio e mette in pausa i brani)
+        mediaRepository.beforePlay = { tsBridge.radioCall { r -> r.CloseRadioCh() } }
         keyMapper = KeyMapper(this).also { it.bridge = tsBridge }
         canReader = CanSerialReader().also { r ->
             r.addSink { vehicleRepository.ingest(it) }
