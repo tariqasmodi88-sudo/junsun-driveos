@@ -90,26 +90,7 @@ fun RadioScreen(
     val name = stationName ?: current?.name?.takeIf { !it.startsWith("FM ") }
 
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Radio", onBack) {
-            Surface(onClick = onOpenExternal, shape = RoundedCornerShape(14.dp), color = colors.surfaceVariant, contentColor = colors.onSurface) {
-                Text("Radio Junsun", fontSize = 14.sp, fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp))
-            }
-            if (onReadNames != null) {
-                Spacer(Modifier.width(10.dp))
-                Surface(onClick = { if (!readingNames) onReadNames() }, shape = RoundedCornerShape(14.dp), color = colors.surfaceVariant, contentColor = colors.onSurface) {
-                    Text(if (readingNames) "Leggo i nomi…" else "Leggi nomi", fontSize = 14.sp, fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp))
-                }
-            }
-            if (onReadOne != null) {
-                Spacer(Modifier.width(10.dp))
-                Surface(onClick = { if (!readingNames) onReadOne() }, shape = RoundedCornerShape(14.dp), color = colors.surfaceVariant, contentColor = colors.onSurface) {
-                    Text("Leggi nome", fontSize = 14.sp, fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp))
-                }
-            }
-        }
+        ScreenHeader("Radio", onBack)
         Row(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             // --- Sintonizzatore ---
             Column(Modifier.weight(0.52f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(12.dp)) {

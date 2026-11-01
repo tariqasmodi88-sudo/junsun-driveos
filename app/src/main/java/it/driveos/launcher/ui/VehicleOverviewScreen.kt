@@ -97,11 +97,6 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onDebug: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     SectionTitle("Stato")
-                    Spacer(Modifier.weight(1f))
-                    Surface(onClick = onDebug, shape = RoundedCornerShape(14.dp), color = c.surfaceVariant, contentColor = c.onSurface) {
-                        Text("Debug", fontSize = 14.sp, fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
-                    }
                 }
                 // Fari, portiere, baule, retromarcia e sensori sono già disegnati sull'auto: qui solo il resto.
                 StatusRow("Freno a mano", state.handbrake?.let { if (it) "tirato" else "giù" }, state.handbrake == true, Amber)

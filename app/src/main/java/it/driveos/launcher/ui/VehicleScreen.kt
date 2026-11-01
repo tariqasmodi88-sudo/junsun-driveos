@@ -67,7 +67,7 @@ fun VehicleScreen(
     val canSignals = signals.filterKeys { it.startsWith("can:") }
 
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Debug veicolo", onBack) {}
+        ScreenHeader("Veicolo", onBack) {}
         exportStatus?.let {
             Text(it, fontSize = 14.sp, color = colors.primary, modifier = Modifier.padding(horizontal = 20.dp))
         }
@@ -106,28 +106,6 @@ fun VehicleScreen(
                 }
             }
 
-            Surface(shape = RoundedCornerShape(16.dp), color = if (loggingOn) colors.primary.copy(alpha = 0.14f) else colors.surface,
-                modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text("Registrazione continua", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
-                            Text(
-                                if (loggingOn) "Attiva · $loggedChanges variazioni registrate (anche a schermo spento)"
-                                else "Registra le variazioni per giorni, poi esporti un file solo",
-                                fontSize = 14.sp, color = colors.onSurfaceVariant,
-                            )
-                        }
-                        androidx.compose.material3.Switch(checked = loggingOn, onCheckedChange = onToggleLogging)
-                    }
-                    Spacer(Modifier.height(10.dp))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Secondary("Esporta registro", Modifier.weight(1f)) { onExportLog() }
-                        Secondary("Azzera registro", Modifier.weight(1f)) { onClearLog() }
-                    }
-                }
-            }
-
             Surface(shape = RoundedCornerShape(16.dp), color = if (logsGranted) colors.primary.copy(alpha = 0.14f) else colors.surface,
                 modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp)) {
@@ -149,25 +127,6 @@ fun VehicleScreen(
                 }
             }
 
-            Text("SEGNALI LETTI ORA (${signals.size})", fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
-                letterSpacing = 1.2.sp, color = colors.primary, modifier = Modifier.padding(top = 12.dp))
-            val ordered = (canSignals.entries + signals.entries.filterNot { it.key.startsWith("can:") }).toList()
-            val shown = if (showAll) ordered else ordered.take(20)
-            Column {
-                shown.forEach { (id, value) ->
-                    Row(Modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(if (id.startsWith("can:")) id else SignalIds.describe(id), fontSize = 14.sp, color = colors.onSurface,
-                            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                        Spacer(Modifier.width(10.dp))
-                        Text(value, fontSize = 14.sp, fontFamily = FontFamily.Monospace, color = colors.onSurfaceVariant,
-                            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 180.dp))
-                    }
-                }
-            }
-            if (!showAll && ordered.size > 20) {
-                Text("Mostra tutti (${ordered.size})", fontSize = 15.sp, color = colors.primary,
-                    modifier = Modifier.clickable { showAll = true }.padding(vertical = 6.dp))
-            }
             Spacer(Modifier.height(24.dp))
         }
     }

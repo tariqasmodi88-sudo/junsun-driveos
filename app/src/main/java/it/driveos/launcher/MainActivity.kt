@@ -450,8 +450,8 @@ class MainActivity : ComponentActivity() {
             if (s.canSerial) driveApp.canReader.start() else driveApp.canReader.stop()
         }
         LaunchedEffect(s.vehicleLogging, s.discoveredActions) {
-            if (s.vehicleLogging) VehicleLogService.start(context, s.discoveredActions)
-            else VehicleLogService.stop(context)
+            // registrazione continua (debug) dismessa: si ferma se era rimasta accesa
+            VehicleLogService.stop(context)
         }
 
         val projectionPkg = PROJECTION_PKGS.firstOrNull { pm.getLaunchIntentForPackage(it) != null }
@@ -1131,9 +1131,6 @@ class MainActivity : ComponentActivity() {
                                 logsGranted = driveApp.logcatReader.available(),
                                 rdsOn = bridgeRds,
                                 rdsStatus = rdsState.takeIf { it.khz == (bridgeKhz ?: logKhz) }?.status?.name,
-                                onReadNames = { readNames() },
-                                readingNames = readingNames,
-                                onReadOne = { readOne() },
                                 onBack = { screen = Screen.SETTINGS },
                             )
 
