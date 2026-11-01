@@ -4,7 +4,26 @@ Launcher (schermata Home) per l'autoradio **Junsun FF_866X** ("V1 Pro") montata 
 **VW Tiguan 2016**. È una normale app Android: **non modifica firmware, partizioni,
 impostazioni di fabbrica né l'MCU** e non richiede root né permessi speciali.
 
-Versione attuale: **0.6.0**
+Versione attuale: **0.9.87**
+
+> ## ⚠️ Avvertenze — leggere prima di installare
+>
+> - **Progetto personale e sperimentale**, non ufficiale e **non collegato** a Junsun, Volkswagen, Google o Waze.
+> - **Provato solo** su: radio **Junsun FF_866X** (MTK MT8667, **Android 10**, firmware ForFan) montata su
+>   **Volkswagen Tiguan 2016** con centralina CAN Raise. Su altre radio, versioni di Android o auto
+>   **potrebbe non funzionare** o comportarsi in modo diverso.
+> - DriveOS comunica con la radio (servizi interni Junsun) e con la **centralina CAN dell'auto** (seriale):
+>   in casi rari può causare **blocchi, riavvii o malfunzionamenti della radio**.
+> - **Non distrarti alla guida.** Sensori, telecamera e avvisi sono un aiuto e non sostituiscono specchietti,
+>   sguardo e codice della strada.
+> - **Uso a proprio rischio:** l'autore non risponde di danni alla radio, all'auto, a persone o cose.
+> - Al primo avvio l'app mostra queste avvertenze e chiede di accettarle.
+
+### Funzioni principali (0.9.x)
+
+Radio integrata con nome RDS, musica con lettore interno, schermata Veicolo (porte, cinture, sensori,
+dati motore, clima), retromarcia con telecamera, comandi vocali offline in 6 lingue, interfaccia
+tradotta (it/en/fr/de/es/pt), limite tocchi in marcia, procedura guidata al primo avvio.
 
 ### Novità 0.6.0
 
