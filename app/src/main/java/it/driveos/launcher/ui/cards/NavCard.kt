@@ -52,15 +52,10 @@ fun NavCard(
     onDestination: (String) -> Unit,
     modifier: Modifier = Modifier,
     onStop: (() -> Unit)? = null,
-    route: it.driveos.launcher.nav.NavRoute.Route? = null,
-    routeActive: String? = null,
-    location: android.location.Location? = null,
 ) {
     DashCard("Navigazione", Icons.Filled.Place, onOpenDetail, modifier, trailing = navEntry?.label) { size, wide ->
         when {
             navEntry == null -> NotConfigured(configured, size, onChooseApp)
-            (guidance != null || routeActive != null) && size != CardSize.COMPACT ->
-                MapGuidance(guidance, routeActive, route, location, navEntry, onResume, onStop)
             guidance != null -> Guidance(guidance, navEntry, size, onResume, onStop)
             else -> Idle(size, wide, recent, onOpenDetail, onHome, onWork, onDestination)
         }
@@ -81,38 +76,6 @@ private fun ColumnScope.NotConfigured(configured: Boolean, size: CardSize, onCho
         "Scegli app", Icons.Filled.Place, onChooseApp, Modifier.fillMaxWidth(),
         height = if (size == CardSize.COMPACT) 56.dp else 72.dp, primary = true,
     )
-}
-
-@Composable
-private fun ColumnScope.MapGuidance(
-    g: NavGuidance?, dest: String?, route: it.driveos.launcher.nav.NavRoute.Route?, location: android.location.Location?,
-    navEntry: AppEntry, onResume: () -> Unit, onStop: (() -> Unit)?,
-) {
-    val colors = MaterialTheme.colorScheme
-    val dark = colors.background.red + colors.background.green + colors.background.blue < 1.5f
-    Box(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(18.dp))) {
-        RouteMap(route, location, dark, Modifier.fillMaxSize())
-        // indicazione corrente sopra la mappa
-        Surface(shape = RoundedCornerShape(14.dp), color = colors.surface.copy(alpha = 0.92f),
-            modifier = Modifier.align(Alignment.TopStart).padding(8.dp).fillMaxWidth(0.9f)) {
-            Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                g?.icon?.let { Image(it, null, Modifier.size(48.dp)); Spacer(Modifier.width(10.dp)) }
-                Column {
-                    Text(g?.title?.ifBlank { null } ?: dest ?: "In navigazione", fontSize = 20.sp, fontWeight = FontWeight.Bold,
-                        maxLines = 1, overflow = TextOverflow.Ellipsis, color = colors.onSurface)
-                    val sub = g?.text?.takeIf { it.isNotBlank() }
-                        ?: route?.let { r -> "%.1f km · %d min".format(java.util.Locale.ITALY, r.distanceM / 1000, (r.durationS / 60).toInt()) }
-                        ?: "Calcolo il percorso…"
-                    Text(sub, fontSize = 15.sp, maxLines = 2, overflow = TextOverflow.Ellipsis, color = colors.onSurfaceVariant)
-                }
-            }
-        }
-    }
-    Spacer(Modifier.height(8.dp))
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        CardButton("Torna alla guida", Icons.Filled.PlayArrow, onResume, Modifier.weight(1.4f), height = 60.dp, primary = true)
-        if (onStop != null) CardButton("Termina", Icons.Filled.Close, onStop, Modifier.weight(1f), height = 60.dp)
-    }
 }
 
 @Composable
