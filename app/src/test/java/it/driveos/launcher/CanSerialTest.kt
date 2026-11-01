@@ -114,7 +114,7 @@ class CanQueryTest {
         org.junit.Assert.assertEquals("850", out["can:rpm"])
         org.junit.Assert.assertEquals("14.2", out["can:voltage"])
         org.junit.Assert.assertEquals("12.5", out["can:out_temp"])
-        org.junit.Assert.assertEquals("640", out["can:range_km"])
+        org.junit.Assert.assertEquals("640", out["can:odometer_km"])
         org.junit.Assert.assertEquals("38", out["can:fuel_l"])
     }
 }

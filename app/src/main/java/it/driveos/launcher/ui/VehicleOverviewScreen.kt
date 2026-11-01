@@ -59,7 +59,7 @@ data class VehicleOverviewState(
     val batteryV: String? = null,
     val rpm: String? = null,
     val fuelL: String? = null,
-    val rangeKm: String? = null,
+    val odometerKm: String? = null,
     val outTemp: String? = null,
     val belt: Boolean? = null,
     val parking: Boolean?,
@@ -153,7 +153,7 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onDebug: () -> Unit) {
                     Column(Modifier.padding(16.dp)) {
                         EngineLine("Batteria", state.batteryV?.let { "$it V" } ?: "—")
                         EngineLine("Carburante", state.fuelL?.let { "$it l" } ?: "—")
-                        EngineLine("Autonomia", state.rangeKm?.let { "$it km" } ?: "—")
+                        EngineLine("Km totali", state.odometerKm?.let { "$it km" } ?: "—")
                         EngineLine("Giri", state.rpm?.let { "$it giri/min" } ?: "—")
                         EngineLine("Temp. esterna", state.outTemp?.let { "$it °C" } ?: "—")
                         if (state.rpm == null) {

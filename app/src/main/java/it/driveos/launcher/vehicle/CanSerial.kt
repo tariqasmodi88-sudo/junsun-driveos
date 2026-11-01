@@ -118,7 +118,7 @@ object CanDecoder {
     const val SPEED = "can:speed"
     const val VOLTAGE = "can:voltage"
     const val OUT_TEMP = "can:out_temp"
-    const val RANGE_KM = "can:range_km"
+    const val ODOMETER_KM = "can:odometer_km"
     const val FUEL_L = "can:fuel_l"
     /** Byte della seriale che non sono un messaggio noto (probabili tasti dell'autoradio). */
     const val RAW_BYTES = "can:X"
@@ -161,13 +161,13 @@ object CanDecoder {
             }
             id == 0x41 && sub == 0x02 && len >= 13 -> {
                 // Schema letto dalla libreria della radio (libcan59.so, CCanVolkswagen::DealCarInfo):
-                // giri, velocita' x0.01, tensione x0.01, temp. esterna x0.1 (con segno), autonomia 24 bit, litri.
+                // giri, velocita' x0.01, tensione x0.01, temp. esterna x0.1 (con segno), chilometri totali 24 bit (verificato: 173952 = contachilometri), litri.
                 fun u16(i: Int) = ((d[i].toInt() and 0xFF) shl 8) or (d[i + 1].toInt() and 0xFF)
                 out[RPM] = u16(1).toString()
                 out[SPEED] = "%.0f".format(java.util.Locale.US, u16(3) / 100.0)
                 out[VOLTAGE] = "%.1f".format(java.util.Locale.US, u16(5) / 100.0)
                 out[OUT_TEMP] = "%.1f".format(java.util.Locale.US, u16(7).toShort() / 10.0)
-                out[RANGE_KM] = (((d[9].toInt() and 0xFF) shl 16) or ((d[10].toInt() and 0xFF) shl 8) or (d[11].toInt() and 0xFF)).toString()
+                out[ODOMETER_KM] = (((d[9].toInt() and 0xFF) shl 16) or ((d[10].toInt() and 0xFF) shl 8) or (d[11].toInt() and 0xFF)).toString()
                 out[FUEL_L] = (d[12].toInt() and 0xFF).toString()
                 return out // cambiano di continuo: niente riga grezza
             }

@@ -1126,7 +1126,7 @@ class MainActivity : ComponentActivity() {
                                     batteryV = vehicleSignals[CanDecoder.BATTERY_V] ?: vehicleSignals[CanDecoder.VOLTAGE],
                                     rpm = vehicleSignals[CanDecoder.RPM],
                                     fuelL = vehicleSignals[CanDecoder.FUEL_L],
-                                    rangeKm = vehicleSignals[CanDecoder.RANGE_KM],
+                                    odometerKm = vehicleSignals[CanDecoder.ODOMETER_KM],
                                     outTemp = vehicleSignals[CanDecoder.OUT_TEMP],
                                     belt = vehicleSignals[CanDecoder.BELT]?.let { it == "1" },
                                     rearLevels = CanDecoder.sensorLevels(vehicleSignals, CanDecoder.REAR_SENSORS),
