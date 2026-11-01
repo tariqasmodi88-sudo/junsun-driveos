@@ -380,6 +380,9 @@ class MainActivity : ComponentActivity() {
         val loggingOn by VehicleLog.running.collectAsStateWithLifecycle()
         val loggedChanges by VehicleLog.changes.collectAsStateWithLifecycle()
         val speedKmh by driveApp.speedWatcher.speedKmh.collectAsStateWithLifecycle()
+        val gpsLocation by driveApp.speedWatcher.location.collectAsStateWithLifecycle()
+        val navRoute by it.driveos.launcher.nav.NavRoute.route.collectAsStateWithLifecycle()
+        val navRouteActive by it.driveos.launcher.nav.NavRoute.active.collectAsStateWithLifecycle()
         val parked by driveApp.speedWatcher.parked.collectAsStateWithLifecycle()
         var debugFromOverview by remember { mutableStateOf(false) }
         var overviewAuto by remember { mutableStateOf(false) } // aperta in automatico (si richiude da sola)
@@ -703,6 +706,12 @@ class MainActivity : ComponentActivity() {
         val musicEntry = apps.firstOrNull { it.key == s.musicApp }
         val sourceEntry = media?.let { m -> apps.firstOrNull { it.key.packageName == m.packageName } }
         val guidance = s.navApp?.packageName?.let { guidanceMap[it] } ?: guidanceMap.values.firstOrNull()
+        // la guida di Waze/Maps e' finita (notifica sparita): via anche il percorso in Home
+        val hadGuidance = remember { booleanArrayOf(false) }
+        LaunchedEffect(guidance != null) {
+            if (guidance != null) hadGuidance[0] = true
+            else if (hadGuidance[0]) { hadGuidance[0] = false; it.driveos.launcher.nav.NavRoute.stop() }
+        }
         val audioSources = remember(apps, declaredAudio, s.musicApp) {
             apps.filter { MediaSources.isLikelyAudio(it.label, it.key.packageName, declaredAudio, s.musicApp?.packageName) }
         }
@@ -782,6 +791,9 @@ class MainActivity : ComponentActivity() {
             }
             val result = Launcher.navigate(context, nav.packageName, destination)
             if (result is LaunchResult.Ok) {
+                it.driveos.launcher.nav.NavRoute.start(destination) {
+                    driveApp.speedWatcher.location.value?.let { l -> l.latitude to l.longitude }
+                }
                 scope.launch { repo.addRecentDestination(destination) }
                 navQuery = ""
             }
@@ -899,7 +911,13 @@ class MainActivity : ComponentActivity() {
                                         onHome = { goHome() },
                                         onWork = { goWork() },
                                         onDestination = { navigateTo(it) },
-                                        onStop = { guidance?.let { g -> if (!NavGuidanceStore.stop(g)) message("L'app di navigazione non offre il comando per terminare: aprila e chiudi il percorso da lì.") } },
+                                        onStop = {
+                                            it.driveos.launcher.nav.NavRoute.stop()
+                                            guidance?.let { g -> if (!NavGuidanceStore.stop(g)) message("L'app di navigazione non offre il comando per terminare: aprila e chiudi il percorso da lì.") }
+                                        },
+                                        route = navRoute,
+                                        routeActive = navRouteActive,
+                                        location = gpsLocation,
                                     )
                                     CardType.MUSIC -> MusicCard(
                                         access = mediaAccess,

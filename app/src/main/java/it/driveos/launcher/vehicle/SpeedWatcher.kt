@@ -29,9 +29,13 @@ class SpeedWatcher(context: Context) {
     val parked: StateFlow<Boolean> = _parked.asStateFlow()
 
     private var running = false
+    private val _location = MutableStateFlow<Location?>(null)
+    /** Ultima posizione GPS (per la mappa del percorso). */
+    val location: StateFlow<Location?> = _location.asStateFlow()
 
     private val listener = object : LocationListener {
         override fun onLocationChanged(location: Location) {
+            _location.value = location
             if (!location.hasSpeed()) return
             val kmh = location.speed * 3.6
             _speedKmh.value = kmh
