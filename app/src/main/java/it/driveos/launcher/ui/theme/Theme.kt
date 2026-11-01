@@ -1,5 +1,8 @@
 package it.driveos.launcher.ui.theme
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -15,7 +18,7 @@ val AccentColors = listOf(
     Color(0xFFE57373), // rosso
     Color(0xFFB39DDB), // viola
 )
-val AccentNames = listOf("Azzurro", "Verde", "Ambra", "Rosso", "Viola")
+val AccentNames = listOf(tr("Azzurro"), tr("Verde"), tr("Ambra"), tr("Rosso"), tr("Viola"))
 
 private fun darker(c: Color) = Color(red = c.red * 0.55f, green = c.green * 0.55f, blue = c.blue * 0.55f, alpha = 1f)
 

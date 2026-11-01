@@ -1,5 +1,8 @@
 package it.driveos.launcher.ui
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,19 +47,19 @@ fun KeysScreen(
 ) {
     val colors = MaterialTheme.colorScheme
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Tasti e volante", onBack)
+        ScreenHeader(tr("Tasti e volante"), onBack)
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 4.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text("Tocca «Impara», poi premi il tasto (dell'autoradio o del volante) entro 8 secondi. " +
-                "Funziona solo con i tasti che passano dalla seriale dell'auto.",
+            Text(tr("Tocca «Impara», poi premi il tasto (dell'autoradio o del volante) entro 8 secondi. ") +
+                tr("Funziona solo con i tasti che passano dalla seriale dell'auto."),
                 fontSize = 14.sp, color = colors.onSurfaceVariant)
             message?.let {
                 Surface(shape = RoundedCornerShape(14.dp), color = colors.primary.copy(alpha = 0.14f), modifier = Modifier.fillMaxWidth()) {
                     Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(it, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = colors.onSurface, modifier = Modifier.weight(1f))
-                        if (learning != null) Text("Annulla", fontSize = 15.sp, color = colors.error,
+                        if (learning != null) Text(tr("Annulla"), fontSize = 15.sp, color = colors.error,
                             modifier = Modifier.clickableNoRipple(onCancel).padding(start = 12.dp))
                     }
                 }
@@ -69,17 +72,17 @@ fun KeysScreen(
                     Row(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(a.label, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
-                            Text(b?.let { "${it.signal} = ${it.value}" } ?: "non assegnato", fontSize = 12.sp,
+                            Text(b?.let { "${it.signal} = ${it.value}" } ?: tr("non assegnato"), fontSize = 12.sp,
                                 fontFamily = FontFamily.Monospace, color = colors.onSurfaceVariant,
                                 maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                         if (b != null) {
-                            Text("Cancella", fontSize = 14.sp, color = colors.error,
+                            Text(tr("Cancella"), fontSize = 14.sp, color = colors.error,
                                 modifier = Modifier.clickableNoRipple { onClear(a) }.padding(end = 14.dp))
                         }
                         Surface(onClick = { onLearn(a) }, shape = RoundedCornerShape(12.dp),
                             color = colors.primary, contentColor = colors.onPrimary) {
-                            Text(if (learning == a) "In ascolto…" else "Impara", fontSize = 15.sp, fontWeight = FontWeight.Medium,
+                            Text(if (learning == a) tr("In ascolto…") else tr("Impara"), fontSize = 15.sp, fontWeight = FontWeight.Medium,
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp))
                         }
                     }

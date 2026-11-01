@@ -1,5 +1,8 @@
 package it.driveos.launcher.ui.detail
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -56,29 +59,29 @@ fun CalendarDetailScreen(
     val groups = remember(state.events, today) { AgendaFormatter.groupByDay(state.events, Instant.now(), zone) }
 
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Agenda", onBack) {
-            CardButton("Apri Calendar", Icons.Filled.DateRange, onOpenCalendarApp, Modifier.widthIn(max = 300.dp), height = 56.dp)
+        ScreenHeader(tr("Agenda"), onBack) {
+            CardButton(tr("Apri Calendar"), Icons.Filled.DateRange, onOpenCalendarApp, Modifier.widthIn(max = 300.dp), height = 56.dp)
         }
         Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
             when {
                 !state.permission -> {
-                    Text("Mostra qui gli impegni del tuo Google Calendar.", fontSize = 22.sp, color = colors.onSurface)
-                    Text("DriveOS legge soltanto: non crea né modifica eventi.", fontSize = 17.sp, color = colors.onSurfaceVariant)
+                    Text(tr("Mostra qui gli impegni del tuo Google Calendar."), fontSize = 22.sp, color = colors.onSurface)
+                    Text(tr("DriveOS legge soltanto: non crea né modifica eventi."), fontSize = 17.sp, color = colors.onSurfaceVariant)
                     Spacer(Modifier.height(16.dp))
-                    CardButton("Collega calendario", Icons.Filled.DateRange, onConnect, Modifier.widthIn(max = 360.dp).fillMaxWidth(), height = 72.dp, primary = true)
+                    CardButton(tr("Collega calendario"), Icons.Filled.DateRange, onConnect, Modifier.widthIn(max = 360.dp).fillMaxWidth(), height = 72.dp, primary = true)
                 }
 
                 state.calendars == 0 -> {
-                    Text("Nessun calendario sincronizzato su questa radio.", fontSize = 22.sp, color = colors.onSurface)
+                    Text(tr("Nessun calendario sincronizzato su questa radio."), fontSize = 22.sp, color = colors.onSurface)
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "In Impostazioni Android → Account aggiungi il tuo account Google e attiva la sincronizzazione " +
-                            "di Calendar. Se l'opzione Calendar non c'è, installa Google Calendar dal Play Store e riprova.",
+                        tr("In Impostazioni Android → Account aggiungi il tuo account Google e attiva la sincronizzazione ") +
+                            tr("di Calendar. Se l'opzione Calendar non c'è, installa Google Calendar dal Play Store e riprova."),
                         fontSize = 18.sp, color = colors.onSurfaceVariant,
                     )
                 }
 
-                groups.isEmpty() -> Text("Nessun impegno nei prossimi 14 giorni.", fontSize = 22.sp, color = colors.onSurfaceVariant)
+                groups.isEmpty() -> Text(tr("Nessun impegno nei prossimi 14 giorni."), fontSize = 22.sp, color = colors.onSurfaceVariant)
 
                 else -> LazyColumn(contentPadding = PaddingValues(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     groups.forEach { (day, events) ->
@@ -115,7 +118,7 @@ fun CalendarDetailScreen(
                                         }
                                     }
                                     if (e.location.isNotBlank()) {
-                                        CardButton("Naviga", Icons.Filled.Place, { onNavigate(e.location) }, Modifier.padding(horizontal = 10.dp), height = 56.dp, primary = true)
+                                        CardButton(tr("Naviga"), Icons.Filled.Place, { onNavigate(e.location) }, Modifier.padding(horizontal = 10.dp), height = 56.dp, primary = true)
                                     }
                                 }
                             }

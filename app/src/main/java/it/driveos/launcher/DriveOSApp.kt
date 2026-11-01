@@ -59,6 +59,8 @@ class DriveOSApp : Application() {
         super.onCreate()
         CrashLog.install(this)
         settingsRepository = SettingsRepository(this)
+        it.driveos.launcher.i18n.I18n.load(this)
+        it.driveos.launcher.i18n.I18n.lang = runCatching { kotlinx.coroutines.runBlocking { settingsRepository.settings.first().voiceLang } }.getOrDefault("it")
         appRepository = AppRepository(this)
         mediaRepository = MediaRepository(this)
         calendarRepository = CalendarRepository(this)

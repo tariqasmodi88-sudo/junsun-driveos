@@ -1,5 +1,8 @@
 package it.driveos.launcher.ui.detail
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -70,7 +73,7 @@ fun NavDetailScreen(
 ) {
     val colors = MaterialTheme.colorScheme
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Navigazione", onBack) {
+        ScreenHeader(tr("Navigazione"), onBack) {
             Surface(onClick = onChooseApp, shape = RoundedCornerShape(16.dp), color = colors.surfaceVariant) {
                 Row(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                     if (navEntry != null) {
@@ -78,7 +81,7 @@ fun NavDetailScreen(
                         Spacer(Modifier.width(10.dp))
                     }
                     Text(
-                        navEntry?.let { "${it.label} · Cambia" } ?: "Scegli app di navigazione",
+                        navEntry?.let { trf("{0} · Cambia", it.label) } ?: tr("Scegli app di navigazione"),
                         fontSize = 17.sp,
                         color = colors.onSurface,
                         maxLines = 1,
@@ -97,10 +100,10 @@ fun NavDetailScreen(
                         onValueChange = onQueryChange,
                         singleLine = true,
                         textStyle = TextStyle(fontSize = 22.sp, color = colors.onSurface),
-                        placeholder = { Text("Indirizzo o luogo", fontSize = 20.sp) },
+                        placeholder = { Text(tr("Indirizzo o luogo"), fontSize = 20.sp) },
                         leadingIcon = { Icon(Icons.Filled.Search, null, Modifier.size(28.dp)) },
                         trailingIcon = {
-                            if (query.isNotEmpty()) IconButton(onClick = { onQueryChange("") }) { Icon(Icons.Filled.Clear, "Cancella") }
+                            if (query.isNotEmpty()) IconButton(onClick = { onQueryChange("") }) { Icon(Icons.Filled.Clear, tr("Cancella")) }
                         },
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
                         keyboardActions = KeyboardActions(onGo = { if (query.isNotBlank()) onNavigate(query) }),
@@ -108,12 +111,12 @@ fun NavDetailScreen(
                         modifier = Modifier.weight(1f),
                     )
                     if (voiceAvailable) CardButton(null, MicIcon, onVoice, Modifier.width(76.dp), height = 64.dp)
-                    CardButton("Vai", Icons.Filled.PlayArrow, { if (query.isNotBlank()) onNavigate(query) }, height = 64.dp, primary = true)
+                    CardButton(tr("Vai"), Icons.Filled.PlayArrow, { if (query.isNotBlank()) onNavigate(query) }, height = 64.dp, primary = true)
                 }
                 Spacer(Modifier.height(14.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    PlaceTile("Casa", homeAddress, Icons.Filled.Home, onHome, onEditHome, Modifier.weight(1f))
-                    PlaceTile("Lavoro", workAddress, Icons.Filled.Star, onWork, onEditWork, Modifier.weight(1f))
+                    PlaceTile(tr("Casa"), homeAddress, Icons.Filled.Home, onHome, onEditHome, Modifier.weight(1f))
+                    PlaceTile(tr("Lavoro"), workAddress, Icons.Filled.Star, onWork, onEditWork, Modifier.weight(1f))
                 }
                 Spacer(Modifier.height(14.dp))
                 if (guidance != null) {
@@ -124,13 +127,13 @@ fun NavDetailScreen(
                             Text(guidance.text, fontSize = 19.sp, color = colors.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
                             if (guidance.subText.isNotBlank()) Text(guidance.subText, fontSize = 17.sp, color = colors.primary, maxLines = 1)
                             Spacer(Modifier.weight(1f))
-                            CardButton("Torna alla guida", Icons.Filled.PlayArrow, onOpenApp, Modifier.fillMaxWidth(), height = 64.dp, primary = true)
+                            CardButton(tr("Torna alla guida"), Icons.Filled.PlayArrow, onOpenApp, Modifier.fillMaxWidth(), height = 64.dp, primary = true)
                         }
                     }
                 } else {
                     Spacer(Modifier.weight(1f))
                     if (navEntry != null) {
-                        CardButton("Apri ${navEntry.label}", Icons.Filled.PlayArrow, onOpenApp, Modifier.fillMaxWidth(), height = 64.dp)
+                        CardButton(trf("Apri {0}", navEntry.label), Icons.Filled.PlayArrow, onOpenApp, Modifier.fillMaxWidth(), height = 64.dp)
                     }
                 }
             }
@@ -138,7 +141,7 @@ fun NavDetailScreen(
                 Text("RECENTI", fontSize = 13.sp, letterSpacing = 1.2.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurfaceVariant)
                 Spacer(Modifier.height(8.dp))
                 if (recent.isEmpty()) {
-                    Text("Le destinazioni cercate compariranno qui.", fontSize = 18.sp, color = colors.onSurfaceVariant)
+                    Text(tr("Le destinazioni cercate compariranno qui."), fontSize = 18.sp, color = colors.onSurfaceVariant)
                 } else {
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(recent, key = { it }) { dest ->
@@ -153,7 +156,7 @@ fun NavDetailScreen(
                                     Spacer(Modifier.width(14.dp))
                                     Text(dest, fontSize = 19.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, color = colors.onSurface, modifier = Modifier.weight(1f))
                                     IconButton(onClick = { onRemoveRecent(dest) }, modifier = Modifier.size(64.dp)) {
-                                        Icon(Icons.Filled.Clear, "Rimuovi", tint = colors.onSurfaceVariant)
+                                        Icon(Icons.Filled.Clear, tr("Rimuovi"), tint = colors.onSurfaceVariant)
                                     }
                                 }
                             }
@@ -182,7 +185,7 @@ private fun PlaceTile(
             Column(Modifier.weight(1f)) {
                 Text(title, fontSize = 21.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
                 Text(
-                    address.ifBlank { "Tocca per impostare" },
+                    address.ifBlank { tr("Tocca per impostare") },
                     fontSize = 15.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -191,7 +194,7 @@ private fun PlaceTile(
             }
             Box(Modifier.size(64.dp), contentAlignment = Alignment.Center) {
                 IconButton(onClick = onEdit, modifier = Modifier.size(64.dp)) {
-                    Icon(Icons.Filled.Edit, "Modifica $title", tint = colors.onSurfaceVariant)
+                    Icon(Icons.Filled.Edit, trf("Modifica {0}", title), tint = colors.onSurfaceVariant)
                 }
             }
         }

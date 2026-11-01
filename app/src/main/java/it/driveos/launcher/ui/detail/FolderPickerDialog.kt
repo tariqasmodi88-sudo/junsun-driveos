@@ -1,5 +1,8 @@
 package it.driveos.launcher.ui.detail
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -33,15 +36,15 @@ fun FolderPickerDialog(onPick: (String) -> Unit, onDismiss: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Scegli la cartella", fontSize = 24.sp) },
+        title = { Text(tr("Scegli la cartella"), fontSize = 24.sp) },
         text = {
             val list = folders
             when {
-                list == null -> Text("Cerco la musica…", fontSize = 18.sp)
-                list.isEmpty() -> Text("Nessun brano trovato sul dispositivo.", fontSize = 18.sp)
+                list == null -> Text(tr("Cerco la musica…"), fontSize = 18.sp)
+                list.isEmpty() -> Text(tr("Nessun brano trovato sul dispositivo."), fontSize = 18.sp)
                 else -> LazyColumn(Modifier.heightIn(max = 360.dp)) {
                     item {
-                        Text("Tutti i brani", fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = colors.primary,
+                        Text(tr("Tutti i brani"), fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = colors.primary,
                             modifier = Modifier.fillMaxWidth().clickable { onPick("") }.padding(vertical = 14.dp))
                     }
                     items(list, key = { it.path }) { f ->
@@ -53,6 +56,6 @@ fun FolderPickerDialog(onPick: (String) -> Unit, onDismiss: () -> Unit) {
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Chiudi", fontSize = 18.sp) } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(tr("Chiudi"), fontSize = 18.sp) } },
     )
 }

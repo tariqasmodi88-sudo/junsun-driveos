@@ -1,5 +1,8 @@
 package it.driveos.launcher.ui
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -63,16 +66,16 @@ fun AppDrawerScreen(
     }
 
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Applicazioni", onBack) {
+        ScreenHeader(tr("Applicazioni"), onBack) {
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
                 singleLine = true,
-                placeholder = { Text("Cerca app") },
+                placeholder = { Text(tr("Cerca app")) },
                 leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                 trailingIcon = {
                     if (query.isNotEmpty()) {
-                        IconButton(onClick = { query = "" }) { Icon(Icons.Filled.Clear, contentDescription = "Cancella") }
+                        IconButton(onClick = { query = "" }) { Icon(Icons.Filled.Clear, contentDescription = tr("Cancella")) }
                     }
                 },
                 shape = RoundedCornerShape(16.dp),
@@ -80,7 +83,7 @@ fun AppDrawerScreen(
             )
         }
         Text(
-            "Tocca per aprire · tieni premuto per aggiungere o togliere dai preferiti",
+            tr("Tocca per aprire · tieni premuto per aggiungere o togliere dai preferiti"),
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 24.dp),
@@ -88,7 +91,7 @@ fun AppDrawerScreen(
         if (filtered.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
-                    if (!loaded) "Caricamento…" else "Nessuna app trovata.",
+                    if (!loaded) tr("Caricamento…") else tr("Nessuna app trovata."),
                     fontSize = 18.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -100,12 +103,12 @@ fun AppDrawerScreen(
                 contentPadding = PaddingValues(16.dp),
             ) {
                 if (query.isBlank()) {
-                    item(key = "h_driveos", span = { GridItemSpan(maxLineSpan) }) { SectionLabel("DriveOS") }
+                    item(key = "h_driveos", span = { GridItemSpan(maxLineSpan) }) { SectionLabel(tr("DriveOS")) }
                     item(key = "t_settings") { SettingsTile(onClick = onOpenSettings) }
                     item(key = "h_apps0", span = { GridItemSpan(maxLineSpan) }) { Spacer(Modifier.height(4.dp)) }
                 }
                 if (favoriteEntries.isNotEmpty()) {
-                    item(key = "h_fav", span = { GridItemSpan(maxLineSpan) }) { SectionLabel("Preferiti") }
+                    item(key = "h_fav", span = { GridItemSpan(maxLineSpan) }) { SectionLabel(tr("Preferiti")) }
                     items(favoriteEntries, key = { "f_" + it.key.encode() }) { entry ->
                         AppTile(
                             entry = entry,
@@ -114,7 +117,7 @@ fun AppDrawerScreen(
                             onLongClick = { onToggleFavorite(entry.key) },
                         )
                     }
-                    item(key = "h_all", span = { GridItemSpan(maxLineSpan) }) { SectionLabel("Tutte le app") }
+                    item(key = "h_all", span = { GridItemSpan(maxLineSpan) }) { SectionLabel(tr("Tutte le app")) }
                 }
                 items(filtered, key = { it.key.encode() }) { entry ->
                     AppTile(
@@ -143,7 +146,7 @@ private fun SettingsTile(onClick: () -> Unit) {
                 modifier = Modifier.size(34.dp))
         }
         Spacer(Modifier.height(6.dp))
-        Text("Impostazioni", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+        Text(tr("Impostazioni"), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
     }
 }
 

@@ -1,5 +1,8 @@
 package it.driveos.launcher.ui
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,15 +43,15 @@ fun DriveLockOverlay(lockedUntil: Long) {
     Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.88f)), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
             Icon(Icons.Filled.Warning, null, Modifier.size(72.dp), tint = Color(0xFFFFB020))
-            Text("Concentrati sulla strada", fontSize = 40.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            Text("Troppe interazioni durante la guida.\nPotrai usare di nuovo lo schermo tra:", fontSize = 20.sp,
+            Text(tr("Concentrati sulla strada"), fontSize = 40.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text(tr("Troppe interazioni durante la guida.\nPotrai usare di nuovo lo schermo tra:"), fontSize = 20.sp,
                 color = Color.White.copy(alpha = 0.8f), textAlign = TextAlign.Center)
             Box(contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(progress = { left / (DriveLock.LOCK_SECONDS * 1000f) }, modifier = Modifier.size(110.dp),
                     strokeWidth = 8.dp, color = MaterialTheme.colorScheme.primary)
                 Text("$secs", fontSize = 44.sp, fontWeight = FontWeight.Bold, color = Color.White)
             }
-            Text("Comandi vocali e tasti al volante restano attivi.", fontSize = 16.sp, color = Color.White.copy(alpha = 0.6f))
+            Text(tr("Comandi vocali e tasti al volante restano attivi."), fontSize = 16.sp, color = Color.White.copy(alpha = 0.6f))
         }
     }
 }

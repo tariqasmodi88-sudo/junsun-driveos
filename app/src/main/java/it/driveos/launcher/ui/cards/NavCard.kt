@@ -1,5 +1,8 @@
 package it.driveos.launcher.ui.cards
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.Image
@@ -53,7 +56,7 @@ fun NavCard(
     modifier: Modifier = Modifier,
     onStop: (() -> Unit)? = null,
 ) {
-    DashCard("Navigazione", Icons.Filled.Place, {}, modifier, trailing = navEntry?.label) { size, wide ->
+    DashCard(tr("Navigazione"), Icons.Filled.Place, {}, modifier, trailing = navEntry?.label) { size, wide ->
         when {
             navEntry == null -> NotConfigured(configured, size, onChooseApp)
             guidance != null -> Guidance(guidance, navEntry, size, onResume, onStop)
@@ -66,14 +69,14 @@ fun NavCard(
 private fun ColumnScope.NotConfigured(configured: Boolean, size: CardSize, onChooseApp: () -> Unit) {
     if (size != CardSize.COMPACT) {
         Text(
-            if (configured) "L'app scelta non è più installata." else "Scegli l'app con cui navigare.",
+            if (configured) tr("L'app scelta non è più installata.") else tr("Scegli l'app con cui navigare."),
             fontSize = 20.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.weight(1f))
     }
     CardButton(
-        "Scegli app", Icons.Filled.Place, onChooseApp, Modifier.fillMaxWidth(),
+        tr("Scegli app"), Icons.Filled.Place, onChooseApp, Modifier.fillMaxWidth(),
         height = if (size == CardSize.COMPACT) 56.dp else 72.dp, primary = true,
     )
 }
@@ -96,7 +99,7 @@ private fun ColumnScope.Guidance(g: NavGuidance, navEntry: AppEntry, size: CardS
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Text(
-                g.title.ifBlank { "In navigazione" },
+                g.title.ifBlank { tr("In navigazione") },
                 fontSize = if (compact) 20.sp else if (size == CardSize.LARGE) 34.sp else 26.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
@@ -121,8 +124,8 @@ private fun ColumnScope.Guidance(g: NavGuidance, navEntry: AppEntry, size: CardS
         }
         Spacer(Modifier.weight(1f))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            CardButton("Torna alla guida", Icons.Filled.PlayArrow, onResume, Modifier.weight(1.4f), height = 72.dp, primary = true)
-            if (onStop != null) CardButton("Termina", Icons.Filled.Close, onStop, Modifier.weight(1f), height = 72.dp)
+            CardButton(tr("Torna alla guida"), Icons.Filled.PlayArrow, onResume, Modifier.weight(1.4f), height = 72.dp, primary = true)
+            if (onStop != null) CardButton(tr("Termina"), Icons.Filled.Close, onStop, Modifier.weight(1f), height = 72.dp)
         }
     }
 }
@@ -140,30 +143,30 @@ private fun ColumnScope.Idle(
     val colors = MaterialTheme.colorScheme
     when (size) {
         CardSize.COMPACT -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            CardButton("Casa", Icons.Filled.Home, onHome, Modifier.weight(1f), height = 56.dp, primary = true)
-            CardButton(if (wide) "Cerca" else null, Icons.Filled.Search, onSearch, Modifier.weight(1f), height = 56.dp)
+            CardButton(tr("Casa"), Icons.Filled.Home, onHome, Modifier.weight(1f), height = 56.dp, primary = true)
+            CardButton(if (wide) tr("Cerca") else null, Icons.Filled.Search, onSearch, Modifier.weight(1f), height = 56.dp)
         }
 
         CardSize.REGULAR -> {
-            Text("Dove andiamo?", fontSize = 24.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface, maxLines = 1)
+            Text(tr("Dove andiamo?"), fontSize = 24.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface, maxLines = 1)
             Spacer(Modifier.weight(1f))
             if (wide) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    CardButton("Casa", Icons.Filled.Home, onHome, Modifier.weight(1f), height = 68.dp, primary = true)
-                    CardButton("Lavoro", Icons.Filled.Star, onWork, Modifier.weight(1f), height = 68.dp)
-                    CardButton("Cerca", Icons.Filled.Search, onSearch, Modifier.weight(1f), height = 68.dp)
+                    CardButton(tr("Casa"), Icons.Filled.Home, onHome, Modifier.weight(1f), height = 68.dp, primary = true)
+                    CardButton(tr("Lavoro"), Icons.Filled.Star, onWork, Modifier.weight(1f), height = 68.dp)
+                    CardButton(tr("Cerca"), Icons.Filled.Search, onSearch, Modifier.weight(1f), height = 68.dp)
                 }
             } else {
-                CardButton("Casa", Icons.Filled.Home, onHome, Modifier.fillMaxWidth(), height = 64.dp, primary = true)
+                CardButton(tr("Casa"), Icons.Filled.Home, onHome, Modifier.fillMaxWidth(), height = 64.dp, primary = true)
                 Spacer(Modifier.height(10.dp))
-                CardButton("Lavoro", Icons.Filled.Star, onWork, Modifier.fillMaxWidth(), height = 64.dp)
+                CardButton(tr("Lavoro"), Icons.Filled.Star, onWork, Modifier.fillMaxWidth(), height = 64.dp)
                 Spacer(Modifier.height(10.dp))
-                CardButton("Cerca", Icons.Filled.Search, onSearch, Modifier.fillMaxWidth(), height = 64.dp)
+                CardButton(tr("Cerca"), Icons.Filled.Search, onSearch, Modifier.fillMaxWidth(), height = 64.dp)
             }
         }
 
         CardSize.LARGE -> {
-            Text("Dove andiamo?", fontSize = 32.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface, maxLines = 1)
+            Text(tr("Dove andiamo?"), fontSize = 32.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface, maxLines = 1)
             Spacer(Modifier.height(14.dp))
             Surface(
                 onClick = onSearch,
@@ -174,13 +177,13 @@ private fun ColumnScope.Idle(
                 Row(Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.Search, null, tint = colors.onSurfaceVariant, modifier = Modifier.size(28.dp))
                     Spacer(Modifier.width(14.dp))
-                    Text("Cerca indirizzo o luogo", fontSize = 20.sp, color = colors.onSurfaceVariant, maxLines = 1)
+                    Text(tr("Cerca indirizzo o luogo"), fontSize = 20.sp, color = colors.onSurfaceVariant, maxLines = 1)
                 }
             }
             Spacer(Modifier.height(12.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                CardButton("Casa", Icons.Filled.Home, onHome, Modifier.weight(1f), height = 76.dp, primary = true)
-                CardButton("Lavoro", Icons.Filled.Star, onWork, Modifier.weight(1f), height = 76.dp)
+                CardButton(tr("Casa"), Icons.Filled.Home, onHome, Modifier.weight(1f), height = 76.dp, primary = true)
+                CardButton(tr("Lavoro"), Icons.Filled.Star, onWork, Modifier.weight(1f), height = 76.dp)
             }
             if (recent.isNotEmpty()) {
                 Spacer(Modifier.height(12.dp))

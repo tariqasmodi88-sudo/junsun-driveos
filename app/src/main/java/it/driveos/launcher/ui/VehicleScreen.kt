@@ -1,5 +1,8 @@
 package it.driveos.launcher.ui
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -71,7 +74,7 @@ fun VehicleScreen(
     val canSignals = signals.filterKeys { it.startsWith("can:") }
 
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Veicolo", onBack) {}
+        ScreenHeader(tr("Veicolo"), onBack) {}
         exportStatus?.let {
             Text(it, fontSize = 14.sp, color = colors.primary, modifier = Modifier.padding(horizontal = 20.dp))
         }
@@ -79,19 +82,19 @@ fun VehicleScreen(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 4.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Secondary("Tasti e volante (impara i tasti)", Modifier.fillMaxWidth()) { onOpenKeys() }
+            Secondary(tr("Tasti e volante (impara i tasti)"), Modifier.fillMaxWidth()) { onOpenKeys() }
 
             Surface(shape = RoundedCornerShape(16.dp), color = if (canSerialOn) colors.primary.copy(alpha = 0.14f) else colors.surface,
                 modifier = Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text("Seriale auto", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
+                        Text(tr("Seriale auto"), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
                         Text(
-                            if (canSerialOn) "Attiva · ${canSignals.size} valori letti. Porte, baule, freno a mano, retromarcia, batteria, sensori."
-                            else "Spenta. Accendila per leggere porte, baule, freno a mano e batteria.",
+                            if (canSerialOn) trf("Attiva · {0} valori letti. Porte, baule, freno a mano, retromarcia, batteria, sensori.", canSignals.size)
+                            else tr("Spenta. Accendila per leggere porte, baule, freno a mano e batteria."),
                             fontSize = 14.sp, color = colors.onSurfaceVariant,
                         )
-                        Text("Sola lettura. Se la radio nativa si comporta male, spegni qui.",
+                        Text(tr("Sola lettura. Se la radio nativa si comporta male, spegni qui."),
                             fontSize = 13.sp, color = colors.onSurfaceVariant)
                     }
                     androidx.compose.material3.Switch(checked = canSerialOn, onCheckedChange = onToggleCanSerial)
@@ -102,8 +105,8 @@ fun VehicleScreen(
                 modifier = Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text("Telecamera posteriore", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
-                        Text(if (rearCameraOn) "Montata: in retromarcia DriveOS mostra immagine, linee guida e sensori." else "Non montata: in retromarcia solo i sensori.",
+                        Text(tr("Telecamera posteriore"), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
+                        Text(if (rearCameraOn) tr("Montata: in retromarcia DriveOS mostra immagine, linee guida e sensori.") else tr("Non montata: in retromarcia solo i sensori."),
                             fontSize = 14.sp, color = colors.onSurfaceVariant)
                     }
                     androidx.compose.material3.Switch(checked = rearCameraOn, onCheckedChange = onToggleRearCamera)
@@ -114,8 +117,8 @@ fun VehicleScreen(
                 modifier = Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text("Limite tocchi in marcia", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
-                        Text(if (touchLimitOn) "Attivo: oltre i 6 tocchi ravvicinati, schermo bloccato 10 s (come Android Auto)." else "Spento: nessun limite durante la guida.",
+                        Text(tr("Limite tocchi in marcia"), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
+                        Text(if (touchLimitOn) tr("Attivo: oltre i 6 tocchi ravvicinati, schermo bloccato 10 s (come Android Auto).") else tr("Spento: nessun limite durante la guida."),
                             fontSize = 14.sp, color = colors.onSurfaceVariant)
                     }
                     androidx.compose.material3.Switch(checked = touchLimitOn, onCheckedChange = onToggleTouchLimit)
@@ -126,8 +129,8 @@ fun VehicleScreen(
                 modifier = Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text("Sensori di parcheggio anteriori", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
-                        Text(if (frontSensorsOn) "Montati: si disegnano a bassa velocità." else "Non montati: non si disegnano.",
+                        Text(tr("Sensori di parcheggio anteriori"), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
+                        Text(if (frontSensorsOn) tr("Montati: si disegnano a bassa velocità.") else tr("Non montati: non si disegnano."),
                             fontSize = 14.sp, color = colors.onSurfaceVariant)
                     }
                     androidx.compose.material3.Switch(checked = frontSensorsOn, onCheckedChange = onToggleFrontSensors)
@@ -137,11 +140,11 @@ fun VehicleScreen(
             Surface(shape = RoundedCornerShape(16.dp), color = if (logsGranted) colors.primary.copy(alpha = 0.14f) else colors.surface,
                 modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp)) {
-                    Text(if (logsGranted) "Lettura log Junsun: attiva ✓" else "Lettura log Junsun: non attiva",
+                    Text(if (logsGranted) tr("Lettura log Junsun: attiva ✓") else tr("Lettura log Junsun: non attiva"),
                         fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
                     if (!logsGranted) {
                         Spacer(Modifier.height(6.dp))
-                        Text("Serve per radio e finestre Junsun. Si concede una volta via ADB, poi riapri DriveOS:",
+                        Text(tr("Serve per radio e finestre Junsun. Si concede una volta via ADB, poi riapri DriveOS:"),
                             fontSize = 14.sp, color = colors.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                         androidx.compose.foundation.text.selection.SelectionContainer {

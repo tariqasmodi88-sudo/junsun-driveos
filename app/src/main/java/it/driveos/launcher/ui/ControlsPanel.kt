@@ -1,5 +1,8 @@
 package it.driveos.launcher.ui
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,18 +53,18 @@ fun ControlsPanel(
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
 
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("Controlli rapidi", fontSize = 20.sp, fontWeight = FontWeight.SemiBold,
+                Text(tr("Controlli rapidi"), fontSize = 20.sp, fontWeight = FontWeight.SemiBold,
                     color = colors.onSurface, modifier = Modifier.weight(1f))
                 Surface(onClick = onClose, shape = RoundedCornerShape(12.dp), color = colors.surfaceVariant,
                     modifier = Modifier.height(44.dp).width(80.dp)) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Filled.KeyboardArrowUp, "Chiudi", tint = colors.onSurface)
+                        Icon(Icons.Filled.KeyboardArrowUp, tr("Chiudi"), tint = colors.onSurface)
                     }
                 }
             }
 
             // Volume
-            Text("Volume   ${volume.percent}%", fontSize = 16.sp, fontWeight = FontWeight.Medium, color = colors.onSurface)
+            Text(trf("Volume   {0}%", volume.percent), fontSize = 16.sp, fontWeight = FontWeight.Medium, color = colors.onSurface)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 StepButton("−") { onVolumeStep(-1) }
                 Slider(
@@ -75,7 +78,7 @@ fun ControlsPanel(
             }
 
             // Luminosità
-            Text("Luminosità" + if (!canSystemBrightness) " (solo DriveOS)" else "",
+            Text(tr("Luminosità") + if (!canSystemBrightness) tr(" (solo DriveOS)") else "",
                 fontSize = 16.sp, fontWeight = FontWeight.Medium, color = colors.onSurface)
             Slider(
                 value = if (brightness < 0f) 0.5f else brightness,
@@ -87,7 +90,7 @@ fun ControlsPanel(
             Surface(onClick = onOpenSoundSettings, shape = RoundedCornerShape(12.dp),
                 color = colors.surfaceVariant, contentColor = colors.onSurface, modifier = Modifier.fillMaxWidth().height(48.dp)) {
                 Box(contentAlignment = Alignment.Center) {
-                    Text("Impostazioni audio di sistema", fontSize = 15.sp)
+                    Text(tr("Impostazioni audio di sistema"), fontSize = 15.sp)
                 }
             }
         }
@@ -117,15 +120,15 @@ fun QuickBar(
     val colors = MaterialTheme.colorScheme
     Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-        QuickChip("Veicolo", Modifier.weight(1f), onVehicle)
-        QuickChip("Radio", Modifier.weight(1f), onRadio)
+        QuickChip(tr("Veicolo"), Modifier.weight(1f), onVehicle)
+        QuickChip(tr("Radio"), Modifier.weight(1f), onRadio)
         Surface(onClick = onControls, shape = RoundedCornerShape(14.dp), color = colors.surfaceVariant,
             contentColor = colors.onSurface, modifier = Modifier.weight(1f).height(44.dp)) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center) {
                 Icon(Icons.Filled.KeyboardArrowDown, null, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("Volume $volumePercent%", fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+                Text(trf("Volume {0}%", volumePercent), fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 1)
             }
         }
     }

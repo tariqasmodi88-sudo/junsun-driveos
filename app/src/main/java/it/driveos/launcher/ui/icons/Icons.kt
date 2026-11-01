@@ -1,5 +1,8 @@
 package it.driveos.launcher.ui.icons
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -7,14 +10,14 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 
 /** Icone non presenti nel set "core" di Material, disegnate qui (forme standard). */
-val PauseIcon: ImageVector = ImageVector.Builder("Pausa", 24.dp, 24.dp, 24f, 24f).apply {
+val PauseIcon: ImageVector = ImageVector.Builder(tr("Pausa"), 24.dp, 24.dp, 24f, 24f).apply {
     path(fill = SolidColor(Color.Black)) {
         moveTo(6f, 19f); horizontalLineTo(10f); verticalLineTo(5f); horizontalLineTo(6f); close()
         moveTo(14f, 5f); verticalLineTo(19f); horizontalLineTo(18f); verticalLineTo(5f); close()
     }
 }.build()
 
-val RadioIcon: ImageVector = ImageVector.Builder("Radio", 24.dp, 24.dp, 24f, 24f).apply {
+val RadioIcon: ImageVector = ImageVector.Builder(tr("Radio"), 24.dp, 24.dp, 24f, 24f).apply {
     path(fill = SolidColor(Color.Black)) {
         // antenna + corpo radio con manopola
         moveTo(3.24f, 6.15f); curveTo(2.51f, 6.43f, 2.12f, 7.24f, 2.4f, 7.97f)
@@ -36,7 +39,7 @@ val RadioIcon: ImageVector = ImageVector.Builder("Radio", 24.dp, 24.dp, 24f, 24f
     }
 }.build()
 
-val MicIcon: ImageVector = ImageVector.Builder("Microfono", 24.dp, 24.dp, 24f, 24f).apply {
+val MicIcon: ImageVector = ImageVector.Builder(tr("Microfono"), 24.dp, 24.dp, 24f, 24f).apply {
     path(fill = SolidColor(Color.Black)) {
         moveTo(12f, 14f)
         curveTo(13.66f, 14f, 15f, 12.66f, 15f, 11f)
@@ -60,7 +63,7 @@ val MicIcon: ImageVector = ImageVector.Builder("Microfono", 24.dp, 24.dp, 24f, 2
     }
 }.build()
 
-val CarIcon: ImageVector = ImageVector.Builder("Veicolo", 24.dp, 24.dp, 24f, 24f).apply {
+val CarIcon: ImageVector = ImageVector.Builder(tr("Veicolo"), 24.dp, 24.dp, 24f, 24f).apply {
     path(fill = SolidColor(Color.Black)) {
         // sagoma auto (forma standard)
         moveTo(18.92f, 6.01f); curveTo(18.72f, 5.42f, 18.16f, 5f, 17.5f, 5f); horizontalLineTo(6.5f)

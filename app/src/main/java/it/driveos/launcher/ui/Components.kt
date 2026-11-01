@@ -1,5 +1,8 @@
 package it.driveos.launcher.ui
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -121,20 +124,20 @@ fun BottomBar(
     ) {
         // Home e Veicolo restano fermi; gli altri scorrono se non c'è spazio.
         val fixed = Modifier.width(116.dp).fillMaxHeight()
-        BigButton("Home", Icons.Filled.Home, onHome, fixed, selected = current == Screen.DASHBOARD)
-        BigButton("Veicolo", it.driveos.launcher.ui.icons.CarIcon, onVehicle, fixed, selected = current == Screen.OVERVIEW)
-        BigButton("Voce", Icons.Filled.Mic, onVoice, Modifier.width(100.dp).fillMaxHeight())
+        BigButton(tr("Home"), Icons.Filled.Home, onHome, fixed, selected = current == Screen.DASHBOARD)
+        BigButton(tr("Veicolo"), it.driveos.launcher.ui.icons.CarIcon, onVehicle, fixed, selected = current == Screen.OVERVIEW)
+        BigButton(tr("Voce"), Icons.Filled.Mic, onVoice, Modifier.width(100.dp).fillMaxHeight())
         Row(
             Modifier.weight(1f).fillMaxHeight().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             val m = Modifier.width(128.dp).fillMaxHeight()
-            BigButton("Naviga", Icons.Filled.Place, onNav, m)
-            BigButton("Radio", it.driveos.launcher.ui.icons.RadioIcon, onRadio, m, selected = current == Screen.RADIO)
-            BigButton("Musica", Icons.Filled.PlayArrow, onMusic, m, selected = current == Screen.MUSIC)
-            BigButton("Telefono", Icons.Filled.Phone, onPhone, m)
-            BigButton("Clima", Icons.Filled.AcUnit, onClimate, m, selected = current == Screen.CLIMATE)
-            BigButton("App", Icons.Filled.Menu, onApps, m, selected = current == Screen.APPS)
+            BigButton(tr("Naviga"), Icons.Filled.Place, onNav, m)
+            BigButton(tr("Radio"), it.driveos.launcher.ui.icons.RadioIcon, onRadio, m, selected = current == Screen.RADIO)
+            BigButton(tr("Musica"), Icons.Filled.PlayArrow, onMusic, m, selected = current == Screen.MUSIC)
+            BigButton(tr("Telefono"), Icons.Filled.Phone, onPhone, m)
+            BigButton(tr("Clima"), Icons.Filled.AcUnit, onClimate, m, selected = current == Screen.CLIMATE)
+            BigButton(tr("App"), Icons.Filled.Menu, onApps, m, selected = current == Screen.APPS)
         }
     }
 }
@@ -190,7 +193,7 @@ fun ScreenHeader(title: String, onBack: () -> Unit, trailing: @Composable RowSco
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onBack, modifier = Modifier.size(56.dp)) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro", modifier = Modifier.size(30.dp))
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = tr("Indietro"), modifier = Modifier.size(30.dp))
         }
         Spacer(Modifier.width(8.dp))
         Text(title, fontSize = 26.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground)
@@ -220,7 +223,7 @@ fun AppTile(
             if (isFavorite) {
                 Icon(
                     Icons.Filled.Star,
-                    contentDescription = "Preferito",
+                    contentDescription = tr("Preferito"),
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(22.dp).align(Alignment.TopEnd),
                 )
@@ -269,20 +272,20 @@ fun AppPickerDialog(
             value = query,
             onValueChange = { query = it },
             singleLine = true,
-            placeholder = { Text("Cerca") },
+            placeholder = { Text(tr("Cerca")) },
             leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(8.dp))
         LazyColumn(Modifier.fillMaxWidth().heightIn(max = 400.dp).weight(1f, fill = false)) {
-            item { PickerRow(null, "Nessuna (non configurata)", selected == null) { onPick(null) } }
+            item { PickerRow(null, tr("Nessuna (non configurata)"), selected == null) { onPick(null) } }
             items(filtered, key = { it.key.encode() }) { entry ->
                 PickerRow(entry.icon, entry.label, entry.key == selected) { onPick(entry) }
             }
         }
         Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            TextButton(onClick = onDismiss) { Text("Chiudi", fontSize = 17.sp) }
+            TextButton(onClick = onDismiss) { Text(tr("Chiudi"), fontSize = 17.sp) }
         }
     }
 }
@@ -314,13 +317,13 @@ fun RadioPresetDialog(
     var freq by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     DriveDialog(onDismiss) {
-        Text("Aggiungi canale", fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
+        Text(tr("Aggiungi canale"), fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(16.dp))
         OutlinedTextField(
             value = freq,
             onValueChange = { freq = it },
             singleLine = true,
-            label = { Text("Frequenza FM (es. 101.5)") },
+            label = { Text(tr("Frequenza FM (es. 101.5)")) },
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
         )
@@ -329,17 +332,17 @@ fun RadioPresetDialog(
             value = name,
             onValueChange = { name = it },
             singleLine = true,
-            label = { Text("Nome (es. Radio Deejay)") },
+            label = { Text(tr("Nome (es. Radio Deejay)")) },
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { if (freq.isNotBlank()) onConfirm(freq, name) }),
         )
         Spacer(Modifier.height(20.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            TextButton(onClick = onDismiss) { Text("Annulla", fontSize = 17.sp) }
+            TextButton(onClick = onDismiss) { Text(tr("Annulla"), fontSize = 17.sp) }
             Spacer(Modifier.width(8.dp))
             Button(onClick = { onConfirm(freq, name) }, enabled = freq.isNotBlank()) {
-                Text("Salva", fontSize = 17.sp)
+                Text(tr("Salva"), fontSize = 17.sp)
             }
         }
     }
@@ -369,7 +372,7 @@ fun TextInputDialog(
         )
         Spacer(Modifier.height(20.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            TextButton(onClick = onDismiss) { Text("Annulla", fontSize = 17.sp) }
+            TextButton(onClick = onDismiss) { Text(tr("Annulla"), fontSize = 17.sp) }
             Spacer(Modifier.width(8.dp))
             Button(onClick = { onConfirm(value.trim()) }, enabled = value.isNotBlank()) {
                 Text(confirmLabel, fontSize = 17.sp)

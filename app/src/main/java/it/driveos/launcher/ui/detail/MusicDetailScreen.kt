@@ -1,5 +1,8 @@
 package it.driveos.launcher.ui.detail
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -80,30 +83,30 @@ fun MusicDetailScreen(
 ) {
     val colors = MaterialTheme.colorScheme
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Musica", onBack) {
+        ScreenHeader(tr("Musica"), onBack) {
             val app = sourceEntry ?: musicApp
-            if (onPickFolder != null) CardButton("Scegli musica", Icons.Filled.Folder, onPickFolder, Modifier.widthIn(max = 320.dp), height = 56.dp)
-            if (app != null && onPickFolder == null) CardButton("Apri ${app.label}", Icons.Filled.PlayArrow, onOpenSource, Modifier.widthIn(max = 320.dp), height = 56.dp)
+            if (onPickFolder != null) CardButton(tr("Scegli musica"), Icons.Filled.Folder, onPickFolder, Modifier.widthIn(max = 320.dp), height = 56.dp)
+            if (app != null && onPickFolder == null) CardButton(trf("Apri {0}", app.label), Icons.Filled.PlayArrow, onOpenSource, Modifier.widthIn(max = 320.dp), height = 56.dp)
         }
         Column(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 20.dp)) {
             when {
                 !access && media == null -> Column(Modifier.weight(1f)) {
-                    Text("Per mostrare brano, copertina e comandi serve l'accesso alle notifiche.", fontSize = 22.sp, color = colors.onSurface)
+                    Text(tr("Per mostrare brano, copertina e comandi serve l'accesso alle notifiche."), fontSize = 22.sp, color = colors.onSurface)
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "DriveOS lo usa solo per leggere il lettore attivo e le indicazioni del navigatore. Le altre notifiche vengono ignorate.",
+                        tr("DriveOS lo usa solo per leggere il lettore attivo e le indicazioni del navigatore. Le altre notifiche vengono ignorate."),
                         fontSize = 17.sp, color = colors.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(16.dp))
-                    CardButton("Attiva accesso", Icons.Filled.Lock, onGrantAccess, Modifier.widthIn(max = 360.dp).fillMaxWidth(), height = 72.dp, primary = true)
+                    CardButton(tr("Attiva accesso"), Icons.Filled.Lock, onGrantAccess, Modifier.widthIn(max = 360.dp).fillMaxWidth(), height = 72.dp, primary = true)
                 }
 
                 media == null || media.title.isBlank() -> Column(Modifier.weight(1f)) {
-                    Text("Nessuna riproduzione in corso.", fontSize = 24.sp, color = colors.onSurface)
-                    Text("Scegli una cartella di brani o avvia una sorgente.", fontSize = 18.sp, color = colors.onSurfaceVariant)
+                    Text(tr("Nessuna riproduzione in corso."), fontSize = 24.sp, color = colors.onSurface)
+                    Text(tr("Scegli una cartella di brani o avvia una sorgente."), fontSize = 18.sp, color = colors.onSurfaceVariant)
                     if (onPlayLast != null) {
                         Spacer(Modifier.height(12.dp))
-                        CardButton("Riproduci l'ultima cartella", Icons.Filled.PlayArrow, onPlayLast, Modifier.widthIn(max = 420.dp).fillMaxWidth(), height = 64.dp, primary = true)
+                        CardButton(tr("Riproduci l'ultima cartella"), Icons.Filled.PlayArrow, onPlayLast, Modifier.widthIn(max = 420.dp).fillMaxWidth(), height = 64.dp, primary = true)
                     }
                 }
 
@@ -145,11 +148,11 @@ fun MusicDetailScreen(
                                 Spacer(Modifier.height(14.dp))
                             }
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-                                RoundButton(Icons.Filled.Shuffle, "Casuale", 60.dp, active = shuffle, onClick = onShuffle)
-                                RoundButton(Icons.Filled.SkipPrevious, "Precedente", 72.dp, onClick = onPrevious)
-                                RoundButton(if (media.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow, "Play", 92.dp, primary = true, onClick = onPlayPause)
-                                RoundButton(Icons.Filled.SkipNext, "Successivo", 72.dp, onClick = onNext)
-                                RoundButton(if (repeat == 2) Icons.Filled.RepeatOne else Icons.Filled.Repeat, "Ripeti", 60.dp, active = repeat != 0, onClick = onRepeat)
+                                RoundButton(Icons.Filled.Shuffle, tr("Casuale"), 60.dp, active = shuffle, onClick = onShuffle)
+                                RoundButton(Icons.Filled.SkipPrevious, tr("Precedente"), 72.dp, onClick = onPrevious)
+                                RoundButton(if (media.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow, tr("Play"), 92.dp, primary = true, onClick = onPlayPause)
+                                RoundButton(Icons.Filled.SkipNext, tr("Successivo"), 72.dp, onClick = onNext)
+                                RoundButton(if (repeat == 2) Icons.Filled.RepeatOne else Icons.Filled.Repeat, tr("Ripeti"), 60.dp, active = repeat != 0, onClick = onRepeat)
                             }
                         }
                     }

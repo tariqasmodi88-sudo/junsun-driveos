@@ -1,5 +1,8 @@
 package it.driveos.launcher.ui.cards
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -71,15 +74,15 @@ fun MusicCard(
     onPrevious: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    DashCard("Musica", Icons.Filled.PlayArrow, onOpenDetail, modifier, trailing = (sourceEntry ?: musicApp)?.label) { size, wide ->
+    DashCard(tr("Musica"), Icons.Filled.PlayArrow, onOpenDetail, modifier, trailing = (sourceEntry ?: musicApp)?.label) { size, wide ->
         when {
             !access -> Message(
-                size, "Attiva l'accesso per vedere il brano in riproduzione.",
-                "Attiva", Icons.Filled.Lock, onGrantAccess,
+                size, tr("Attiva l'accesso per vedere il brano in riproduzione."),
+                tr("Attiva"), Icons.Filled.Lock, onGrantAccess,
             )
             media == null || media.title.isBlank() -> Message(
-                size, "Nessuna riproduzione in corso.",
-                musicApp?.let { "Apri ${it.label}" } ?: "Scegli app", Icons.Filled.PlayArrow, onOpenMusicApp,
+                size, tr("Nessuna riproduzione in corso."),
+                musicApp?.let { trf("Apri {0}", it.label) } ?: tr("Scegli app"), Icons.Filled.PlayArrow, onOpenMusicApp,
             )
             else -> Playing(media, sourceEntry, size, wide, onPlayPause, onNext, onPrevious)
         }

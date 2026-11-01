@@ -1,5 +1,8 @@
 package it.driveos.launcher.ui
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -74,14 +77,14 @@ fun DeviceInfoScreen(
                         data.toString(2).toByteArray())
                 }.getOrElse { Exporter.Result(emptyList(), listOf(it.message ?: "errore")) }
             }
-            status = if (result.ok) "Salvato in:\n• " + result.saved.joinToString("\n• ")
-            else "Esportazione non riuscita. " + result.errors.firstOrNull().orEmpty()
+            status = if (result.ok) tr("Salvato in:\n• ") + result.saved.joinToString(tr("\n• "))
+            else tr("Esportazione non riuscita. ") + result.errors.firstOrNull().orEmpty()
         }
     }
 
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Info dispositivo", onBack) {
-            ActionButton("Esporta JSON", Icons.Filled.Share, onClick = { export() },
+        ScreenHeader(tr("Info dispositivo"), onBack) {
+            ActionButton(tr("Esporta JSON"), Icons.Filled.Share, onClick = { export() },
                 modifier = Modifier.widthIn(max = 260.dp), highlighted = true)
         }
         Column(
@@ -93,7 +96,7 @@ fun DeviceInfoScreen(
             }
             val data = info
             if (data == null) {
-                Text("Raccolta informazioni in corso…", fontSize = 18.sp)
+                Text(tr("Raccolta informazioni in corso…"), fontSize = 18.sp)
             } else {
                 SelectionContainer {
                     Column {
@@ -108,14 +111,14 @@ fun DeviceInfoScreen(
                 }
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    "Il file esportato contiene app, launcher, servizi vocali, sensori, dispositivi di input, " +
-                        "i segnali del veicolo letti e l'eventuale ultimo errore. Viene salvato in Download/DriveOS " +
-                        "e sulla chiavetta USB (cartella Android/data/it.driveos.launcher/files).",
+                    tr("Il file esportato contiene app, launcher, servizi vocali, sensori, dispositivi di input, ") +
+                        tr("i segnali del veicolo letti e l'eventuale ultimo errore. Viene salvato in Download/DriveOS ") +
+                        tr("e sulla chiavetta USB (cartella Android/data/it.driveos.launcher/files)."),
                     fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 data.optString("ultimoCrash").takeIf { it.isNotBlank() }?.let {
                     Spacer(Modifier.height(16.dp))
-                    Text("Ultimo errore registrato", fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
+                    Text(tr("Ultimo errore registrato"), fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.error)
                     Text(it.take(600), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }

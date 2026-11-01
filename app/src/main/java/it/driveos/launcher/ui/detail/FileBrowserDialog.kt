@@ -1,5 +1,8 @@
 package it.driveos.launcher.ui.detail
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -49,7 +52,7 @@ fun isAudioFile(f: File) = f.isFile && AUDIO.any { f.name.lowercase().endsWith(i
 private class Listing(val dirs: List<File>, val files: List<File>, val error: String?)
 
 private fun roots(): List<Pair<String, File>> {
-    val out = mutableListOf("Memoria interna" to File("/storage/emulated/0"))
+    val out = mutableListOf(tr("Memoria interna") to File("/storage/emulated/0"))
     File("/storage").listFiles()?.filter { it.isDirectory && it.name != "emulated" && it.name != "self" }
         ?.forEach { out.add("USB / SD (${it.name})" to it) }
     return out
@@ -71,7 +74,7 @@ fun FileBrowserDialog(
             if (d == null) Listing(emptyList(), emptyList(), null)
             else {
                 val kids = d.listFiles()
-                if (kids == null) Listing(emptyList(), emptyList(), "Non riesco a leggere questa cartella (permesso file mancante?).")
+                if (kids == null) Listing(emptyList(), emptyList(), tr("Non riesco a leggere questa cartella (permesso file mancante?)."))
                 else Listing(
                     kids.filter { it.isDirectory && !it.name.startsWith(".") }.sortedBy { it.name.lowercase() },
                     kids.filter { isAudioFile(it) }.sortedBy { it.name.lowercase() },
@@ -89,12 +92,12 @@ fun FileBrowserDialog(
                             val d = dir!!
                             dir = if (roots().any { it.second.path == d.path }) null else d.parentFile
                         }, shape = RoundedCornerShape(14.dp), color = colors.surfaceVariant) {
-                            Icon(Icons.Filled.ArrowBack, "Su", Modifier.padding(12.dp).size(30.dp))
+                            Icon(Icons.Filled.ArrowBack, tr("Su"), Modifier.padding(12.dp).size(30.dp))
                         }
                         Spacer(Modifier.width(14.dp))
                     }
                     Column(Modifier.weight(1f)) {
-                        Text(dir?.name ?: "Scegli la musica", fontSize = 26.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(dir?.name ?: tr("Scegli la musica"), fontSize = 26.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         if (dir != null) Text(dir!!.path, fontSize = 14.sp, color = colors.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                     val l = listing
@@ -102,13 +105,13 @@ fun FileBrowserDialog(
                         Surface(onClick = { onPlay(l.files, 0, dir!!.path) }, shape = RoundedCornerShape(14.dp), color = colors.primary, contentColor = colors.onPrimary) {
                             Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Filled.PlayArrow, null, Modifier.size(26.dp)); Spacer(Modifier.width(6.dp))
-                                Text("Riproduci tutto", fontSize = 18.sp, fontWeight = FontWeight.Medium)
+                                Text(tr("Riproduci tutto"), fontSize = 18.sp, fontWeight = FontWeight.Medium)
                             }
                         }
                         Spacer(Modifier.width(10.dp))
                     }
                     Surface(onClick = onDismiss, shape = RoundedCornerShape(14.dp), color = colors.surfaceVariant) {
-                        Icon(Icons.Filled.Close, "Chiudi", Modifier.padding(12.dp).size(30.dp))
+                        Icon(Icons.Filled.Close, tr("Chiudi"), Modifier.padding(12.dp).size(30.dp))
                     }
                 }
                 Spacer(Modifier.height(12.dp))
@@ -119,9 +122,9 @@ fun FileBrowserDialog(
                             Entry(if (f.path.contains("emulated")) Icons.Filled.Folder else Icons.Filled.Usb, label, f.path) { dir = f }
                         }
                     }
-                    l == null -> Text("Apro la cartella…", fontSize = 20.sp)
+                    l == null -> Text(tr("Apro la cartella…"), fontSize = 20.sp)
                     l.error != null -> Text(l.error, fontSize = 20.sp, color = colors.error)
-                    l.dirs.isEmpty() && l.files.isEmpty() -> Text("Cartella vuota (nessun brano).", fontSize = 20.sp)
+                    l.dirs.isEmpty() && l.files.isEmpty() -> Text(tr("Cartella vuota (nessun brano)."), fontSize = 20.sp)
                     else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(l.dirs, key = { "d" + it.path }) { d -> Entry(Icons.Filled.Folder, d.name, null) { dir = d } }
                         items(l.files.size, key = { "f" + l.files[it].path }) { i ->

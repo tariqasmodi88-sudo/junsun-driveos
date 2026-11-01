@@ -1,5 +1,8 @@
 package it.driveos.launcher.ui
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,17 +37,17 @@ fun ClimateScreen(signals: Map<String, String>, onBack: () -> Unit) {
     val known = signals.containsKey(CanDecoder.AC_FAN)
     val power = signals[CanDecoder.AC_POWER] != "0"
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Clima", onBack)
+        ScreenHeader(tr("Clima"), onBack)
         if (!known) {
             Column(Modifier.fillMaxWidth().padding(24.dp)) {
-                Text("In attesa dei dati del climatizzatore.", fontSize = 24.sp, color = c.onSurface)
-                Text("Arrivano dalla centralina dell'auto appena tocchi un comando del clima (quadro acceso).",
+                Text(tr("In attesa dei dati del climatizzatore."), fontSize = 24.sp, color = c.onSurface)
+                Text(tr("Arrivano dalla centralina dell'auto appena tocchi un comando del clima (quadro acceso)."),
                     fontSize = 17.sp, color = c.onSurfaceVariant)
             }
             return@Column
         }
         Row(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            TempPanel("Guidatore", CanDecoder.acTemp(signals[CanDecoder.AC_TEMP_L]), signals[CanDecoder.SEAT_HEAT_L], power, Modifier.weight(1f))
+            TempPanel(tr("Guidatore"), CanDecoder.acTemp(signals[CanDecoder.AC_TEMP_L]), signals[CanDecoder.SEAT_HEAT_L], power, Modifier.weight(1f))
             Column(Modifier.weight(1.4f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Surface(shape = RoundedCornerShape(22.dp), color = c.surface, modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(18.dp)) {
@@ -62,9 +65,9 @@ fun ClimateScreen(signals: Map<String, String>, onBack: () -> Unit) {
                         Text("FLUSSO ARIA", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.5.sp, color = c.primary)
                         Spacer(Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Chip("Parabrezza", on(CanDecoder.AC_AIR_UP), Modifier.weight(1f))
-                            Chip("Viso", on(CanDecoder.AC_AIR_MID), Modifier.weight(1f))
-                            Chip("Piedi", on(CanDecoder.AC_AIR_DOWN), Modifier.weight(1f))
+                            Chip(tr("Parabrezza"), on(CanDecoder.AC_AIR_UP), Modifier.weight(1f))
+                            Chip(tr("Viso"), on(CanDecoder.AC_AIR_MID), Modifier.weight(1f))
+                            Chip(tr("Piedi"), on(CanDecoder.AC_AIR_DOWN), Modifier.weight(1f))
                         }
                     }
                 }
@@ -77,17 +80,17 @@ fun ClimateScreen(signals: Map<String, String>, onBack: () -> Unit) {
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Chip(if (on(CanDecoder.AC_DUAL)) "DUAL" else "SYNC", true, Modifier.weight(1f))
-                            Chip("Ricircolo", on(CanDecoder.AC_RECIRC), Modifier.weight(1f))
-                            Chip("MAX sbrin.", on(CanDecoder.AC_MAXDEF), Modifier.weight(1f))
+                            Chip(tr("Ricircolo"), on(CanDecoder.AC_RECIRC), Modifier.weight(1f))
+                            Chip(tr("MAX sbrin."), on(CanDecoder.AC_MAXDEF), Modifier.weight(1f))
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Chip("Lunotto", on(CanDecoder.AC_REARDEF), Modifier.weight(1f))
+                            Chip(tr("Lunotto"), on(CanDecoder.AC_REARDEF), Modifier.weight(1f))
                             Spacer(Modifier.weight(2.08f))
                         }
                     }
                 }
             }
-            TempPanel("Passeggero", CanDecoder.acTemp(signals[CanDecoder.AC_TEMP_R]), signals[CanDecoder.SEAT_HEAT_R], power, Modifier.weight(1f))
+            TempPanel(tr("Passeggero"), CanDecoder.acTemp(signals[CanDecoder.AC_TEMP_R]), signals[CanDecoder.SEAT_HEAT_R], power, Modifier.weight(1f))
         }
     }
 }
@@ -104,7 +107,7 @@ private fun TempPanel(label: String, temp: String?, seat: String?, power: Boolea
             }
             val lv = seat?.toIntOrNull() ?: 0
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Sedile riscaldato", fontSize = 14.sp, color = c.onSurfaceVariant)
+                Text(tr("Sedile riscaldato"), fontSize = 14.sp, color = c.onSurfaceVariant)
                 Spacer(Modifier.height(6.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     for (i in 1..3) Surface(shape = RoundedCornerShape(5.dp), color = if (i <= lv) Color3 else c.surfaceVariant,

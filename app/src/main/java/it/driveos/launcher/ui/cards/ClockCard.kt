@@ -1,5 +1,8 @@
 package it.driveos.launcher.ui.cards
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -32,7 +35,7 @@ fun rememberMinuteClock(): State<LocalDateTime> = produceState(initialValue = Lo
 
 fun formatTime(t: LocalDateTime): String = t.format(DateTimeFormatter.ofPattern("HH:mm"))
 
-fun formatDate(t: LocalDateTime, locale: Locale = Locale.getDefault()): String =
+fun formatDate(t: LocalDateTime, locale: Locale = it.driveos.launcher.i18n.I18n.locale): String =
     t.format(DateTimeFormatter.ofPattern("EEEE d MMMM", locale))
         .replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
 
@@ -70,7 +73,7 @@ fun ClockCard(onClick: () -> Unit, modifier: Modifier = Modifier, outTemp: Strin
                 )
                 // Temperatura esterna dalla centralina dell'auto (solo se arriva)
                 if (outTemp != null) Text(
-                    "Esterno " + outTemp.replace('.', ',') + " °C",
+                    tr("Esterno ") + outTemp.replace('.', ',') + " °C",
                     fontSize = dateSp,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,

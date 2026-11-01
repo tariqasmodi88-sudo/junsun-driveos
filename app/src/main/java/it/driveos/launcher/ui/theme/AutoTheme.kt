@@ -1,5 +1,8 @@
 package it.driveos.launcher.ui.theme
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import java.time.LocalDate
 import kotlin.math.acos
 import kotlin.math.cos
@@ -39,9 +42,9 @@ object SunTimes {
 
 /** Da dove viene la decisione chiaro/scuro in modalita' automatica (mostrato in Impostazioni). */
 enum class AutoSource(val label: String) {
-    LIGHTS("fari (segnale CAN collegato)"),
-    SYSTEM("modalità notte di Android"),
-    SUN("orario di alba e tramonto"),
+    LIGHTS(tr("fari (segnale CAN collegato)")),
+    SYSTEM(tr("modalità notte di Android")),
+    SUN(tr("orario di alba e tramonto")),
 }
 
 object AutoThemeResolver {

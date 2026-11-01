@@ -1,5 +1,8 @@
 package it.driveos.launcher.ui
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,10 +49,10 @@ fun SmartStartScreen(
     onBack: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
-    fun describe(key: AppKey?) = if (key == null) "Non configurata" else appLabel(key) ?: "App non trovata"
+    fun describe(key: AppKey?) = if (key == null) tr("Non configurata") else appLabel(key) ?: tr("App non trovata")
 
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Avvio intelligente", onBack)
+        ScreenHeader(tr("Avvio intelligente"), onBack)
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 4.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)) {
 
@@ -59,26 +62,26 @@ fun SmartStartScreen(
                     fontSize = 15.sp, fontWeight = FontWeight.Medium, color = colors.onSurface, modifier = Modifier.padding(14.dp))
             }
 
-            Text("Quando il telefono si collega in Bluetooth, DriveOS avvia da solo la musica " +
-                "(Spotify se c'è rete, altrimenti i brani locali) senza cambiare schermata.",
+            Text(tr("Quando il telefono si collega in Bluetooth, DriveOS avvia da solo la musica ") +
+                tr("(Spotify se c'è rete, altrimenti i brani locali) senza cambiare schermata."),
                 fontSize = 14.sp, color = colors.onSurfaceVariant)
 
-            ToggleRow("Attiva avvio intelligente", "Sostituisce AutoLink", settings.smartStartEnabled, onToggleEnabled)
-            ToggleRow("Avvia la musica", "Alla connessione del telefono", settings.smartStartMusic, onToggleMusic)
-            SettingRowLite("Musica online (streaming)", describe(settings.onlineMusicApp), onPickOnline)
-            SettingRowLite("Musica offline (locale)", describe(settings.offlineMusicApp), onPickOffline)
-            ToggleRow("Avvia la navigazione", "Apre l'app di navigazione scelta", settings.smartStartNav, onToggleNav)
-            ToggleRow("Collega CarPlay/Android Auto",
-                if (androidAutoInstalled) "Si collega in secondo piano: resti sulla Home DriveOS" else "Android Auto non risulta installato",
+            ToggleRow(tr("Attiva avvio intelligente"), tr("Sostituisce AutoLink"), settings.smartStartEnabled, onToggleEnabled)
+            ToggleRow(tr("Avvia la musica"), tr("Alla connessione del telefono"), settings.smartStartMusic, onToggleMusic)
+            SettingRowLite(tr("Musica online (streaming)"), describe(settings.onlineMusicApp), onPickOnline)
+            SettingRowLite(tr("Musica offline (locale)"), describe(settings.offlineMusicApp), onPickOffline)
+            ToggleRow(tr("Avvia la navigazione"), tr("Apre l'app di navigazione scelta"), settings.smartStartNav, onToggleNav)
+            ToggleRow(tr("Collega CarPlay/Android Auto"),
+                if (androidAutoInstalled) tr("Si collega in secondo piano: resti sulla Home DriveOS") else tr("Android Auto non risulta installato"),
                 settings.smartStartAndroidAuto, onToggleAndroidAuto)
 
             Spacer(Modifier.height(8.dp))
             Surface(onClick = onRunNow, shape = RoundedCornerShape(16.dp), color = colors.primary, contentColor = colors.onPrimary,
                 modifier = Modifier.fillMaxWidth().height(54.dp)) {
-                Box(contentAlignment = Alignment.Center) { Text("Avvia ora (prova)", fontSize = 17.sp, fontWeight = FontWeight.Medium) }
+                Box(contentAlignment = Alignment.Center) { Text(tr("Avvia ora (prova)"), fontSize = 17.sp, fontWeight = FontWeight.Medium) }
             }
-            Text("Nota: l'avvio della riproduzione è «best-effort» — alcune app partono solo se " +
-                "sono già state aperte almeno una volta dopo l'accensione.",
+            Text(tr("Nota: l'avvio della riproduzione è «best-effort» — alcune app partono solo se ") +
+                tr("sono già state aperte almeno una volta dopo l'accensione."),
                 fontSize = 13.sp, color = colors.onSurfaceVariant)
             Spacer(Modifier.height(16.dp))
         }

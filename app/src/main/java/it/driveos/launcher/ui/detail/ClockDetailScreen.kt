@@ -1,5 +1,8 @@
 package it.driveos.launcher.ui.detail
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -46,7 +49,7 @@ fun ClockDetailScreen(nextEvent: CalendarEvent?, onBack: () -> Unit) {
             if (nextEvent != null) {
                 Spacer(Modifier.height(20.dp))
                 Text(
-                    "Prossimo: ${shortWhen(nextEvent, zone, LocalDate.now(zone))} · ${nextEvent.title}",
+                    trf("Prossimo: {0} · {1}", shortWhen(nextEvent, zone, LocalDate.now(zone)), nextEvent.title),
                     fontSize = 22.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

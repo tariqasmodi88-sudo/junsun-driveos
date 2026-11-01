@@ -1,5 +1,8 @@
 package it.driveos.launcher
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import kotlinx.coroutines.flow.first
 import android.Manifest
 import androidx.compose.material3.Text
@@ -111,12 +114,12 @@ import java.time.ZoneId
 enum class Screen { DASHBOARD, APPS, SETTINGS, DEVICE_INFO, NAV, MUSIC, CALENDAR, CLOCK, VEHICLE, RADIO, SMART_START, OVERVIEW, KEYS, CLIMATE, REAR_CAM }
 
 private enum class PickerTarget(val title: String) {
-    NAV("App di navigazione"),
-    MUSIC("App musica"),
-    PHONE("App telefono"),
-    RADIO("App radio"),
-    ONLINE_MUSIC("App musica online (streaming)"),
-    OFFLINE_MUSIC("App musica offline (locale)"),
+    NAV(tr("App di navigazione")),
+    MUSIC(tr("App musica")),
+    PHONE(tr("App telefono")),
+    RADIO(tr("App radio")),
+    ONLINE_MUSIC(tr("App musica online (streaming)")),
+    OFFLINE_MUSIC(tr("App musica offline (locale)")),
 }
 
 private enum class TextTarget { HOME_ADDRESS, WORK_ADDRESS, LOCATION, SEARCH }
@@ -439,7 +442,7 @@ class MainActivity : ComponentActivity() {
 
         val locationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) driveApp.speedWatcher.start()
-            else message("Senza posizione la schermata veicolo si apre solo quando apri una portiera.")
+            else message(tr("Senza posizione la schermata veicolo si apre solo quando apri una portiera."))
         }
         val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
         var showFolders by remember { mutableStateOf(false) }
@@ -452,11 +455,11 @@ class MainActivity : ComponentActivity() {
         val storagePermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted && pendingFolders) { pendingFolders = false; showFolders = true }
             else if (granted) driveApp.mediaRepository.let { mr -> if (mr.lastFolder() != null) mr.playLastFolder() else mr.playFolder("") }
-            else message("Senza accesso ai file audio la musica del dispositivo non parte.")
+            else message(tr("Senza accesso ai file audio la musica del dispositivo non parte."))
         }
         val calendarPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             driveApp.calendarRepository.refresh()
-            if (!granted) message("Permesso negato. Puoi concederlo in Impostazioni Android → App → DriveOS → Autorizzazioni.")
+            if (!granted) message(tr("Permesso negato. Puoi concederlo in Impostazioni Android → App → DriveOS → Autorizzazioni."))
         }
         val voiceLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             val text = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
@@ -552,8 +555,8 @@ class MainActivity : ComponentActivity() {
             )
             val plan = SmartStart.plan(config, online)
             if (plan.isEmpty()) {
-                message(if (projectionOn) "CarPlay/Android Auto è già attivo: l'avvio intelligente non fa nulla per non sovrapporsi."
-                    else "Avvio intelligente: niente da fare (controlla le app scelte).")
+                message(if (projectionOn) tr("CarPlay/Android Auto è già attivo: l'avvio intelligente non fa nulla per non sovrapporsi.")
+                    else tr("Avvio intelligente: niente da fare (controlla le app scelte)."))
                 return
             }
             plan.forEach { action ->
@@ -795,7 +798,7 @@ class MainActivity : ComponentActivity() {
         fun radioPress(id: String, viaBridge: (() -> Boolean)? = null) {
             if (viaBridge?.invoke() == true) return
             if (!NativeRadio.press(context, id)) {
-                message(if (!WindowWatcher.enabled()) "Per comandare la radio attiva il servizio Accessibilità di DriveOS (Impostazioni → Veicolo)." else "Comando radio ancora in corso, riprova tra un attimo.")
+                message(if (!WindowWatcher.enabled()) tr("Per comandare la radio attiva il servizio Accessibilità di DriveOS (Impostazioni → Veicolo).") else tr("Comando radio ancora in corso, riprova tra un attimo."))
             }
         }
 
@@ -831,7 +834,7 @@ class MainActivity : ComponentActivity() {
 
         fun openNotificationAccess() {
             report(Launcher.openSystemSettings(context, Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-            message("Attiva DriveOS nell'elenco, poi torna indietro.")
+            message(tr("Attiva DriveOS nell'elenco, poi torna indietro."))
         }
 
         fun connectCalendar() {
@@ -842,10 +845,14 @@ class MainActivity : ComponentActivity() {
         // --- Comandi vocali offline (Vosk) ---
         var voiceOpen by remember { mutableStateOf(false) }
         var langDialog by remember { mutableStateOf(false) }
-        LaunchedEffect(s.voiceLang) { driveApp.voice.language = s.voiceLang }
+        LaunchedEffect(s.voiceLang) {
+            driveApp.voice.language = s.voiceLang
+            // lingua dell'interfaccia: si ridisegna tutto con le nuove scritte
+            if (it.driveos.launcher.i18n.I18n.lang != s.voiceLang) { it.driveos.launcher.i18n.I18n.lang = s.voiceLang; this@MainActivity.recreate() }
+        }
         if (langDialog) androidx.compose.material3.AlertDialog(
             onDismissRequest = { langDialog = false },
-            title = { Text("Lingua comandi vocali") },
+            title = { Text(tr("Lingua comandi vocali")) },
             text = {
                 Column {
                     it.driveos.launcher.voice.VoiceLanguages.all.forEach { l ->
@@ -855,10 +862,10 @@ class MainActivity : ComponentActivity() {
                                 scope.launch { repo.setVoiceLang(l.code) }
                             }.padding(vertical = 12.dp))
                     }
-                    Text("La nuova lingua si scarica (circa 40-50 MB) la prima volta che premi Voce.", fontSize = 14.sp)
+                    Text(tr("La nuova lingua si scarica (circa 40-50 MB) la prima volta che premi Voce."), fontSize = 14.sp)
                 }
             },
-            confirmButton = { androidx.compose.material3.TextButton(onClick = { langDialog = false }) { Text("Chiudi") } },
+            confirmButton = { androidx.compose.material3.TextButton(onClick = { langDialog = false }) { Text(tr("Chiudi")) } },
         )
         var voiceHeard by remember { mutableStateOf<String?>(null) }
         val voiceState by driveApp.voice.state.collectAsStateWithLifecycle()
@@ -884,7 +891,7 @@ class MainActivity : ComponentActivity() {
                     val preset = s.radioPresets.firstOrNull { p -> p.khz > 0 && VoiceCommands.normalize(p.name).replace(" ", "").let { n -> n.isNotEmpty() && (n.contains(q) || q.contains(n)) } }
                     val learned = driveApp.logcatReader.names.value.entries.firstOrNull { e -> VoiceCommands.normalize(e.value).replace(" ", "").let { n -> n.isNotEmpty() && (n.contains(q) || q.contains(n)) } }?.key
                     val khz = preset?.khz ?: learned
-                    if (khz != null) tuneTo(khz) else { openRadio(); message("Non trovo la stazione \"${cmd.name}\" tra quelle conosciute.") }
+                    if (khz != null) tuneTo(khz) else { openRadio(); message(trf("Non trovo la stazione \"{0}\" tra quelle conosciute.", cmd.name)) }
                 }
                 is VoiceCommand.Frequency -> tuneTo(cmd.khz)
                 VoiceCommand.Music -> { screen = Screen.MUSIC; if (driveApp.mediaRepository.media.value?.isPlaying != true && driveApp.mediaRepository.lastFolder() != null) driveApp.mediaRepository.playLastFolder() }
@@ -908,7 +915,7 @@ class MainActivity : ComponentActivity() {
             driveApp.voice.listen { text -> if (text.isBlank()) voiceHeard = null else handleVoice(text) }
         }
         val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            if (granted) listenNow() else { voiceOpen = false; message("Senza il permesso del microfono i comandi vocali non funzionano.") }
+            if (granted) listenNow() else { voiceOpen = false; message(tr("Senza il permesso del microfono i comandi vocali non funzionano.")) }
         }
         fun startOfflineVoice(forNav: Boolean = false) {
             voiceForNav = forNav
@@ -1011,7 +1018,7 @@ class MainActivity : ComponentActivity() {
                                         onWork = { goWork() },
                                         onDestination = { navigateTo(it) },
                                         onStop = {
-                                            guidance?.let { g -> if (!NavGuidanceStore.stop(g)) message("L'app di navigazione non offre il comando per terminare: aprila e chiudi il percorso da lì.") }
+                                            guidance?.let { g -> if (!NavGuidanceStore.stop(g)) message(tr("L'app di navigazione non offre il comando per terminare: aprila e chiudi il percorso da lì.")) }
                                         },
                                     )
                                     CardType.MUSIC -> MusicCard(
@@ -1068,8 +1075,8 @@ class MainActivity : ComponentActivity() {
                                 onSeek = { mediaRepo.seekTo(it) },
                                 shuffle = driveApp.mediaRepository.shuffle.collectAsStateWithLifecycle().value,
                                 repeat = driveApp.mediaRepository.repeat.collectAsStateWithLifecycle().value,
-                                onShuffle = { if (!driveApp.mediaRepository.toggleShuffle()) message("Questo lettore non permette di cambiare la riproduzione casuale.") },
-                                onRepeat = { if (!driveApp.mediaRepository.cycleRepeat()) message("Questo lettore non permette di cambiare la ripetizione.") },
+                                onShuffle = { if (!driveApp.mediaRepository.toggleShuffle()) message(tr("Questo lettore non permette di cambiare la riproduzione casuale.")) },
+                                onRepeat = { if (!driveApp.mediaRepository.cycleRepeat()) message(tr("Questo lettore non permette di cambiare la ripetizione.")) },
                                 onOpenSource = { openSource() },
                                 onPickFolder = {
                                     if (!it.driveos.launcher.media.LocalMusicService.hasPermission(context)) { pendingFolders = true; storagePermission.launch(it.driveos.launcher.media.LocalMusicService.permission()) }
@@ -1149,7 +1156,7 @@ class MainActivity : ComponentActivity() {
                                     runCatching {
                                         context.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                                             android.net.Uri.parse("package:" + context.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                                    }.onFailure { message("Non riesco ad aprire la schermata dei permessi.") }
+                                    }.onFailure { message(tr("Non riesco ad aprire la schermata dei permessi.")) }
                                 },
                                 onAccessibility = { report(Launcher.openSystemSettings(context, Settings.ACTION_ACCESSIBILITY_SETTINGS)) },
                                 onToggleKeepHome = { scope.launch { repo.setKeepHome(!s.keepHome) } },
@@ -1162,9 +1169,9 @@ class MainActivity : ComponentActivity() {
                                 onVoiceUpdate = {
                                     scope.launch {
                                         if (!driveApp.voice.installed()) { startOfflineVoice(); return@launch }
-                                        message("Controllo se c'e' una voce piu' recente…")
+                                        message(tr("Controllo se c'e' una voce piu' recente…"))
                                         if (driveApp.voice.updateAvailable()) { voiceOpen = true; driveApp.voice.install() }
-                                        else message("La voce e' gia' la piu' recente.")
+                                        else message(tr("La voce e' gia' la piu' recente."))
                                     }
                                 },
                                 onDeviceInfo = { screen = Screen.DEVICE_INFO },
@@ -1209,13 +1216,13 @@ class MainActivity : ComponentActivity() {
                                         val r = withContext(kotlinx.coroutines.Dispatchers.IO) {
                                             it.driveos.launcher.system.Exporter.save(context, "driveos_registro_$stamp.csv", "text/csv", bytes)
                                         }
-                                        vehicleExportStatus = if (r.ok) "Registro ($loggedChanges variazioni) salvato in: " + r.saved.joinToString(" · ")
-                                        else "Export registro non riuscito. " + r.errors.firstOrNull().orEmpty()
+                                        vehicleExportStatus = if (r.ok) trf("Registro ({0} variazioni) salvato in: ", loggedChanges) + r.saved.joinToString(" · ")
+                                        else tr("Export registro non riuscito. ") + r.errors.firstOrNull().orEmpty()
                                     }
                                 },
                                 onClearLog = {
                                     scope.launch { withContext(kotlinx.coroutines.Dispatchers.IO) { VehicleLog.clear(context) } }
-                                    vehicleExportStatus = "Registro azzerato."
+                                    vehicleExportStatus = tr("Registro azzerato.")
                                 },
                                 exportStatus = vehicleExportStatus,
                                 onBack = { if (debugFromOverview) { debugFromOverview = false; screen = Screen.OVERVIEW } else screen = Screen.SETTINGS },
@@ -1255,7 +1262,7 @@ class MainActivity : ComponentActivity() {
                                     val khz = bridgeKhz ?: radioState?.khz ?: vehicleSignals[LogcatParser.RADIO_FREQ]?.toIntOrNull()
                                     if (khz != null) {
                                         val p = RadioPreset(khz, stationNames[khz] ?: "FM ${RadioPreset(khz, "").displayFrequency()}", RadioBand.FM)
-                                        if (RadioPresetLogic.isFull(s.radioPresets, p)) message("Hai già 6 stazioni: rimuovine una.")
+                                        if (RadioPresetLogic.isFull(s.radioPresets, p)) message(tr("Hai già 6 stazioni: rimuovine una."))
                                         else scope.launch { driveApp.settingsRepository.setRadioPresets(RadioPresetLogic.add(s.radioPresets, p)) }
                                     }
                                 },
@@ -1394,19 +1401,19 @@ class MainActivity : ComponentActivity() {
 
             when (textDialog) {
                 TextTarget.SEARCH -> TextInputDialog(
-                    title = "Dove andiamo?",
+                    title = tr("Dove andiamo?"),
                     initial = "",
-                    placeholder = "Indirizzo o luogo",
-                    confirmLabel = "Vai",
+                    placeholder = tr("Indirizzo o luogo"),
+                    confirmLabel = tr("Vai"),
                     onConfirm = { value -> textDialog = null; if (value.isNotBlank()) navigateTo(value) },
                     onDismiss = { textDialog = null },
                 )
 
                 TextTarget.HOME_ADDRESS -> TextInputDialog(
-                    title = "Indirizzo di casa",
+                    title = tr("Indirizzo di casa"),
                     initial = s.homeAddress,
-                    placeholder = "Via, numero civico, città",
-                    confirmLabel = "Salva",
+                    placeholder = tr("Via, numero civico, città"),
+                    confirmLabel = tr("Salva"),
                     onConfirm = { value ->
                         scope.launch { repo.setHomeAddress(value) }
                         textDialog = null
@@ -1415,10 +1422,10 @@ class MainActivity : ComponentActivity() {
                 )
 
                 TextTarget.WORK_ADDRESS -> TextInputDialog(
-                    title = "Indirizzo di lavoro",
+                    title = tr("Indirizzo di lavoro"),
                     initial = s.workAddress,
-                    placeholder = "Via, numero civico, città",
-                    confirmLabel = "Salva",
+                    placeholder = tr("Via, numero civico, città"),
+                    confirmLabel = tr("Salva"),
                     onConfirm = { value ->
                         scope.launch { repo.setWorkAddress(value) }
                         textDialog = null
@@ -1427,17 +1434,17 @@ class MainActivity : ComponentActivity() {
                 )
 
                 TextTarget.LOCATION -> TextInputDialog(
-                    title = "Posizione (latitudine, longitudine)",
+                    title = tr("Posizione (latitudine, longitudine)"),
                     initial = if (s.latitude != 0.0 || s.longitude != 0.0) "${s.latitude}, ${s.longitude}" else "",
-                    placeholder = "es. 45.07, 7.69",
-                    confirmLabel = "Salva",
+                    placeholder = tr("es. 45.07, 7.69"),
+                    confirmLabel = tr("Salva"),
                     onConfirm = { value ->
                         val parts = value.split(",", ";").mapNotNull { it.trim().toDoubleOrNull() }
                         if (parts.size == 2 && parts[0] in -90.0..90.0 && parts[1] in -180.0..180.0) {
                             scope.launch { repo.setLocation(parts[0], parts[1]) }
                             textDialog = null
                         } else {
-                            message("Formato: latitudine, longitudine (es. 45.07, 7.69)")
+                            message(tr("Formato: latitudine, longitudine (es. 45.07, 7.69)"))
                         }
                     },
                     onDismiss = { textDialog = null },
@@ -1451,11 +1458,11 @@ class MainActivity : ComponentActivity() {
                     onConfirm = { frequency, name ->
                         val khz = RadioPresetLogic.parseFm(frequency)
                         if (khz == null) {
-                            message("Frequenza non valida (87.5 – 108.0 MHz).")
+                            message(tr("Frequenza non valida (87.5 – 108.0 MHz)."))
                         } else {
                             val label = name.ifBlank { "FM ${RadioPreset(khz, "").displayFrequency()}" }
                             if (RadioPresetLogic.isFull(s.radioPresets, RadioPreset(khz, label, RadioBand.FM))) {
-                                message("Hai già 6 stazioni: rimuovine una.")
+                                message(tr("Hai già 6 stazioni: rimuovine una."))
                                 radioDialog = false
                                 return@RadioPresetDialog
                             }

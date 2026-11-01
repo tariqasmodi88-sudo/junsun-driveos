@@ -1,5 +1,8 @@
 package it.driveos.launcher.ui
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -80,7 +83,7 @@ data class VehicleOverviewState(
     val rearRaw: List<Int>? = null,
 )
 
-private val DRAWN_ALERTS = setOf("Retromarcia", "Portiera", "Sensori parcheggio")
+private val DRAWN_ALERTS = setOf(tr("Retromarcia"), tr("Portiera"), tr("Sensori parcheggio"))
 private val Amber = Color(0xFFFFB020)
 private val Warn = Color(0xFFFF5A4E)
 private val Ok = Color(0xFF3DDC97)
@@ -100,14 +103,14 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onDebug: () -> Unit /* = 
             Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    SectionTitle("Stato")
+                    SectionTitle(tr("Stato"))
                 }
                 // Fari, portiere, baule, retromarcia e sensori sono già disegnati sull'auto: qui solo il resto.
-                StatusRow("Freno a mano", state.handbrake?.let { if (it) "tirato" else "giù" }, state.handbrake == true, Amber)
-                state.belt?.let { StatusRow("Cintura guida", if (it) "allacciata" else "slacciata", false, Ok) }
-                if (state.beltPassenger == false) StatusRow("Cintura passeggero", "slacciata", false, Ok)
-                StatusRow("Telefono", state.phone?.let { if (it) "collegato" else "scollegato" }, state.phone == true, Ok)
-                StatusRow("CarPlay/AA", if (state.projection) "attivo" else "no", state.projection, Ok)
+                StatusRow(tr("Freno a mano"), state.handbrake?.let { if (it) "tirato" else "giù" }, state.handbrake == true, Amber)
+                state.belt?.let { StatusRow(tr("Cintura guida"), if (it) "allacciata" else "slacciata", false, Ok) }
+                if (state.beltPassenger == false) StatusRow(tr("Cintura passeggero"), "slacciata", false, Ok)
+                StatusRow(tr("Telefono"), state.phone?.let { if (it) "collegato" else "scollegato" }, state.phone == true, Ok)
+                StatusRow(tr("CarPlay/AA"), if (state.projection) "attivo" else "no", state.projection, Ok)
                 StatusRow("Radio", state.radioKhz?.let { "%.1f MHz".format(it / 1000.0) }, false, c.primary)
             }
             // Home: questa schermata non ha la barra in basso
@@ -116,7 +119,7 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onDebug: () -> Unit /* = 
                 Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                     androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Filled.Home, null, Modifier.size(28.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Home", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                    Text(tr("Home"), fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
             }
@@ -125,9 +128,9 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onDebug: () -> Unit /* = 
             Box(Modifier.weight(0.3f).fillMaxHeight(), contentAlignment = Alignment.Center) {
                 CarTopView(state, Modifier.fillMaxSize())
                 Column(Modifier.align(Alignment.TopCenter), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(state.speedKmh?.let { "${it.toInt()} km/h" } ?: "— km/h",
+                    Text(state.speedKmh?.let { trf("{0} km/h", it.toInt()) } ?: tr("— km/h"),
                         fontSize = 30.sp, fontWeight = FontWeight.Bold, color = c.onBackground)
-                    Text(when { state.speedKmh == null -> if (state.gpsPermission) "In attesa del GPS" else "Serve il permesso posizione"; state.speedKmh < 2.0 -> "Veicolo fermo"; else -> "In marcia" },
+                    Text(when { state.speedKmh == null -> if (state.gpsPermission) tr("In attesa del GPS") else tr("Serve il permesso posizione"); state.speedKmh < 2.0 -> tr("Veicolo fermo"); else -> tr("In marcia") },
                         fontSize = 14.sp, color = c.onSurfaceVariant)
                 }
             }
@@ -135,7 +138,7 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onDebug: () -> Unit /* = 
             // --- Destra: spie e motore ---
             Column(Modifier.weight(0.34f).fillMaxHeight().verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                SectionTitle("Spie")
+                SectionTitle(tr("Spie"))
                 // Portiere, retromarcia e sensori sono già disegnati sull'auto: qui solo le vere spie (pneumatici, luci guaste…).
                 val spie = state.alerts.filter { it.label !in DRAWN_ALERTS }
                 if (spie.isEmpty()) {
@@ -143,7 +146,7 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onDebug: () -> Unit /* = 
                         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                             Box(Modifier.size(12.dp).background(Ok, CircleShape))
                             Spacer(Modifier.width(10.dp))
-                            Text("Nessuna spia attiva", fontSize = 17.sp, fontWeight = FontWeight.Medium, color = c.onSurface)
+                            Text(tr("Nessuna spia attiva"), fontSize = 17.sp, fontWeight = FontWeight.Medium, color = c.onSurface)
                         }
                     }
                 } else {
@@ -158,17 +161,17 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onDebug: () -> Unit /* = 
                     }
                 }
                 Spacer(Modifier.height(6.dp))
-                SectionTitle("Motore")
+                SectionTitle(tr("Motore"))
                 Surface(shape = RoundedCornerShape(16.dp), color = c.surface, modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp)) {
-                        EngineLine("Batteria", state.batteryV?.let { "$it V" } ?: "—")
-                        EngineLine("Carburante", state.fuelL?.let { "$it l" } ?: "—")
-                        EngineLine("Km totali", state.odometerKm?.let { "$it km" } ?: "—")
-                        EngineLine("Giri", state.rpm?.let { "$it giri/min" } ?: "—")
-                        EngineLine("Temp. esterna", state.outTemp?.let { "$it °C" } ?: "—")
+                        EngineLine(tr("Batteria"), state.batteryV?.let { "$it V" } ?: "—")
+                        EngineLine(tr("Carburante"), state.fuelL?.let { trf("{0} l", it) } ?: "—")
+                        EngineLine(tr("Km totali"), state.odometerKm?.let { trf("{0} km", it) } ?: "—")
+                        EngineLine(tr("Giri"), state.rpm?.let { trf("{0} giri/min", it) } ?: "—")
+                        EngineLine(tr("Temp. esterna"), state.outTemp?.let { "$it °C" } ?: "—")
                         if (state.rpm == null) {
                             Spacer(Modifier.height(8.dp))
-                            Text("In attesa dei dati motore dalla centralina (si chiedono ogni secondo a quadro acceso).",
+                            Text(tr("In attesa dei dati motore dalla centralina (si chiedono ogni secondo a quadro acceso)."),
                                 fontSize = 13.sp, color = c.onSurfaceVariant)
                         }
                     }
@@ -348,8 +351,8 @@ private fun DrawScope.drawDoors(left: Float, top: Float, w: Float, h: Float, ope
             drawLine(closedColor, Offset(x, y), Offset(x - dir * w * 0.12f, y), strokeWidth = 3f)
         }
     }
-    side(frontY, true, "ant. sx"); side(frontY, false, "ant. dx")
-    side(midY, true, "post. sx"); side(midY, false, "post. dx")
+    side(frontY, true, tr("ant. sx")); side(frontY, false, tr("ant. dx"))
+    side(midY, true, tr("post. sx")); side(midY, false, tr("post. dx"))
     // portellone: cerniera in alto, quando e' aperto il portellone e' disegnato pieno e sporge dietro l'auto
     drawLine(closedColor, Offset(left + w * 0.1f, rearY), Offset(left + w * 0.9f, rearY), strokeWidth = 3f)
     if (isOpen("baule")) {

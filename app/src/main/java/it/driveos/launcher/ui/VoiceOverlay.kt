@@ -1,5 +1,8 @@
 package it.driveos.launcher.ui
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,33 +47,33 @@ fun VoiceOverlay(state: OfflineVoice.State, lastHeard: String?, onInstall: () ->
                 }
                 when (state) {
                     is OfflineVoice.State.NotInstalled -> {
-                        Text("Comandi vocali offline", fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
-                        Text("Serve scaricare una volta il riconoscimento vocale italiano (circa 50 MB). Poi funziona anche senza internet.",
+                        Text(tr("Comandi vocali offline"), fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
+                        Text(tr("Serve scaricare una volta il riconoscimento vocale (circa 50 MB). Poi funziona anche senza internet."),
                             fontSize = 17.sp, color = c.onSurfaceVariant, textAlign = TextAlign.Center)
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Btn("Scarica ora", true, onInstall); Btn("Chiudi", false, onClose)
+                            Btn(tr("Scarica ora"), true, onInstall); Btn(tr("Chiudi"), false, onClose)
                         }
                     }
                     is OfflineVoice.State.Downloading -> {
-                        Text("Scarico la voce italiana… ${state.percent}%", fontSize = 20.sp)
+                        Text(trf("Scarico la voce… {0}%", state.percent), fontSize = 20.sp)
                         LinearProgressIndicator(progress = { state.percent / 100f }, modifier = Modifier.fillMaxWidth().height(8.dp))
-                        Text("Puoi chiudere: continua in sottofondo.", fontSize = 14.sp, color = c.onSurfaceVariant)
+                        Text(tr("Puoi chiudere: continua in sottofondo."), fontSize = 14.sp, color = c.onSurfaceVariant)
                     }
-                    is OfflineVoice.State.Loading -> Text("Preparo il riconoscimento…", fontSize = 20.sp)
+                    is OfflineVoice.State.Loading -> Text(tr("Preparo il riconoscimento…"), fontSize = 20.sp)
                     is OfflineVoice.State.Listening -> {
-                        Text("Ti ascolto…", fontSize = 24.sp, fontWeight = FontWeight.SemiBold, color = c.primary)
-                        Text(state.partial.ifBlank { "Es. \"portami a casa\", \"metti radio deejay\", \"prossima canzone\", \"alza il volume\"" },
+                        Text(tr("Ti ascolto…"), fontSize = 24.sp, fontWeight = FontWeight.SemiBold, color = c.primary)
+                        Text(state.partial.ifBlank { tr("Es. \"portami a casa\", \"metti radio deejay\", \"prossima canzone\", \"alza il volume\"") },
                             fontSize = if (state.partial.isBlank()) 15.sp else 24.sp, color = if (state.partial.isBlank()) c.onSurfaceVariant else c.onSurface,
                             textAlign = TextAlign.Center)
-                        Btn("Annulla", false, onClose)
+                        Btn(tr("Annulla"), false, onClose)
                     }
                     is OfflineVoice.State.Ready -> {
-                        Text(lastHeard?.let { "Non ho capito: \"$it\"" } ?: "Non ho sentito nulla.", fontSize = 19.sp, textAlign = TextAlign.Center)
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) { Btn("Riprova", true, onRetry); Btn("Chiudi", false, onClose) }
+                        Text(lastHeard?.let { trf("Non ho capito: \"{0}\"", it) } ?: tr("Non ho sentito nulla."), fontSize = 19.sp, textAlign = TextAlign.Center)
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) { Btn(tr("Riprova"), true, onRetry); Btn(tr("Chiudi"), false, onClose) }
                     }
                     is OfflineVoice.State.Error -> {
                         Text(state.message, fontSize = 18.sp, color = c.error, textAlign = TextAlign.Center)
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) { Btn("Riprova", true, onRetry); Btn("Chiudi", false, onClose) }
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) { Btn(tr("Riprova"), true, onRetry); Btn(tr("Chiudi"), false, onClose) }
                     }
                 }
                 Spacer(Modifier.height(2.dp))

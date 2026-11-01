@@ -1,5 +1,8 @@
 package it.driveos.launcher.ui
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -79,16 +82,16 @@ fun SettingsScreen(
     onAndroidSettings: () -> Unit,
     onDeviceInfo: () -> Unit,
     onBack: () -> Unit,
-    voiceLanguage: String = "Italiano",
+    voiceLanguage: String = tr("Italiano"),
     voiceModel: String? = null,
     onVoiceLanguage: () -> Unit = {},
     onVoiceUpdate: () -> Unit = {},
 ) {
     fun describe(key: AppKey?): String =
-        if (key == null) "Non configurata" else appLabel(key) ?: "App non trovata (${key.packageName})"
+        if (key == null) tr("Non configurata") else appLabel(key) ?: trf("App non trovata ({0})", key.packageName)
 
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Impostazioni", onBack)
+        ScreenHeader(tr("Impostazioni"), onBack)
         Column(
             Modifier
                 .fillMaxSize()
@@ -96,7 +99,7 @@ fun SettingsScreen(
                 .padding(horizontal = 24.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            SectionTitle("Schermata Home")
+            SectionTitle(tr("Schermata Home"))
             Row(
                 Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -106,47 +109,47 @@ fun SettingsScreen(
                 }
             }
 
-            SectionTitle("Veicolo e radio")
-            SettingRow("Schermata veicolo", "Auto vista dall'alto: portiere, fari, retro, sensori, spie", onOpenOverview)
-            SettingRow("Schermata veicolo automatica",
+            SectionTitle(tr("Veicolo e radio"))
+            SettingRow(tr("Schermata veicolo"), tr("Auto vista dall'alto: portiere, fari, retro, sensori, spie"), onOpenOverview)
+            SettingRow(tr("Schermata veicolo automatica"),
                 when {
-                    !autoOverview -> "Spenta: si apre solo a mano. Tocca per attivare"
-                    autoOverviewHasGps -> "Attiva: si apre quando l'auto è ferma o apri una portiera"
-                    else -> "Attiva solo con le portiere. Tocca e consenti la posizione per usarla da fermo"
+                    !autoOverview -> tr("Spenta: si apre solo a mano. Tocca per attivare")
+                    autoOverviewHasGps -> tr("Attiva: si apre quando l'auto è ferma o apri una portiera")
+                    else -> tr("Attiva solo con le portiere. Tocca e consenti la posizione per usarla da fermo")
                 }, onToggleAutoOverview)
-            SettingRow("Accessibilità DriveOS",
-                if (accessibilityOn) "Attiva: DriveOS vede le finestre Junsun e riporta la Home davanti"
-                else "Spenta: tocca, scegli DriveOS e attivala (serve per portiere, retro e CarPlay)", onAccessibility)
-            SettingRow("Mostra sopra altre app",
-                if (overlayGranted) "Consentita: DriveOS può tornare davanti da solo"
-                else "Non consentita: tocca e attivala per DriveOS (serve a riportare la Home davanti)", onOverlay)
-            SettingRow("Resta sulla Home DriveOS",
-                if (keepHome) "Sì: portiere, radar, retromarcia e CarPlay non coprono lo schermo"
-                else "No: le finestre Junsun restano sopra. Tocca per attivare", onToggleKeepHome)
-            SettingRow("Veicolo", "Seriale auto, sensori anteriori, limite tocchi, tasti volante", onOpenVehicle)
-            SettingRow("Radio integrata", "Sintonizzatore e canali memorizzati" + (settings.radioPresets.count { it.khz > 0 }.let { if (it > 0) " ($it)" else "" }), onOpenRadio)
-            SettingRow("Avvio intelligente (Bluetooth)",
-                if (smartStartEnabled) "Attivo: musica/nav all'arrivo del telefono" else "Spento: avvia musica e nav quando colleghi il telefono", onOpenSmartStart)
-            SettingRow("App radio (ripiego esterno)", describe(settings.radioApp), onPickRadio)
+            SettingRow(tr("Accessibilità DriveOS"),
+                if (accessibilityOn) tr("Attiva: DriveOS vede le finestre Junsun e riporta la Home davanti")
+                else tr("Spenta: tocca, scegli DriveOS e attivala (serve per portiere, retro e CarPlay)"), onAccessibility)
+            SettingRow(tr("Mostra sopra altre app"),
+                if (overlayGranted) tr("Consentita: DriveOS può tornare davanti da solo")
+                else tr("Non consentita: tocca e attivala per DriveOS (serve a riportare la Home davanti)"), onOverlay)
+            SettingRow(tr("Resta sulla Home DriveOS"),
+                if (keepHome) tr("Sì: portiere, radar, retromarcia e CarPlay non coprono lo schermo")
+                else tr("No: le finestre Junsun restano sopra. Tocca per attivare"), onToggleKeepHome)
+            SettingRow(tr("Veicolo"), tr("Seriale auto, sensori anteriori, limite tocchi, tasti volante"), onOpenVehicle)
+            SettingRow(tr("Radio integrata"), tr("Sintonizzatore e canali memorizzati") + (settings.radioPresets.count { it.khz > 0 }.let { if (it > 0) " ($it)" else "" }), onOpenRadio)
+            SettingRow(tr("Avvio intelligente (Bluetooth)"),
+                if (smartStartEnabled) tr("Attivo: musica/nav all'arrivo del telefono") else tr("Spento: avvia musica e nav quando colleghi il telefono"), onOpenSmartStart)
+            SettingRow(tr("App radio (ripiego esterno)"), describe(settings.radioApp), onPickRadio)
 
-            SectionTitle("App")
-            SettingRow("Navigazione", describe(settings.navApp), onPickNav)
-            SettingRow("Indirizzo di casa", settings.homeAddress.ifBlank { "Non impostato" }, onEditHome)
-            SettingRow("Indirizzo di lavoro", settings.workAddress.ifBlank { "Non impostato" }, onEditWork)
-            SettingRow("Musica", describe(settings.musicApp), onPickMusic)
-            SettingRow("Telefono", describe(settings.phoneApp), onPickPhone)
-            SettingRow("Lingua comandi vocali", voiceLanguage, onVoiceLanguage)
-            SettingRow("Aggiorna voce", voiceModel?.let { "Installata: $it · tocca per cercare una versione nuova" } ?: "Non ancora scaricata", onVoiceUpdate)
+            SectionTitle(tr("App"))
+            SettingRow(tr("Navigazione"), describe(settings.navApp), onPickNav)
+            SettingRow(tr("Indirizzo di casa"), settings.homeAddress.ifBlank { tr("Non impostato") }, onEditHome)
+            SettingRow(tr("Indirizzo di lavoro"), settings.workAddress.ifBlank { tr("Non impostato") }, onEditWork)
+            SettingRow(tr("Musica"), describe(settings.musicApp), onPickMusic)
+            SettingRow(tr("Telefono"), describe(settings.phoneApp), onPickPhone)
+            SettingRow(tr("Lingua comandi vocali"), voiceLanguage, onVoiceLanguage)
+            SettingRow(tr("Aggiorna voce"), voiceModel?.let { trf("Installata: {0} · tocca per cercare una versione nuova", it) } ?: tr("Non ancora scaricata"), onVoiceUpdate)
 
-            SectionTitle("Aspetto")
+            SectionTitle(tr("Aspetto"))
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 ThemeMode.entries.forEach { mode ->
                     Chip(
                         label = when (mode) {
-                            ThemeMode.DARK -> "Scuro"
-                            ThemeMode.LIGHT -> "Chiaro"
-                            ThemeMode.SYSTEM -> "Come il sistema"
-                            ThemeMode.AUTO -> "Automatico"
+                            ThemeMode.DARK -> tr("Scuro")
+                            ThemeMode.LIGHT -> tr("Chiaro")
+                            ThemeMode.SYSTEM -> tr("Come il sistema")
+                            ThemeMode.AUTO -> tr("Automatico")
                         },
                         selected = settings.themeMode == mode,
                         onClick = { onThemeMode(mode) },
@@ -155,15 +158,15 @@ fun SettingsScreen(
             }
             if (settings.themeMode == ThemeMode.AUTO) {
                 Text(
-                    "Automatico: scuro di notte, chiaro di giorno. " +
-                        (autoThemeSource?.let { "Ora decide da: $it. " } ?: "") +
-                        if (settings.lightsBinding == null) "Collega i fari in Veicolo per usarli." else "",
+                    tr("Automatico: scuro di notte, chiaro di giorno. ") +
+                        (autoThemeSource?.let { trf("Ora decide da: {0}. ", it) } ?: "") +
+                        if (settings.lightsBinding == null) tr("Collega i fari in Veicolo per usarli.") else "",
                     fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                SettingRow("Posizione (alba/tramonto)",
+                SettingRow(tr("Posizione (alba/tramonto)"),
                     if (settings.latitude != 0.0 || settings.longitude != 0.0)
                         "%.3f, %.3f".format(settings.latitude, settings.longitude)
-                    else "Predefinita (Italia centrale)", onEditLocation)
+                    else tr("Predefinita (Italia centrale)"), onEditLocation)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 AccentColors.forEachIndexed { index, color ->
@@ -188,28 +191,28 @@ fun SettingsScreen(
                 )
             }
 
-            SectionTitle("Permessi")
+            SectionTitle(tr("Permessi"))
             SettingRow(
-                "Accesso alle notifiche",
-                if (notificationAccess) "Attivo: brano in riproduzione e indicazioni del navigatore"
-                else "Non attivo: tocca per abilitare DriveOS (serve per Musica e guida)",
+                tr("Accesso alle notifiche"),
+                if (notificationAccess) tr("Attivo: brano in riproduzione e indicazioni del navigatore")
+                else tr("Non attivo: tocca per abilitare DriveOS (serve per Musica e guida)"),
                 onNotificationAccess,
             )
             SettingRow(
-                "Calendario",
-                if (calendarAccess) "Collegato (sola lettura)" else "Non collegato: tocca per mostrare i tuoi impegni",
+                tr("Calendario"),
+                if (calendarAccess) tr("Collegato (sola lettura)") else tr("Non collegato: tocca per mostrare i tuoi impegni"),
                 onCalendarAccess,
             )
 
-            SectionTitle("Sistema")
-            SettingRow("Launcher predefinito", "Scegli quale schermata Home usare (DriveOS o quella Junsun)", onHomeSettings)
-            SettingRow("Impostazioni Android", "Apre le impostazioni di sistema", onAndroidSettings)
-            SettingRow("Info dispositivo", "Riepilogo hardware ed esportazione dei dati per lo sviluppo", onDeviceInfo)
+            SectionTitle(tr("Sistema"))
+            SettingRow(tr("Launcher predefinito"), tr("Scegli quale schermata Home usare (DriveOS o quella Junsun)"), onHomeSettings)
+            SettingRow(tr("Impostazioni Android"), tr("Apre le impostazioni di sistema"), onAndroidSettings)
+            SettingRow(tr("Info dispositivo"), tr("Riepilogo hardware ed esportazione dei dati per lo sviluppo"), onDeviceInfo)
 
-            SectionTitle("Informazioni")
+            SectionTitle(tr("Informazioni"))
             Text(
-                "DriveOS ${BuildConfig.VERSION_NAME}. Radio, Bluetooth, CANBUS e retrocamera restano " +
-                    "gestiti dalle app Junsun originali: DriveOS non le modifica.",
+                trf("DriveOS {0}. Radio, Bluetooth, CANBUS e retrocamera restano ", BuildConfig.VERSION_NAME) +
+                    tr("gestiti dalle app Junsun originali: DriveOS non le modifica."),
                 fontSize = 15.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

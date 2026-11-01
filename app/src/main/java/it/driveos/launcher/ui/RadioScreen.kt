@@ -1,5 +1,8 @@
 package it.driveos.launcher.ui
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -90,7 +93,7 @@ fun RadioScreen(
     val name = stationName ?: current?.name?.takeIf { !it.startsWith("FM ") }
 
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Radio", onBack)
+        ScreenHeader(tr("Radio"), onBack)
         Row(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             // --- Sintonizzatore ---
             Column(Modifier.weight(0.52f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -113,7 +116,7 @@ fun RadioScreen(
                                 }
                             }
                             Spacer(Modifier.weight(1f))
-                            Text(if (detected) (if (playing) "In ascolto" else "In pausa") else "Frequenza dal sistema",
+                            Text(if (detected) (if (playing) tr("In ascolto") else tr("In pausa")) else tr("Frequenza dal sistema"),
                                 fontSize = 13.sp, color = colors.onSurfaceVariant)
                         }
                         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -123,25 +126,25 @@ fun RadioScreen(
                                 Row(verticalAlignment = Alignment.Bottom) {
                                     Text(freqText, fontSize = 24.sp, fontWeight = FontWeight.Medium, color = colors.primary)
                                     Spacer(Modifier.width(6.dp))
-                                    Text("MHz", fontSize = 14.sp, color = colors.onSurfaceVariant, modifier = Modifier.padding(bottom = 3.dp))
+                                    Text(tr("MHz"), fontSize = 14.sp, color = colors.onSurfaceVariant, modifier = Modifier.padding(bottom = 3.dp))
                                 }
                             } else {
                                 Row(verticalAlignment = Alignment.Bottom) {
                                     Text(freqText, fontSize = 64.sp, fontWeight = FontWeight.Light, color = colors.onSurface)
                                     Spacer(Modifier.width(8.dp))
-                                    Text("MHz", fontSize = 18.sp, color = colors.onSurfaceVariant, modifier = Modifier.padding(bottom = 14.dp))
+                                    Text(tr("MHz"), fontSize = 18.sp, color = colors.onSurfaceVariant, modifier = Modifier.padding(bottom = 14.dp))
                                 }
                             }
                             if (!logsGranted && stationName == null)
-                                Text("Nome RDS non leggibile: manca il permesso ai log (vedi istruzioni in chat)", fontSize = 12.sp, color = colors.onSurfaceVariant)
+                                Text(tr("Nome RDS non leggibile: manca il permesso ai log (vedi istruzioni in chat)"), fontSize = 12.sp, color = colors.onSurfaceVariant)
                         }
                         Dial(khz)
                     }
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    CtrlButton(null, "Cerca giù", Modifier.weight(1.2f), onSeekDown, textIcon = "‹ cerca")
+                    CtrlButton(null, tr("Cerca giù"), Modifier.weight(1.2f), onSeekDown, textIcon = tr("‹ cerca"))
                     CtrlButton(null, "FM", Modifier.weight(0.6f), onFm, highlighted = true, textIcon = "FM")
-                    CtrlButton(null, "Cerca su", Modifier.weight(1.2f), onSeekUp, textIcon = "cerca ›")
+                    CtrlButton(null, tr("Cerca su"), Modifier.weight(1.2f), onSeekUp, textIcon = tr("cerca ›"))
                 }
                 Spacer(Modifier.height(4.dp))
             }
@@ -239,7 +242,7 @@ private fun EmptyTile(slot: Int, canSave: Boolean, onClick: () -> Unit, onLong: 
         Column(Modifier.fillMaxSize().combinedClickable(onClick = onClick, onLongClick = onLong), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Text("P$slot", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = colors.onSurfaceVariant)
             Icon(Icons.Filled.Add, null, tint = colors.onSurfaceVariant, modifier = Modifier.size(26.dp))
-            Text(if (canSave) "Salva questa" else "Aggiungi", fontSize = 12.sp, color = colors.onSurfaceVariant)
+            Text(if (canSave) tr("Salva questa") else tr("Aggiungi"), fontSize = 12.sp, color = colors.onSurfaceVariant)
         }
     }
 }

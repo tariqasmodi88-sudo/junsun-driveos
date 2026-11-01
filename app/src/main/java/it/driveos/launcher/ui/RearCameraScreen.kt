@@ -1,5 +1,8 @@
 package it.driveos.launcher.ui
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.SurfaceTexture
@@ -74,22 +77,22 @@ fun RearCameraScreen(rearLevels: List<Int>?, rearRaw: List<Int>?, cameraEnabled:
         // barra in alto
         Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Surface(shape = RoundedCornerShape(14.dp), color = Color.Black.copy(alpha = 0.55f)) {
-                Text("R  Retromarcia", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                Text(tr("R  Retromarcia"), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White,
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
             }
             Spacer(Modifier.weight(1f))
             val worst = rearLevels?.maxOrNull() ?: 0
             if (worst > 0) Surface(shape = RoundedCornerShape(14.dp), color = levelColor(worst).copy(alpha = 0.85f)) {
-                Text(when (worst) { 3 -> "STOP"; 2 -> "Vicino"; else -> "Ostacolo" }, fontSize = 20.sp, fontWeight = FontWeight.Bold,
+                Text(when (worst) { 3 -> "STOP"; 2 -> tr("Vicino"); else -> tr("Ostacolo") }, fontSize = 20.sp, fontWeight = FontWeight.Bold,
                     color = Color.Black, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
             }
             Spacer(Modifier.width(10.dp))
             Surface(onClick = onHome, shape = RoundedCornerShape(14.dp), color = Color.Black.copy(alpha = 0.55f)) {
-                Text("Home", fontSize = 18.sp, color = Color.White, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
+                Text(tr("Home"), fontSize = 18.sp, color = Color.White, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
             }
         }
         if (!hasImage) Text(
-            if (cameraEnabled) "Nessuna immagine dalla telecamera" else "Telecamera non impostata",
+            if (cameraEnabled) tr("Nessuna immagine dalla telecamera") else tr("Telecamera non impostata"),
             fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
         )

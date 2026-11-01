@@ -1,5 +1,8 @@
 package it.driveos.launcher.ui.cards
 
+import it.driveos.launcher.i18n.tr
+import it.driveos.launcher.i18n.trf
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -39,8 +42,8 @@ import java.util.Locale
 fun shortWhen(e: CalendarEvent, zone: ZoneId, today: LocalDate, locale: Locale = Locale.getDefault()): String {
     val day = AgendaFormatter.dayOf(e, zone)
     val dayText = when (day) {
-        today -> "Oggi"
-        today.plusDays(1) -> "Domani"
+        today -> tr("Oggi")
+        today.plusDays(1) -> tr("Domani")
         else -> day.format(java.time.format.DateTimeFormatter.ofPattern("EEE d", locale))
             .replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
     }
@@ -67,14 +70,14 @@ fun CalendarCard(
     val todayCount = upcoming.count { AgendaFormatter.dayOf(it, zone) == today }
 
     DashCard(
-        "Agenda", Icons.Filled.DateRange, onOpenDetail, modifier,
-        trailing = if (state.permission && state.calendars > 0) "oggi $todayCount" else null,
+        tr("Agenda"), Icons.Filled.DateRange, onOpenDetail, modifier,
+        trailing = if (state.permission && state.calendars > 0) trf("oggi {0}", todayCount) else null,
     ) { size, _ ->
         when {
-            !state.permission -> Info(size, "Mostra qui i tuoi impegni di Google Calendar.", "Collega", onConnect)
-            !state.loaded -> Text("Caricamento…", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            state.calendars == 0 -> Info(size, "Nessun calendario sincronizzato su questa radio.", null, onOpenDetail)
-            upcoming.isEmpty() -> Info(size, "Nessun impegno nei prossimi giorni.", null, onOpenDetail)
+            !state.permission -> Info(size, tr("Mostra qui i tuoi impegni di Google Calendar."), tr("Collega"), onConnect)
+            !state.loaded -> Text(tr("Caricamento…"), fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            state.calendars == 0 -> Info(size, tr("Nessun calendario sincronizzato su questa radio."), null, onOpenDetail)
+            upcoming.isEmpty() -> Info(size, tr("Nessun impegno nei prossimi giorni."), null, onOpenDetail)
             else -> EventList(upcoming, size, zone, today)
         }
     }
