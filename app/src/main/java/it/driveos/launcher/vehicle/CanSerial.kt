@@ -309,7 +309,7 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
         job = scope.launch {
             // Mai durante l'avvio o il risveglio della radio: in quei secondi la radio Junsun "saluta" l'MCU
             // su questa stessa linea (vedi pause()). Si aspetta [notBefore] e che lo schermo sia acceso.
-            while (isActive && (System.currentTimeMillis() < notBefore || !screenOn())) delay(1000)
+            while (isActive && (System.currentTimeMillis() < notBefore || !screenOn() || !it.driveos.launcher.system.PowerGate.ready())) delay(1000)
             startQueries()
             val last = HashMap<String, String>()
             while (isActive) {

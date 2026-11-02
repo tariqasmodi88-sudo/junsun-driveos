@@ -61,6 +61,7 @@ class TsBridge(context: Context) {
     }
 
     private fun radioCommonBinder(): IBinder? {
+        if (!it.driveos.launcher.system.PowerGate.ready()) return null
         radioCommon?.let { if (it.isBinderAlive) return it }
         val c = common ?: run { bindCommon(); return null }
         val data = android.os.Parcel.obtain(); val reply = android.os.Parcel.obtain()
@@ -88,9 +89,16 @@ class TsBridge(context: Context) {
     }
 
     fun connect() {
+        if (!it.driveos.launcher.system.PowerGate.ready()) return
         bindCommon()
         if (radio == null) bind(RADIO_ACTION, radioConn)
         if (function == null) bind(FUNCTION_ACTION, functionConn)
+    }
+
+    /** Scollega tutto dai servizi Junsun (quadro spento): la radio puo' andare in standby libera. */
+    fun disconnect() {
+        listOf(radioConn, functionConn, commonConn).forEach { c -> runCatching { app.unbindService(c) } }
+        radio = null; function = null; common = null; radioCommon = null
     }
 
     private fun bind(action: String, conn: ServiceConnection) {

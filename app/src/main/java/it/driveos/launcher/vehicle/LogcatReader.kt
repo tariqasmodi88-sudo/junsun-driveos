@@ -37,6 +37,7 @@ class LogcatReader(context: Context, private val repo: VehicleRepository) {
 
     fun start() {
         if (!available() || job?.isActive == true) return
+        if (!it.driveos.launcher.system.PowerGate.ready()) return
         job = scope.launch { readLoop() }
         if (ticker?.isActive != true) ticker = scope.launch { while (isActive) { tick(); delay(300) } }
     }

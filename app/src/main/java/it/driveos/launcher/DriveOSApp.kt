@@ -67,7 +67,7 @@ class DriveOSApp : Application() {
         mediaRepository = MediaRepository(this)
         calendarRepository = CalendarRepository(this)
         vehicleRepository = VehicleRepository(this)
-        tsBridge = it.driveos.launcher.junsun.TsBridge(this).also { it.connect() }
+        tsBridge = it.driveos.launcher.junsun.TsBridge(this) // si collega dopo il cancello di accensione (vedi wake)
         systemControls = SystemControls(this).also { it.bridge = tsBridge }
         bluetoothWatcher = BluetoothWatcher(this)
         connectivityWatcher = ConnectivityWatcher(this)
@@ -90,16 +90,23 @@ class DriveOSApp : Application() {
             registerReceiver(object : android.content.BroadcastReceiver() {
                 override fun onReceive(c: android.content.Context, i: android.content.Intent) {
                     when (i.action) {
-                        android.content.Intent.ACTION_SCREEN_OFF -> { wakeJob?.cancel(); canReader.pause(); voice.stop(); mediaRepository.pauseForPower() }
+                        android.content.Intent.ACTION_SCREEN_OFF -> {
+                            // quadro spento: si stacca TUTTO dalla radio Junsun
+                            it.driveos.launcher.system.PowerGate.screenOn = false
+                            wakeJob?.cancel(); canReader.pause(); voice.stop(); mediaRepository.pauseForPower()
+                            logcatReader.stop(); speedWatcher.stop(); tsBridge.disconnect()
+                        }
                         android.content.Intent.ACTION_SCREEN_ON -> {
                             wakeJob?.cancel()
+                            it.driveos.launcher.system.PowerGate.screenOn = true
+                            it.driveos.launcher.system.PowerGate.notBefore = System.currentTimeMillis() + 20_000
                             wakeJob = wakeScope.launch {
                                 // lascia alla radio Junsun il tempo di riagganciare l'MCU, poi riprende la seriale
                                 canReader.notBefore = System.currentTimeMillis() + 20_000
                                 kotlinx.coroutines.delay(8_000)
                                 mediaRepository.resumeAfterPower()
-                                kotlinx.coroutines.delay(12_000)
-                                canReader.resumeIfPaused()
+                                kotlinx.coroutines.delay(12_100)
+                                reconnectAll()
                             }
                             // al risveglio la radio rimette davanti la sua app: si torna sulla Home DriveOS
                             wakeScope.launch {
@@ -119,6 +126,12 @@ class DriveOSApp : Application() {
                 addAction(android.content.Intent.ACTION_SCREEN_OFF); addAction(android.content.Intent.ACTION_SCREEN_ON)
             })
         }
+        it.driveos.launcher.system.PowerGate.screenOn = getSystemService(android.os.PowerManager::class.java)?.isInteractive != false
+        wakeScope.launch {
+            // avvio (anche dopo che la radio ha chiuso le app): prima si lascia finire la radio
+            while (!it.driveos.launcher.system.PowerGate.ready()) kotlinx.coroutines.delay(1000)
+            reconnectAll()
+        }
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         scope.launch { settingsRepository.settings.collect { keyMapper.bindings = it.keyBindings } }
         scope.launch {
@@ -137,5 +150,15 @@ class DriveOSApp : Application() {
                 settingsRepository.setKeyBindings(KeyBindingCodec.set(cur, b))
             }
         }
+    }
+
+    /** Dopo il cancello di accensione: riaggancia servizi Junsun, log, GPS e seriale. */
+    private fun reconnectAll() {
+        if (!it.driveos.launcher.system.PowerGate.ready()) return
+        tsBridge.connect()
+        logcatReader.start()
+        speedWatcher.start()
+        canReader.resumeIfPaused()
+        mediaRepository.resumeAfterPower()
     }
 }
