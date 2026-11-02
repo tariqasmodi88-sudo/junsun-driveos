@@ -139,6 +139,8 @@ class MainActivity : ComponentActivity() {
     private var screen by mutableStateOf(Screen.DASHBOARD)
     private val driveApp: DriveOSApp get() = application as DriveOSApp
     private var receiverRegistered = false
+    /** DriveOS e' davanti (tra onResume e onPause). */
+    private var isForeground by mutableStateOf(false)
 
     /** Aggiorna l'elenco quando un'app viene installata, rimossa o aggiornata. */
     private val packageReceiver = object : BroadcastReceiver() {
@@ -261,6 +263,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        isForeground = true
         // Se la radio si e' risvegliata senza avvisare (nessun segnale di riaccensione), la Home visibile
         // vale come risveglio: DriveOS si ricollega comunque 20 s dopo.
         if (!it.driveos.launcher.system.PowerGate.screenOn &&
@@ -280,6 +283,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onPause() {
         super.onPause()
+        isForeground = false
         // vehicleRepository resta attivo anche in secondo piano: serve a riprendere lo schermo dopo la retromarcia
         driveApp.bluetoothWatcher.stop()
         driveApp.speedWatcher.stop()
@@ -630,12 +634,24 @@ class MainActivity : ComponentActivity() {
                 val includeProj = System.currentTimeMillis() < projectionBounceUntil
                 if (WindowRules.bounceHome(e.kind, includeProj)) {
                     kotlinx.coroutines.delay(250)
-                    WindowWatcher.goHome()
+                    bringHomeToFront()
                     if (e.kind != it.driveos.launcher.vehicle.WindowKind.PROJECTION && screenNow != Screen.VEHICLE) {
                         overviewAuto = true; screen = Screen.OVERVIEW
                     }
                 }
             }
+        }
+        // Sensori di parcheggio attivi o retromarcia mentre DriveOS e' dietro (finestra radar/retro della
+        // radio Junsun): DriveOS torna davanti con la sua schermata. Funziona anche senza Accessibilita'.
+        val sensorsActive = (CanDecoder.sensorLevels(vehicleSignals, CanDecoder.REAR_SENSORS)?.any { it > 0 } == true) ||
+            (s?.frontSensors == true && CanDecoder.sensorLevels(vehicleSignals, CanDecoder.FRONT_SENSORS)?.any { it > 0 } == true)
+        val reverseSig = KnownVehicleSignals.reverseOn(vehicleSignals) == true
+        LaunchedEffect(sensorsActive, reverseSig, isForeground) {
+            val cur = settingsState ?: return@LaunchedEffect
+            if (!cur.keepHome || isForeground || !(sensorsActive || reverseSig)) return@LaunchedEffect
+            kotlinx.coroutines.delay(400) // lascia aprire la finestra Junsun, poi la si copre
+            bringHomeToFront()
+            if (!reverseSig && screen != Screen.VEHICLE) { overviewAuto = true; screen = Screen.OVERVIEW }
         }
         var a11yOn by remember { mutableStateOf(WindowWatcher.enabled()) }
         LaunchedEffect(Unit) { while (true) { a11yOn = WindowWatcher.enabled(); kotlinx.coroutines.delay(2000) } }
