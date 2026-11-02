@@ -57,7 +57,7 @@ class LocalPlayer(context: Context, private val onChange: (MediaInfo?) -> Unit) 
     val repeat: Int get() = if (!hasItems) 0 else when (player.repeatMode) { Player.REPEAT_MODE_ALL -> 1; Player.REPEAT_MODE_ONE -> 2; else -> 0 }
 
     /** Cartella ("" = tutti i brani) dalla raccolta Audio; la ricorda per la volta dopo. */
-    fun playFolder(folder: String) {
+    fun playFolder(folder: String, restore: Boolean = false) {
         prefs.edit().putString("folder", folder).apply()
         thread(name = "local-scan") {
             val uris = if (folder.isEmpty()) AudioFolders.all(app) else AudioFolders.tracks(app, folder)
@@ -65,7 +65,10 @@ class LocalPlayer(context: Context, private val onChange: (MediaInfo?) -> Unit) 
                 if (uris.isEmpty()) { onChange(null); return@post }
                 val items = uris.map { MediaItem.Builder().setUri(it).setMediaId(it.toString()).build() }
                 hasItems = true
-                player.setMediaItems(items)
+                // ripresa: stesso brano e stesso punto dell'ultima volta (anche dopo un riavvio della radio)
+                val savedId = prefs.getString("track", null)
+                val idx = if (restore) items.indexOfFirst { it.mediaId == savedId } else -1
+                if (idx >= 0) player.setMediaItems(items, idx, prefs.getLong("pos", 0L)) else player.setMediaItems(items)
                 player.prepare()
                 player.play()
                 loadMeta(player.currentMediaItem)
@@ -87,7 +90,7 @@ class LocalPlayer(context: Context, private val onChange: (MediaInfo?) -> Unit) 
         publish()
     }
 
-    fun playLastFolder(): Boolean { val f = lastFolder ?: return false; playFolder(f); return true }
+    fun playLastFolder(): Boolean { val f = lastFolder ?: return false; playFolder(f, restore = true); return true }
 
     private fun loadMeta(item: MediaItem?) {
         val id = item?.mediaId ?: return
@@ -127,9 +130,15 @@ class LocalPlayer(context: Context, private val onChange: (MediaInfo?) -> Unit) 
         return Bitmap.createScaledBitmap(b, (b.width * ratio).toInt(), (b.height * ratio).toInt(), true)
     }
 
+    private var lastSave = 0L
     private fun publish() {
         if (!hasItems) return
         val item = player.currentMediaItem
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastSave > 3000) {
+            lastSave = now
+            prefs.edit().putString("track", item?.mediaId).putLong("pos", player.currentPosition).apply()
+        }
         val meta = item?.mediaId?.let { cache[it] }
         val name = item?.mediaId?.let { Uri.parse(it).lastPathSegment?.substringAfterLast('/')?.substringBeforeLast('.') }.orEmpty()
         val dur = player.duration.takeIf { it != C.TIME_UNSET && it > 0 } ?: meta?.durationMs ?: 0L

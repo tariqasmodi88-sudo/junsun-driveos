@@ -83,7 +83,7 @@ data class VehicleOverviewState(
     val rearRaw: List<Int>? = null,
 )
 
-private val DRAWN_ALERTS = setOf(tr("Retromarcia"), tr("Portiera"), tr("Sensori parcheggio"))
+private val DRAWN_ALERTS = setOf("Retromarcia", "Portiera", "Sensori parcheggio")
 private val Amber = Color(0xFFFFB020)
 private val Warn = Color(0xFFFF5A4E)
 private val Ok = Color(0xFF3DDC97)
@@ -155,7 +155,7 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onDebug: () -> Unit /* = 
                             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("⚠", fontSize = 20.sp, color = Warn)
                                 Spacer(Modifier.width(10.dp))
-                                Text(a.label, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = c.onSurface)
+                                Text(tr(a.label), fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = c.onSurface)
                             }
                         }
                     }

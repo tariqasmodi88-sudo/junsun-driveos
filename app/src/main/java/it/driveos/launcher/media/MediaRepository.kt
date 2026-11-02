@@ -328,13 +328,20 @@ class MediaRepository(context: Context) {
     }
 
     /** Passando a Musica: se il lettore interno ha una coda ferma, riparte. */
-    fun resumeLocalIfIdle() = handler.post { if (localActive && !local.isPlaying) { willPlay(); local.play() } }
+    fun resumeLocalIfIdle() = handler.post {
+        if (localActive && !local.isPlaying) { willPlay(); local.play() }
+        // dopo un riavvio il lettore interno e' vuoto: riprende l'ultima cartella dal punto in cui era,
+        // a meno che stia gia' suonando un'altra app
+        else if (!localActive && local.lastFolder != null && controller?.playbackState?.state != PlaybackState.STATE_PLAYING) {
+            willPlay(); localActive = true; local.playLastFolder()
+        }
+    }
 
     fun playPause() {
         val playingNow = if (localActive) local.isPlaying else controller?.playbackState?.state == PlaybackState.STATE_PLAYING
         if (!playingNow) willPlay()
         if (localActive) { local.playPause(); return }
-        val c = controller ?: return
+        val c = controller ?: run { if (local.lastFolder != null) { localActive = true; local.playLastFolder() }; return }
         if (playingNow) c.transportControls.pause() else c.transportControls.play()
     }
 

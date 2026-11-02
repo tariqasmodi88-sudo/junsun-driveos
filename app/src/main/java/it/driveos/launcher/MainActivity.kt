@@ -530,8 +530,7 @@ class MainActivity : ComponentActivity() {
         var projectionBounceUntil by remember { mutableStateOf(0L) }
         val projectionLive by androidx.compose.runtime.rememberUpdatedState(projectionOn)
         fun playLocalMusic() {
-            val app = s.offlineMusicApp
-            if (app != null) { driveApp.mediaRepository.resumeOrPlay(app.packageName); return }
+            // sempre il lettore interno di DriveOS (non piu' l'app Files o altre)
             // Lettore interno di DriveOS: tutti i brani audio del dispositivo, mai video.
             if (!it.driveos.launcher.media.LocalMusicService.hasPermission(context)) {
                 storagePermission.launch(it.driveos.launcher.media.LocalMusicService.permission())
