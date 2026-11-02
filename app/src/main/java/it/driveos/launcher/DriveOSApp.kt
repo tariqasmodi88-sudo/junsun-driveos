@@ -90,13 +90,14 @@ class DriveOSApp : Application() {
             registerReceiver(object : android.content.BroadcastReceiver() {
                 override fun onReceive(c: android.content.Context, i: android.content.Intent) {
                     when (i.action) {
-                        android.content.Intent.ACTION_SCREEN_OFF -> {
+                        android.content.Intent.ACTION_SCREEN_OFF, "com.cusc.action.ACC_OFF", "com.ts.main.uiaccoff",
+                        "autochips.intent.action.QB_POWEROFF" -> {
                             // quadro spento: si stacca TUTTO dalla radio Junsun
                             it.driveos.launcher.system.PowerGate.screenOn = false
                             wakeJob?.cancel(); canReader.pause(); voice.stop(); mediaRepository.pauseForPower()
                             logcatReader.stop(); speedWatcher.stop(); tsBridge.disconnect()
                         }
-                        android.content.Intent.ACTION_SCREEN_ON -> {
+                        android.content.Intent.ACTION_SCREEN_ON, "com.ts.main.uiaccon", "autochips.intent.action.QB_POWERON" -> {
                             wakeJob?.cancel()
                             it.driveos.launcher.system.PowerGate.screenOn = true
                             it.driveos.launcher.system.PowerGate.notBefore = System.currentTimeMillis() + 20_000
@@ -124,6 +125,9 @@ class DriveOSApp : Application() {
                 }
             }, android.content.IntentFilter().apply {
                 addAction(android.content.Intent.ACTION_SCREEN_OFF); addAction(android.content.Intent.ACTION_SCREEN_ON)
+                // segnali della radio Junsun: quadro spento / riacceso (arrivano prima dello schermo)
+                addAction("com.cusc.action.ACC_OFF"); addAction("com.ts.main.uiaccoff"); addAction("com.ts.main.uiaccon")
+                addAction("autochips.intent.action.QB_POWEROFF"); addAction("autochips.intent.action.QB_POWERON")
             })
         }
         it.driveos.launcher.system.PowerGate.screenOn = getSystemService(android.os.PowerManager::class.java)?.isInteractive != false

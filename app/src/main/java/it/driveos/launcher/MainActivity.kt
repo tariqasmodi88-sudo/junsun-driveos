@@ -261,6 +261,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Se la radio si e' risvegliata senza avvisare (nessun segnale di riaccensione), la Home visibile
+        // vale come risveglio: DriveOS si ricollega comunque 20 s dopo.
+        if (!it.driveos.launcher.system.PowerGate.screenOn &&
+            (getSystemService(android.os.PowerManager::class.java)?.isInteractive != false)) {
+            sendBroadcast(Intent("com.ts.main.uiaccon").setPackage(packageName))
+        }
         // Al ritorno dalle impostazioni di Android i permessi potrebbero essere cambiati.
         driveApp.mediaRepository.start()
         driveApp.calendarRepository.refresh()

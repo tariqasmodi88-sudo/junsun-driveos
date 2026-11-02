@@ -329,7 +329,14 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
                         val parser = CanStreamParser()
                         val buf = ByteArray(512)
                         while (isActive) {
-                            val n = ins.read(buf)
+                            // Lettura SENZA attesa bloccata: si legge solo cio' che e' gia' arrivato.
+                            // Cosi' allo spegnimento si smette all'istante e non resta una lettura "in sospeso"
+                            // che ruberebbe alla radio la risposta dell'MCU (saluto di spegnimento/riaccensione).
+                            if (paused || !it.driveos.launcher.system.PowerGate.ready()) break
+                            val avail = runCatching { ins.available() }.getOrDefault(-1)
+                            if (avail < 0) break
+                            if (avail == 0) { delay(5); continue }
+                            val n = ins.read(buf, 0, minOf(avail, buf.size))
                             if (n < 0) break
                             lastByteAt = System.currentTimeMillis()
                             val changes = LinkedHashMap<String, String>()
