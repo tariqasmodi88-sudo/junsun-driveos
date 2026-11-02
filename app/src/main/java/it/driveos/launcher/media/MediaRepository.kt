@@ -282,6 +282,20 @@ class MediaRepository(context: Context) {
     /** Mette in pausa se sta suonando (per lasciare l'audio alla radio). */
     @Volatile private var pausedForRadio = false
 
+    @Volatile private var pausedForPower = false
+    /** Quadro spento: ferma la musica (la radio sta andando in standby). */
+    fun pauseForPower() = handler.post {
+        val playing = if (localActive) local.isPlaying else controller?.playbackState?.state == PlaybackState.STATE_PLAYING
+        if (playing) { pausedForPower = true; if (localActive) local.pause() else runCatching { controller?.transportControls?.pause() } }
+    }
+    /** Quadro riacceso: riprende se era stata fermata allo spegnimento. */
+    fun resumeAfterPower() = handler.post {
+        if (!pausedForPower) return@post
+        pausedForPower = false
+        willPlay()
+        if (localActive) local.play() else runCatching { controller?.transportControls?.play() }
+    }
+
     fun pauseIfPlaying() {
         if (localActive) { if (local.isPlaying) { local.pause(); pausedForRadio = true }; return }
         val c = controller ?: return

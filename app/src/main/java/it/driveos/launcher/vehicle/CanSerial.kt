@@ -305,9 +305,12 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
     fun removeSink(s: (Map<String, String>) -> Unit) { sinks.remove(s) }
 
     fun start() {
-        startQueries()
         if (job?.isActive == true) return
         job = scope.launch {
+            // Mai durante l'avvio o il risveglio della radio: in quei secondi la radio Junsun "saluta" l'MCU
+            // su questa stessa linea (vedi pause()). Si aspetta [notBefore] e che lo schermo sia acceso.
+            while (isActive && (System.currentTimeMillis() < notBefore || !screenOn())) delay(1000)
+            startQueries()
             val last = HashMap<String, String>()
             while (isActive) {
                 try {
@@ -355,6 +358,10 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
      */
     /** Quadro spento / schermo spento: smette di interrogare la centralina (la lascia dormire). */
     val running: Boolean get() = job?.isActive == true
+    /** Prima di questo istante la seriale non si apre (impostato all'avvio e a ogni riaccensione). */
+    @Volatile var notBefore: Long = System.currentTimeMillis() + 20_000
+    /** Stato dello schermo (impostato da DriveOSApp). */
+    @Volatile var screenOn: () -> Boolean = { true }
     @Volatile private var paused = false
 
     /**
@@ -364,8 +371,8 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
      * Quindi a schermo spento si chiude tutto, e si riapre solo qualche secondo dopo la riaccensione.
      */
     fun pause() {
-        if (!running) return
-        paused = true
+        paused = paused || running || job != null
+        if (!paused) return
         stopQueries()
         job?.cancel(); job = null
         runCatching { stream?.close() }

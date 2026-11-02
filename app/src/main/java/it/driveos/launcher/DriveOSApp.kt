@@ -79,6 +79,8 @@ class DriveOSApp : Application() {
         mediaRepository.beforePlay = { tsBridge.radioCall { r -> r.CloseRadioCh() } }
         keyMapper = KeyMapper(this).also { it.bridge = tsBridge }
         canReader = CanSerialReader().also { r ->
+            val pm = getSystemService(android.os.PowerManager::class.java)
+            r.screenOn = { pm?.isInteractive != false }
             r.addSink { vehicleRepository.ingest(it) }
             r.addSink { keyMapper.onChanges(it) }
         }
@@ -88,12 +90,15 @@ class DriveOSApp : Application() {
             registerReceiver(object : android.content.BroadcastReceiver() {
                 override fun onReceive(c: android.content.Context, i: android.content.Intent) {
                     when (i.action) {
-                        android.content.Intent.ACTION_SCREEN_OFF -> { wakeJob?.cancel(); canReader.pause(); voice.stop() }
+                        android.content.Intent.ACTION_SCREEN_OFF -> { wakeJob?.cancel(); canReader.pause(); voice.stop(); mediaRepository.pauseForPower() }
                         android.content.Intent.ACTION_SCREEN_ON -> {
                             wakeJob?.cancel()
                             wakeJob = wakeScope.launch {
                                 // lascia alla radio Junsun il tempo di riagganciare l'MCU, poi riprende la seriale
-                                kotlinx.coroutines.delay(20_000)
+                                canReader.notBefore = System.currentTimeMillis() + 20_000
+                                kotlinx.coroutines.delay(8_000)
+                                mediaRepository.resumeAfterPower()
+                                kotlinx.coroutines.delay(12_000)
                                 canReader.resumeIfPaused()
                             }
                             // al risveglio la radio rimette davanti la sua app: si torna sulla Home DriveOS
