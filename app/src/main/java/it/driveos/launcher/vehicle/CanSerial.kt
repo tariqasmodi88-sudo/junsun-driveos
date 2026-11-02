@@ -355,6 +355,24 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
      */
     /** Quadro spento / schermo spento: smette di interrogare la centralina (la lascia dormire). */
     val running: Boolean get() = job?.isActive == true
+    @Volatile private var paused = false
+
+    /**
+     * Quadro spento: la seriale e' la STESSA linea con cui la radio Junsun parla con l'MCU.
+     * Durante lo spegnimento/riaccensione (QuickBoot) la radio fa un "saluto" con l'MCU su questa linea:
+     * se DriveOS legge o scrive in quel momento, ruba i byte e la radio mostra ErrorCode:001 e resta bloccata.
+     * Quindi a schermo spento si chiude tutto, e si riapre solo qualche secondo dopo la riaccensione.
+     */
+    fun pause() {
+        if (!running) return
+        paused = true
+        stopQueries()
+        job?.cancel(); job = null
+        runCatching { stream?.close() }
+    }
+
+    /** Riprende solo se era stata messa in pausa (non riaccende una seriale spenta nelle impostazioni). */
+    fun resumeIfPaused() { if (paused) { paused = false; start() } }
     fun stopQueries() { queryJob?.cancel(); queryJob = null }
 
     fun startQueries(periodMs: Long = 1000) {
@@ -378,6 +396,7 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
     }
 
     fun stop() {
+        paused = false
         queryJob?.cancel(); queryJob = null
         job?.cancel(); job = null
         runCatching { stream?.close() }

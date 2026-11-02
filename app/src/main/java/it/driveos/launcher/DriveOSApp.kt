@@ -50,6 +50,8 @@ class DriveOSApp : Application() {
     lateinit var canReader: CanSerialReader
         private set
     val driveLock = it.driveos.launcher.system.DriveLock()
+    private val wakeScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private var wakeJob: kotlinx.coroutines.Job? = null
     lateinit var voice: it.driveos.launcher.voice.OfflineVoice
         private set
     lateinit var keyMapper: KeyMapper
@@ -86,8 +88,26 @@ class DriveOSApp : Application() {
             registerReceiver(object : android.content.BroadcastReceiver() {
                 override fun onReceive(c: android.content.Context, i: android.content.Intent) {
                     when (i.action) {
-                        android.content.Intent.ACTION_SCREEN_OFF -> { canReader.stopQueries(); voice.stop() }
-                        android.content.Intent.ACTION_SCREEN_ON -> if (canReader.running) canReader.startQueries()
+                        android.content.Intent.ACTION_SCREEN_OFF -> { wakeJob?.cancel(); canReader.pause(); voice.stop() }
+                        android.content.Intent.ACTION_SCREEN_ON -> {
+                            wakeJob?.cancel()
+                            wakeJob = wakeScope.launch {
+                                // lascia alla radio Junsun il tempo di riagganciare l'MCU, poi riprende la seriale
+                                kotlinx.coroutines.delay(20_000)
+                                canReader.resumeIfPaused()
+                            }
+                            // al risveglio la radio rimette davanti la sua app: si torna sulla Home DriveOS
+                            wakeScope.launch {
+                                kotlinx.coroutines.delay(6_000)
+                                val keep = runCatching { settingsRepository.settings.first().keepHome }.getOrDefault(true)
+                                if (keep && it.driveos.launcher.vehicle.WindowWatcher.currentPackage() == "com.ts.MainUI") {
+                                    runCatching {
+                                        startActivity(android.content.Intent(this@DriveOSApp, MainActivity::class.java)
+                                            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }, android.content.IntentFilter().apply {

@@ -14,7 +14,10 @@ object WindowWatcher {
     @Volatile var service: DriveAccessibilityService? = null
 
     fun enabled(): Boolean = service != null
-    fun emit(e: WindowEvent) { _events.tryEmit(e) }
+    @Volatile private var lastPkg: String? = null
+    /** Pacchetto dell'ultima finestra apparsa (null se l'Accessibilita' non e' attiva). */
+    fun currentPackage(): String? = lastPkg
+    fun emit(e: WindowEvent) { lastPkg = e.pkg; _events.tryEmit(e) }
 
     /** Azione "Home" di Android: con DriveOS come launcher porta davanti la sua Home. */
     fun goHome(): Boolean = service?.goHome() ?: false
