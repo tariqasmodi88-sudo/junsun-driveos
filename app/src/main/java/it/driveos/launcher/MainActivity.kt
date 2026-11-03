@@ -893,11 +893,38 @@ class MainActivity : ComponentActivity() {
         var voiceHeard by remember { mutableStateOf<String?>(null) }
         val voiceState by driveApp.voice.state.collectAsStateWithLifecycle()
         var voiceForNav by remember { mutableStateOf(false) }
+        // Mentre parli: musica/app in pausa e audio di sistema (radio, AutoLink) muto; alla fine si ripristina.
+        val voiceHold = remember { object { var held = false; var muted = false; var muteJob: kotlinx.coroutines.Job? = null } }
+        fun holdAudio() {
+            if (voiceHold.held) return
+            voiceHold.held = true
+            driveApp.mediaRepository.pauseForVoice()
+            voiceHold.muteJob = scope.launch {
+                if (driveApp.tsBridge.isMuted() == false) { driveApp.tsBridge.setMuted(true); voiceHold.muted = true }
+            }
+        }
+        /** Ritorna true se della musica era stata messa in pausa. */
+        fun releaseAudio(resumeMedia: Boolean = true, unmute: Boolean = true): Boolean {
+            if (!voiceHold.held) return false
+            voiceHold.held = false
+            val had = driveApp.mediaRepository.resumeAfterVoice(resumeMedia)
+            val job = voiceHold.muteJob
+            scope.launch {
+                job?.join()
+                if (voiceHold.muted && !voiceHold.held) { voiceHold.muted = false; if (unmute) driveApp.tsBridge.setMuted(false) }
+            }
+            return had
+        }
         fun handleVoice(text: String) {
             val cmd = VoiceCommands.parse(text, s.voiceLang).let { c ->
                 // dal tasto microfono della ricerca: una frase "libera" e' una destinazione
                 if (voiceForNav && c is VoiceCommand.Unknown) VoiceCommand.Navigate(text) else c
             }
+            val weMuted = voiceHold.muted
+            val hadMusic = releaseAudio(
+                resumeMedia = cmd !is VoiceCommand.Station && cmd !is VoiceCommand.Frequency && cmd != VoiceCommand.Radio && cmd != VoiceCommand.Pause,
+                unmute = cmd != VoiceCommand.Mute,
+            )
             voiceForNav = false
             fun tuneTo(khz: Int) {
                 scope.launch { driveApp.settingsRepository.setLastRadioKhz(khz) }
@@ -917,14 +944,14 @@ class MainActivity : ComponentActivity() {
                     if (khz != null) tuneTo(khz) else { openRadio(); message(trf("Non trovo la stazione \"{0}\" tra quelle conosciute.", cmd.name)) }
                 }
                 is VoiceCommand.Frequency -> tuneTo(cmd.khz)
-                VoiceCommand.Music -> { screen = Screen.MUSIC; if (driveApp.mediaRepository.media.value?.isPlaying != true && driveApp.mediaRepository.lastFolder() != null) driveApp.mediaRepository.playLastFolder() }
+                VoiceCommand.Music -> { screen = Screen.MUSIC; if (!hadMusic && driveApp.mediaRepository.media.value?.isPlaying != true && driveApp.mediaRepository.lastFolder() != null) driveApp.mediaRepository.playLastFolder() }
                 VoiceCommand.Next -> if (screen == Screen.RADIO) driveApp.tsBridge.radioCall { r -> r.SeekUp() } else driveApp.mediaRepository.next()
                 VoiceCommand.Previous -> if (screen == Screen.RADIO) driveApp.tsBridge.radioCall { r -> r.SeekDn() } else driveApp.mediaRepository.previous()
                 VoiceCommand.Pause -> if (driveApp.mediaRepository.media.value?.isPlaying == true) driveApp.mediaRepository.playPause()
-                VoiceCommand.Play -> if (driveApp.mediaRepository.media.value?.isPlaying != true) driveApp.mediaRepository.playPause()
+                VoiceCommand.Play -> if (!hadMusic && driveApp.mediaRepository.media.value?.isPlaying != true) driveApp.mediaRepository.playPause()
                 VoiceCommand.VolumeUp -> driveApp.tsBridge.functionCall { f -> f.onVolumeUp(); f.onVolumeUp() }
                 VoiceCommand.VolumeDown -> driveApp.tsBridge.functionCall { f -> f.onVolumeDown(); f.onVolumeDown() }
-                VoiceCommand.Mute -> driveApp.tsBridge.functionCall { f -> if (f.isVolumeMute()) f.onVolumeUnmute() else f.onVolumeMute() }
+                VoiceCommand.Mute -> if (!weMuted) driveApp.tsBridge.functionCall { f -> if (f.isVolumeMute()) f.onVolumeUnmute() else f.onVolumeMute() }
                 VoiceCommand.Climate -> screen = Screen.CLIMATE
                 VoiceCommand.Vehicle -> { overviewAuto = false; screen = Screen.OVERVIEW }
                 VoiceCommand.Home -> screen = Screen.DASHBOARD
@@ -935,7 +962,8 @@ class MainActivity : ComponentActivity() {
         }
         fun listenNow() {
             voiceHeard = null
-            driveApp.voice.listen { text -> if (text.isBlank()) voiceHeard = null else handleVoice(text) }
+            holdAudio()
+            driveApp.voice.listen { text -> if (text.isBlank()) { voiceHeard = null; releaseAudio() } else handleVoice(text) }
         }
         val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) listenNow() else { voiceOpen = false; message(tr("Senza il permesso del microfono i comandi vocali non funzionano.")) }
@@ -948,12 +976,16 @@ class MainActivity : ComponentActivity() {
                 micPermission.launch(Manifest.permission.RECORD_AUDIO)
             else listenNow()
         }
+        // errore microfono o finestra chiusa in altro modo: l'audio torna com'era
+        LaunchedEffect(voiceState, voiceOpen) {
+            if (!voiceOpen || voiceState is it.driveos.launcher.voice.OfflineVoice.State.Error) releaseAudio()
+        }
         if (voiceOpen) it.driveos.launcher.ui.VoiceOverlay(
             state = voiceState,
             lastHeard = voiceHeard,
             onInstall = { driveApp.voice.install { ok -> if (ok) startOfflineVoice(voiceForNav) } },
             onRetry = { driveApp.voice.dismissError(); startOfflineVoice(voiceForNav) },
-            onClose = { driveApp.voice.stop(); voiceOpen = false },
+            onClose = { driveApp.voice.stop(); releaseAudio(); voiceOpen = false },
         )
 
         fun startVoice() = startOfflineVoice(forNav = true)

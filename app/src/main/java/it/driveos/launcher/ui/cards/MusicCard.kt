@@ -4,6 +4,10 @@ import it.driveos.launcher.i18n.tr
 import it.driveos.launcher.i18n.trf
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -152,6 +156,28 @@ private fun ColumnScope.Playing(
             }
             Spacer(Modifier.width(8.dp))
             CardButton(null, if (media.isPlaying) PauseIcon else Icons.Filled.PlayArrow, onPlayPause, Modifier.width(64.dp), height = 56.dp, primary = true)
+        }
+
+        // Copertina presente: riempie tutta la scheda, testi e comandi sopra con una sfumatura scura.
+        media.art != null -> Box(Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp))) {
+            Image(media.art, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+            Box(
+                Modifier.fillMaxSize().background(
+                    Brush.verticalGradient(0f to Color.Transparent, 0.35f to Color.Black.copy(alpha = 0.15f), 1f to Color.Black.copy(alpha = 0.85f))
+                )
+            )
+            Column(Modifier.fillMaxSize().padding(14.dp)) {
+                Spacer(Modifier.weight(1f))
+                Text(media.title, fontSize = if (size == CardSize.LARGE) 26.sp else 21.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, color = Color.White)
+                if (media.artist.isNotBlank()) Text(media.artist, fontSize = if (size == CardSize.LARGE) 19.sp else 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, color = Color.White.copy(alpha = 0.8f))
+                Spacer(Modifier.height(8.dp))
+                if (media.durationMs > 0) {
+                    val progress = rememberProgress(media)
+                    LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().height(4.dp))
+                    Spacer(Modifier.height(8.dp))
+                }
+                TransportControls(media.isPlaying, onPlayPause, onNext, onPrevious, height = 56.dp, modifier = Modifier.fillMaxWidth())
+            }
         }
 
         wide -> Row(Modifier.fillMaxSize()) {

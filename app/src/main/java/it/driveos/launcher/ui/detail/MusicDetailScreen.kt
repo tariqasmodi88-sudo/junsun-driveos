@@ -111,7 +111,7 @@ fun MusicDetailScreen(
                 }
 
                 else -> BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
-                    val art = minOf(maxHeight, maxWidth * 0.42f)
+                    val art = minOf(maxHeight, maxWidth * 0.5f)
                     val local = media.packageName == LocalContext.current.packageName
                     Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
                         AlbumArt(media, if (local) null else sourceEntry, Modifier.size(art), corner = 28.dp)

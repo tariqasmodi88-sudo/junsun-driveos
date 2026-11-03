@@ -296,6 +296,30 @@ class MediaRepository(context: Context) {
         if (localActive) local.play() else runCatching { controller?.transportControls?.play() }
     }
 
+    // --- Comandi vocali: pausa mentre si parla, poi riprende quello che suonava ---
+    private val voicePaused = mutableListOf<MediaController>()
+    private var voiceLocal = false
+    /** Mette in pausa tutto cio' che suona (lettore interno e app esterne). Va chiamata dal main thread. */
+    fun pauseForVoice() {
+        if (voiceLocal || voicePaused.isNotEmpty()) return
+        if (local.isPlaying) { local.pause(); voiceLocal = true }
+        runCatching { manager?.getActiveSessions(listenerComponent).orEmpty() }.getOrDefault(emptyList())
+            .filter { it.packageName != app.packageName && it.playbackState?.state == PlaybackState.STATE_PLAYING }
+            .forEach { c -> if (runCatching { c.transportControls.pause() }.isSuccess) voicePaused += c }
+    }
+    /** Fine ascolto. resume=false lascia tutto in pausa. Ritorna true se qualcosa era stato messo in pausa. */
+    fun resumeAfterVoice(resume: Boolean = true): Boolean {
+        val had = voiceLocal || voicePaused.isNotEmpty()
+        if (resume && had) {
+            willPlay()
+            if (voiceLocal) local.play()
+            voicePaused.forEach { c -> runCatching { c.transportControls.play() } }
+        }
+        voiceLocal = false
+        voicePaused.clear()
+        return had
+    }
+
     fun pauseIfPlaying() {
         if (localActive) { if (local.isPlaying) { local.pause(); pausedForRadio = true }; return }
         val c = controller ?: return
