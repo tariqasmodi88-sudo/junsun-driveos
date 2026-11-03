@@ -163,9 +163,15 @@ private fun CameraPreview(onFrames: () -> Unit, onFail: () -> Unit, modifier: Mo
             surfaceTextureListener = object : TextureView.SurfaceTextureListener {
                 override fun onSurfaceTextureAvailable(st: SurfaceTexture, w: Int, h: Int) {
                     val cm = c.getSystemService(CameraManager::class.java)
+                    // Junsun FF_866X: l'ingresso retrocamera analogico (PAL 960x576 / NTSC) e' la camera "1",
+                    // la stessa che apre l'app nativa SpmCarCam in retromarcia. Le altre sono AHD/vuote.
                     val id = runCatching {
-                        cm.cameraIdList.firstOrNull { cm.getCameraCharacteristics(it).get(CameraCharacteristics.LENS_FACING) != CameraCharacteristics.LENS_FACING_FRONT }
-                            ?: cm.cameraIdList.firstOrNull()
+                        val ids = cm.cameraIdList.toList()
+                        fun h(id: String) = cm.getCameraCharacteristics(id).get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE)?.height() ?: 0
+                        ids.firstOrNull { h(it) == 576 || h(it) == 480 && it != "0" }
+                            ?: ids.firstOrNull { it == "1" }
+                            ?: ids.firstOrNull { cm.getCameraCharacteristics(it).get(CameraCharacteristics.LENS_FACING) != CameraCharacteristics.LENS_FACING_FRONT }
+                            ?: ids.firstOrNull()
                     }.getOrNull() ?: run { onFail(); return }
                     runCatching {
                         cm.openCamera(id, object : CameraDevice.StateCallback() {
