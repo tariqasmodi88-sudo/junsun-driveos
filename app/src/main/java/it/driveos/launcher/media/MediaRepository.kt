@@ -263,7 +263,8 @@ class MediaRepository(context: Context) {
         return null
     }
 
-    private fun downscale(b: Bitmap): Bitmap {
+    private fun downscale(raw: Bitmap): Bitmap {
+        val b = ArtTrim.trim(raw)
         val max = 512
         if (b.width <= max && b.height <= max) return b
         val ratio = max.toFloat() / maxOf(b.width, b.height)

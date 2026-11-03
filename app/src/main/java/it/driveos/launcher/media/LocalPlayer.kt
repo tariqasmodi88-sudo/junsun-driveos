@@ -123,7 +123,8 @@ class LocalPlayer(context: Context, private val onChange: (MediaInfo?) -> Unit) 
         }
     }
 
-    private fun downscale(b: Bitmap): Bitmap {
+    private fun downscale(raw: Bitmap): Bitmap {
+        val b = ArtTrim.trim(raw)
         val max = 600
         val ratio = minOf(1f, max.toFloat() / maxOf(b.width, b.height))
         if (ratio >= 1f) return b
