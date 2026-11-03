@@ -45,6 +45,8 @@ object CanQuery {
     val ENGINE: ByteArray = frame(raise(0x90, 0x41, 0x02))
     /** Richiesta stato/avvisi (riserva, batteria, freno a mano…). */
     val STATUS: ByteArray = frame(raise(0x90, 0x41, 0x01))
+    /** Richiesta angolo volante (EPS): la radio la manda ogni ~60 ms in retromarcia (libcan59, CCanVolkswagen::QueryEPS). */
+    val EPS: ByteArray = frame(raise(0x90, 0x26, 0x00))
 }
 
 /**
@@ -115,7 +117,7 @@ object CanDecoder {
     const val BELT_PASSENGER = "can:belt_passenger"
     const val REAR_SENSORS = "can:rear"
     const val FRONT_SENSORS = "can:front"
-    /** Angolo volante (C 0x26, protocollo Raise VW PQ): con segno, circa -540..+540. */
+    /** Angolo volante (C 0x26, protocollo Raise VW PQ): little-endian con segno, -500..+500 (libcan59 HandleCanCmd 0x26). */
     const val STEER = "can:steer"
     // Dati motore (C 0x41 sotto-tipo 02): la centralina li manda SOLO su richiesta, vedi [CanQuery].
     const val RPM = "can:rpm"
@@ -412,6 +414,8 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
     /** Riprende solo se era stata messa in pausa (non riaccende una seriale spenta nelle impostazioni). */
     fun resumeIfPaused() { if (paused) { paused = false; start() } }
     fun stopQueries() { queryJob?.cancel(); queryJob = null }
+    /** true in retromarcia: chiede anche l'angolo del volante. */
+    @Volatile var steerWanted = false
 
     fun startQueries(periodMs: Long = 1000) {
         if (queryJob?.isActive == true) return
@@ -420,11 +424,18 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
             while (isActive) {
                 try {
                     java.io.FileOutputStream(path).use { out ->
+                        var lastEngine = 0L
                         while (isActive) {
-                            out.write(CanQuery.ENGINE); out.flush()
-                            if (n++ % 5 == 0) { delay(50); out.write(CanQuery.STATUS); out.flush() }
-                            queryError = null
-                            delay(periodMs)
+                            val now = System.currentTimeMillis()
+                            if (now - lastEngine >= periodMs) {
+                                lastEngine = now
+                                out.write(CanQuery.ENGINE); out.flush()
+                                if (n++ % 5 == 0) { delay(50); out.write(CanQuery.STATUS); out.flush() }
+                                queryError = null
+                            }
+                            // in retromarcia: angolo volante per le linee che curvano
+                            if (steerWanted) { delay(20); out.write(CanQuery.EPS); out.flush(); delay(120) }
+                            else delay(100)
                         }
                     }
                 } catch (t: Throwable) { queryError = t.message ?: t.javaClass.simpleName }

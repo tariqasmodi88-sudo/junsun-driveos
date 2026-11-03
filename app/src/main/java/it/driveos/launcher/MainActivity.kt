@@ -669,6 +669,7 @@ class MainActivity : ComponentActivity() {
         var reverseOpened by remember { mutableStateOf(false) }
         val settingsNowRev by androidx.compose.runtime.rememberUpdatedState(s)
         LaunchedEffect(reverseNow) {
+            driveApp.canReader.steerWanted = reverseNow
             if (reverseNow) {
                 reverseOpened = true
                 // schermata retromarcia (telecamera o solo sensori)

@@ -104,13 +104,13 @@ private fun hasCameraPermission(ctx: Context) =
     ctx.checkSelfPermission(android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED
 
 /**
- * Linee di traiettoria che curvano con il volante (angolo dalla centralina, circa -540..+540;
+ * Linee di traiettoria che curvano con il volante (angolo dalla centralina, circa -500..+500, clamp della radio;
  * senza dato restano dritte) e i 4 sensori come archi sottili sopra il paraurti.
  */
 @Composable
 private fun Guides(levels: List<Int>?, steer: Int?, modifier: Modifier) {
     val k by androidx.compose.animation.core.animateFloatAsState(
-        ((steer ?: 0) / 540f).coerceIn(-1f, 1f), label = "steer",
+        ((steer ?: 0) / 500f).coerceIn(-1f, 1f), label = "steer",
     )
     Canvas(modifier) {
         val w = size.width; val h = size.height
