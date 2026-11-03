@@ -115,6 +115,8 @@ object CanDecoder {
     const val BELT_PASSENGER = "can:belt_passenger"
     const val REAR_SENSORS = "can:rear"
     const val FRONT_SENSORS = "can:front"
+    /** Angolo volante (C 0x26, protocollo Raise VW PQ): con segno, circa -540..+540. */
+    const val STEER = "can:steer"
     // Dati motore (C 0x41 sotto-tipo 02): la centralina li manda SOLO su richiesta, vedi [CanQuery].
     const val RPM = "can:rpm"
     const val SPEED = "can:speed"
@@ -228,6 +230,11 @@ object CanDecoder {
                 return out // cambia di continuo: niente riga grezza
             }
         }
+        if (id == 0x26 && len >= 2) {
+            // little-endian con segno (come gli emulatori Raise PQ open source); cambia di continuo
+            out[STEER] = (((d[1].toInt() and 0xFF) shl 8) or (d[0].toInt() and 0xFF)).toShort().toInt().toString()
+            return out
+        }
         if ((id == 0x22 || id == 0x23) && len == 4) {
             // 4 valori, uno per sensore (sinistra → destra)
             out[if (id == 0x22) REAR_SENSORS else FRONT_SENSORS] = d.joinToString(" ") { (it.toInt() and 0xFF).toString() }
@@ -328,7 +335,23 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
                         }
                         val parser = CanStreamParser()
                         val buf = ByteArray(512)
+                        // Sensori: la centralina smette di mandarli quando il Park Pilot si spegne (es. in marcia
+                        // sopra i 15 km/h). Senza aggiornamenti per 1,5 s si azzerano, altrimenti resterebbero "rossi".
+                        val sensorSeen = HashMap<String, Long>()
+                        var lastExpiryCheck = 0L
                         while (isActive) {
+                            val nowMs = System.currentTimeMillis()
+                            if (nowMs - lastExpiryCheck > 300) {
+                                lastExpiryCheck = nowMs
+                                val expired = LinkedHashMap<String, String>()
+                                for (k in listOf(CanDecoder.REAR_SENSORS, CanDecoder.FRONT_SENSORS)) {
+                                    val seen = sensorSeen[k] ?: continue
+                                    if (nowMs - seen > 2000 && last[k] != null && last[k] != "0 0 0 0") {
+                                        last[k] = "0 0 0 0"; expired[k] = "0 0 0 0"
+                                    }
+                                }
+                                if (expired.isNotEmpty()) sinks.forEach { runCatching { it(expired) } }
+                            }
                             // Lettura SENZA attesa bloccata: si legge solo cio' che e' gia' arrivato.
                             // Cosi' allo spegnimento si smette all'istante e non resta una lettura "in sospeso"
                             // che ruberebbe alla radio la risposta dell'MCU (saluto di spegnimento/riaccensione).
@@ -343,6 +366,7 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
                             for (f in parser.feed(buf, n)) {
                                 framesSeen++
                                 for ((k, v) in CanDecoder.decode(f)) {
+                                    if (k == CanDecoder.REAR_SENSORS || k == CanDecoder.FRONT_SENSORS) sensorSeen[k] = System.currentTimeMillis()
                                     // I tasti (byte "X") sono eventi: ogni pressione conta, anche se identica alla precedente.
                                     if (k == CanDecoder.RAW_BYTES) changes[k] = v
                                     else if (last[k] != v) { last[k] = v; changes[k] = v }

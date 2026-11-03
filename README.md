@@ -183,6 +183,29 @@ DriveOS non cancella né disattiva nulla del sistema originale.
 6. *Impostazioni → Info dispositivo → Esporta JSON* su chiavetta e invia il file:
    serve per progettare le fasi successive con dati reali.
 
+## 6. Spegnere le schermate retro/sensori della Junsun (consigliato)
+
+La radio Junsun apre le sue finestre di retromarcia ("No Signal" con le linee) e dei sensori di
+parcheggio sopra a qualunque app. DriveOS legge da solo retromarcia e sensori dalla seriale
+dell'auto, quindi le finestre native si possono spegnere. Si fa dalle impostazioni di fabbrica:
+
+**Impostazioni Junsun → Impostazioni di fabbrica (password, spesso 8888) → Backcar Setup**
+
+| Voce | Valore | Effetto |
+|---|---|---|
+| **Reverse mode** | `5 ALL OFF` | niente finestra sensori Junsun, ne' in avanti ne' in retro |
+|  | `1 CAM+OPS(only rear)` | alternativa: in avanti niente sensori Junsun, in retro resta la loro schermata |
+| **Camera detect** | `Not detect` | la Junsun non apre la sua schermata telecamera in retromarcia (con `Detect` la apre sempre, anche senza telecamera: "No Signal") |
+
+Gli altri valori (Park mute, Line, CamType, CamFormat, mirror, back option, RadarType) non vanno toccati.
+
+Verificato sul firmware ForFan FF_866X (MainUI): `Reverse mode` e' il parametro `CanS(43)`
+(`CanRadarManager`), `Camera detect` e' `CamFix`, che `MainUI.IsCameraMode()` controlla prima di aprire
+`BackcarMainActivity`. Dopo il cambio, se la schermata Junsun compare ancora, spegnere e riaccendere il quadro.
+
+**Telecamera posteriore in DriveOS** (se montata): attivare *Veicolo → Telecamera posteriore* e lasciare
+`Camera detect = Not detect`, cosi' l'ingresso video (camera Android `1`, PAL 960x576, CVBS) resta libero per DriveOS.
+
 ## Struttura
 
 ```

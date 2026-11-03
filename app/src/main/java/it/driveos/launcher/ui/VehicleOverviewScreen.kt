@@ -268,11 +268,11 @@ private fun CarTopView(state: VehicleOverviewState, modifier: Modifier) {
                         level == 2 -> Color(0xFFFF9A3D)
                         else -> Amber
                     }
-                    val alpha = if (!lit) 0.4f else if (level!! >= 3) 0.7f + 0.3f * pulse else 0.95f
+                    val alpha = if (!lit) 0.16f else if (level!! >= 3) 0.7f + 0.3f * pulse else 0.95f
                     val r = w * (0.32f + ring * 0.17f)
                     drawArc(color.copy(alpha = alpha), start + seg * i + 2f, seg - 4f, false,
                         topLeft = Offset(cx - r, cy - r * 0.55f), size = Size(r * 2, r * 1.1f),
-                        style = Stroke(width = 11f, cap = StrokeCap.Round))
+                        style = Stroke(width = if (lit) 7f else 4f, cap = StrokeCap.Round))
                 }
             }
         }

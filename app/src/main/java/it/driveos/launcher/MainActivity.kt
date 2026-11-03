@@ -678,7 +678,7 @@ class MainActivity : ComponentActivity() {
             } else if (reverseOpened) {
                 reverseOpened = false
                 kotlinx.coroutines.delay(1500)
-                if (screen == Screen.REAR_CAM) { screen = if (parkedNow) Screen.OVERVIEW else Screen.DASHBOARD; overviewAuto = false }
+                if (screen == Screen.REAR_CAM) { if (parkedNow) { screen = Screen.OVERVIEW; overviewAuto = true } else { screen = Screen.DASHBOARD; overviewAuto = false } }
                 else if (!parkedNow && screen == Screen.OVERVIEW) { screen = Screen.DASHBOARD; overviewAuto = false }
             }
         }
@@ -733,6 +733,13 @@ class MainActivity : ComponentActivity() {
             if ((parked || handbrakeOn || doorOpenNow || reverseNow) && screen == Screen.DASHBOARD) {
                 screen = Screen.OVERVIEW; overviewAuto = true
             } else if (!parked && !handbrakeOn && !doorOpenNow && !reverseNow && overviewAuto && screen == Screen.OVERVIEW) {
+                screen = Screen.DASHBOARD; overviewAuto = false
+            }
+        }
+        // In marcia (velocita' dalla centralina, non serve il GPS): la schermata aperta da sola si richiude.
+        val movingCan = (vehicleSignals[CanDecoder.SPEED]?.toDoubleOrNull() ?: 0.0) >= 8.0
+        LaunchedEffect(movingCan) {
+            if (movingCan && overviewAuto && !reverseNow && (screen == Screen.OVERVIEW || screen == Screen.REAR_CAM)) {
                 screen = Screen.DASHBOARD; overviewAuto = false
             }
         }
@@ -1382,6 +1389,7 @@ class MainActivity : ComponentActivity() {
                                 rearRaw = CanDecoder.sensorRaw(vehicleSignals, CanDecoder.REAR_SENSORS),
                                 cameraEnabled = s.rearCamera,
                                 onHome = { overviewAuto = false; screen = Screen.DASHBOARD },
+                                steer = vehicleSignals[CanDecoder.STEER]?.toIntOrNull(),
                             )
 
                             Screen.CLIMATE -> it.driveos.launcher.ui.ClimateScreen(

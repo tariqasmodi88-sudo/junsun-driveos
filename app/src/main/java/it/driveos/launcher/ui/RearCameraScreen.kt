@@ -62,18 +62,17 @@ private val Green = Color(0xFF3DDC84)
  * [rearLevels]: 0 = niente, 1 lontano, 2 medio, 3 vicinissimo (da sinistra a destra).
  */
 @Composable
-fun RearCameraScreen(rearLevels: List<Int>?, rearRaw: List<Int>?, cameraEnabled: Boolean, onHome: () -> Unit) {
+fun RearCameraScreen(rearLevels: List<Int>?, rearRaw: List<Int>?, cameraEnabled: Boolean, onHome: () -> Unit, steer: Int? = null) {
     var hasImage by remember { mutableStateOf(false) }
     val ctx = LocalContext.current
-    Box(Modifier.fillMaxSize().background(Color.Black)) {
+    // il messaggio "nessuna immagine" compare solo se dopo 3 s non arriva nulla (niente sfarfallio all'apertura)
+    val waited by androidx.compose.runtime.produceState(false) { kotlinx.coroutines.delay(3000); value = true }
+    Box(Modifier.fillMaxSize().background(Color(0xFF0E1116))) {
         if (cameraEnabled && hasCameraPermission(ctx)) {
             CameraPreview(onFrames = { hasImage = true }, onFail = { hasImage = false }, modifier = Modifier.fillMaxSize())
         }
-        if (!hasImage) {
-            // nessuna immagine: fondo neutro e solo i sensori
-            Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
-        }
-        Guides(rearLevels, showLanes = hasImage, modifier = Modifier.fillMaxSize())
+        // stessa grafica con e senza immagine: linee di traiettoria + sensori
+        Guides(rearLevels, steer, modifier = Modifier.fillMaxSize())
         // barra in alto
         Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Surface(shape = RoundedCornerShape(14.dp), color = Color.Black.copy(alpha = 0.55f)) {
@@ -82,7 +81,7 @@ fun RearCameraScreen(rearLevels: List<Int>?, rearRaw: List<Int>?, cameraEnabled:
             }
             Spacer(Modifier.weight(1f))
             val worst = rearLevels?.maxOrNull() ?: 0
-            if (worst > 0) Surface(shape = RoundedCornerShape(14.dp), color = levelColor(worst).copy(alpha = 0.85f)) {
+            if (worst > 0) Surface(shape = RoundedCornerShape(14.dp), color = levelColor(worst).copy(alpha = 0.9f)) {
                 Text(when (worst) { 3 -> "STOP"; 2 -> tr("Vicino"); else -> tr("Ostacolo") }, fontSize = 20.sp, fontWeight = FontWeight.Bold,
                     color = Color.Black, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
             }
@@ -91,10 +90,10 @@ fun RearCameraScreen(rearLevels: List<Int>?, rearRaw: List<Int>?, cameraEnabled:
                 Text(tr("Home"), fontSize = 18.sp, color = Color.White, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
             }
         }
-        if (!hasImage) Text(
+        if (!hasImage && (waited || !cameraEnabled)) Text(
             if (cameraEnabled) tr("Nessuna immagine dalla telecamera") else tr("Telecamera non impostata"),
-            fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
+            fontSize = 14.sp, color = Color.White.copy(alpha = 0.45f),
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 26.dp),
         )
     }
 }
@@ -104,47 +103,63 @@ private fun levelColor(l: Int) = when (l) { 3 -> Red; 2 -> Orange; 1 -> Yellow; 
 private fun hasCameraPermission(ctx: Context) =
     ctx.checkSelfPermission(android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED
 
-/** Linee guida (con immagine) e arco dei 4 sensori in basso. */
+/**
+ * Linee di traiettoria che curvano con il volante (angolo dalla centralina, circa -540..+540;
+ * senza dato restano dritte) e i 4 sensori come archi sottili sopra il paraurti.
+ */
 @Composable
-private fun Guides(levels: List<Int>?, showLanes: Boolean, modifier: Modifier) {
+private fun Guides(levels: List<Int>?, steer: Int?, modifier: Modifier) {
+    val k by androidx.compose.animation.core.animateFloatAsState(
+        ((steer ?: 0) / 540f).coerceIn(-1f, 1f), label = "steer",
+    )
     Canvas(modifier) {
         val w = size.width; val h = size.height
-        if (showLanes) {
-            // trapezio prospettico: rosso vicino (in basso), poi arancio, giallo, verde
-            val bands = listOf(Red to 0.0f, Orange to 0.25f, Yellow to 0.5f, Green to 0.75f)
-            fun xAt(t: Float, left: Boolean): Float { val near = if (left) 0.18f else 0.82f; val far = if (left) 0.38f else 0.62f; return w * (near + (far - near) * t) }
-            fun yAt(t: Float) = h * (0.95f - 0.5f * t)
-            bands.forEach { (c, t0) ->
-                val t1 = t0 + 0.25f
-                drawLine(c, Offset(xAt(t0, true), yAt(t0)), Offset(xAt(t1, true), yAt(t1)), strokeWidth = 8f, cap = StrokeCap.Round)
-                drawLine(c, Offset(xAt(t0, false), yAt(t0)), Offset(xAt(t1, false), yAt(t1)), strokeWidth = 8f, cap = StrokeCap.Round)
-                drawLine(c, Offset(xAt(t1, true), yAt(t1)), Offset(xAt(t1, true) + w * 0.04f, yAt(t1)), strokeWidth = 6f)
-                drawLine(c, Offset(xAt(t1, false), yAt(t1)), Offset(xAt(t1, false) - w * 0.04f, yAt(t1)), strokeWidth = 6f)
+        val bottom = h * 0.97f; val far = h * 0.42f
+        // punto della corsia alla distanza t (0 = paraurti, 1 = lontano): prospettiva + curva del volante
+        fun pt(t: Float, side: Float): Offset {
+            val y = bottom - (bottom - far) * (1f - (1f - t) * (1f - t) * 0.15f) * t
+            val half = w * (0.30f - 0.19f * t)          // meta' larghezza auto, si stringe in lontananza
+            val bend = k * w * 0.32f * t * t             // la traiettoria piega con lo sterzo
+            return Offset(w / 2 + side * half + bend, y)
+        }
+        fun colorAt(t: Float) = when { t < 0.25f -> Red; t < 0.5f -> Orange; t < 0.75f -> Yellow; else -> Green }
+        // linee statiche (larghezza auto) tenui e tratteggiate
+        if (kotlin.math.abs(k) > 0.03f) for (side in listOf(-1f, 1f)) {
+            val p0 = Offset(w / 2 + side * w * 0.30f, bottom); val p1 = Offset(w / 2 + side * w * 0.11f, far)
+            drawLine(Color.White.copy(alpha = 0.22f), p0, p1, strokeWidth = 3f,
+                pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(18f, 14f)))
+        }
+        // traiettoria: due linee sottili a colori + tacche di distanza
+        val steps = 40
+        for (side in listOf(-1f, 1f)) {
+            for (i in 0 until steps) {
+                val t0 = i / steps.toFloat(); val t1 = (i + 1) / steps.toFloat()
+                drawLine(colorAt(t0).copy(alpha = 0.95f), pt(t0, side), pt(t1, side), strokeWidth = 5f, cap = StrokeCap.Round)
             }
         }
-        // sensori: 4 settori ad arco sopra il paraurti (in basso al centro)
-        val cx = w / 2; val cy = h * (if (showLanes) 1.02f else 0.80f)
-        val r = minOf(w, h) * (if (showLanes) 0.30f else 0.42f)
+        for (t in listOf(0.25f, 0.5f, 0.75f)) {
+            val l = pt(t, -1f); val r = pt(t, 1f)
+            val len = (r.x - l.x) * 0.12f
+            drawLine(colorAt(t - 0.01f), l, Offset(l.x + len, l.y), strokeWidth = 4f, cap = StrokeCap.Round)
+            drawLine(colorAt(t - 0.01f), r, Offset(r.x - len, r.y), strokeWidth = 4f, cap = StrokeCap.Round)
+        }
+        // sensori: 4 settori, 3 anelli sottili ciascuno, appena sopra il paraurti
+        val cx = w / 2; val cy = h * 1.05f
+        val r0 = minOf(w, h) * 0.20f
         val lv = levels ?: listOf(0, 0, 0, 0)
-        val sweep = 160f / 4
+        val sweep = 120f / 4
         for (i in 0 until 4) {
             val l = lv.getOrElse(i) { 0 }
-            val start = 190f + i * sweep
+            val start = 210f + i * sweep
             for (ring in 1..3) {
-                val on = l > 0 && ring <= l
-                val col = if (on) levelColor(l) else Color.White.copy(alpha = if (showLanes) 0.25f else 0.18f)
-                val rr = r * (1.25f - ring * 0.22f)
-                drawArc(col, start + 2f, sweep - 4f, useCenter = false,
-                    topLeft = Offset(cx - rr, cy - rr), size = Size(rr * 2, rr * 2), style = Stroke(width = r * 0.13f, cap = StrokeCap.Butt))
+                // anello 1 = il piu' vicino all'auto (si accende per ultimo, insieme al rosso)
+                val on = l > 0 && ring >= 4 - l
+                val col = if (on) levelColor(l) else Color.White.copy(alpha = 0.14f)
+                val rr = r0 + ring * r0 * 0.16f
+                drawArc(col, start + 3f, sweep - 6f, useCenter = false,
+                    topLeft = Offset(cx - rr, cy - rr), size = Size(rr * 2, rr * 2),
+                    style = Stroke(width = if (on) 7f else 4f, cap = StrokeCap.Round))
             }
-        }
-        if (!showLanes) {
-            // sagoma posteriore dell'auto
-            val bw = w * 0.30f; val bh = h * 0.12f
-            val p = Path().apply {
-                moveTo(cx - bw / 2, cy); lineTo(cx - bw / 2, cy + bh); lineTo(cx + bw / 2, cy + bh); lineTo(cx + bw / 2, cy); close()
-            }
-            drawPath(p, Color.White.copy(alpha = 0.35f), style = Stroke(width = 4f))
         }
     }
 }
