@@ -14,6 +14,7 @@ class WindowRulesTest {
         assertEquals(WindowKind.REVERSE, WindowRules.classify("com.ts.MainUI", "com.ts.backcar.BackcarMainActivity"))
         assertEquals(WindowKind.PROJECTION, WindowRules.classify("com.suding.speedplay", "x.Main"))
         assertEquals(WindowKind.OTHER, WindowRules.classify("com.ts.MainUI", "com.ts.main.Media.USBMainActivity"))
+        assertEquals(WindowKind.OTHER, WindowRules.classify("com.ts.MainUI", "com.ts.main.factory.FsBackCarSetActivity"))
     }
 
     @Test fun bounceOnlyWhenWanted() {

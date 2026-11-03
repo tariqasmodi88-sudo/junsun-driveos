@@ -646,9 +646,12 @@ class MainActivity : ComponentActivity() {
         val sensorsActive = (CanDecoder.sensorLevels(vehicleSignals, CanDecoder.REAR_SENSORS)?.any { it > 0 } == true) ||
             (s?.frontSensors == true && CanDecoder.sensorLevels(vehicleSignals, CanDecoder.FRONT_SENSORS)?.any { it > 0 } == true)
         val reverseSig = KnownVehicleSignals.reverseOn(vehicleSignals) == true
-        LaunchedEffect(sensorsActive, reverseSig, isForeground) {
+        // Solo quando sensori/retro SI ACCENDONO: se poi esci tu da DriveOS (es. impostazioni Junsun)
+        // non ti riporta indietro.
+        val fgNow by androidx.compose.runtime.rememberUpdatedState(isForeground)
+        LaunchedEffect(sensorsActive, reverseSig) {
             val cur = settingsState ?: return@LaunchedEffect
-            if (!cur.keepHome || isForeground || !(sensorsActive || reverseSig)) return@LaunchedEffect
+            if (!cur.keepHome || fgNow || !(sensorsActive || reverseSig)) return@LaunchedEffect
             kotlinx.coroutines.delay(400) // lascia aprire la finestra Junsun, poi la si copre
             bringHomeToFront()
             if (!reverseSig && screen != Screen.VEHICLE) { overviewAuto = true; screen = Screen.OVERVIEW }

@@ -10,7 +10,11 @@ object WindowRules {
     fun classify(pkg: String?, cls: String?): WindowKind {
         val c = cls.orEmpty().lowercase()
         val p = pkg.orEmpty()
+        val simple = c.substringAfterLast('.')
+        // pagine di impostazioni Junsun (es. FsBackCarSetActivity): mai coprirle
+        val settingsPage = simple.startsWith("fs") || simple.contains("set")
         return when {
+            settingsPage -> WindowKind.OTHER
             c.contains("candoor") || c.contains("doormsg") -> WindowKind.DOOR
             c.contains("canradar") || c.contains("radaractivity") -> WindowKind.RADAR
             c.contains("backcar") || c.contains("rearview") -> WindowKind.REVERSE
