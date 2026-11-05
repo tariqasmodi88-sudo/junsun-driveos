@@ -19,6 +19,24 @@ class DriveAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         WindowWatcher.service = this
+        // Il sistema ricollega l'Accessibilità anche dopo un riavvio o se il processo era stato chiuso:
+        // vale come accensione.
+        it.driveos.launcher.system.WakeGuard.arm(System.currentTimeMillis())
+    }
+
+    /** Subito dopo l'accensione: se il firmware rimette davanti un'app Junsun, si torna alla Home. */
+    private fun wakeBounce(pkg: String, cls: String) {
+        val guard = it.driveos.launcher.system.WakeGuard
+        val repo = (application as? DriveOSApp)?.vehicleRepository
+        val reverse = repo?.let { KnownVehicleSignals.reverseOn(it.signals.value) } == true
+        if (!guard.shouldBounce(pkg, cls, System.currentTimeMillis(), homeInFront = false, reverse = reverse)) return
+        // breve attesa: il firmware a volte apre due finestre di fila
+        handler.postDelayed({
+            if (WindowWatcher.currentPackage() == pkg) {
+                guard.bounced()
+                goHome()
+            }
+        }, 800)
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -40,6 +58,7 @@ class DriveAccessibilityService : AccessibilityService() {
             else -> {}
         }
         WindowWatcher.emit(WindowEvent(pkg, cls, kind))
+        wakeBounce(pkg, cls)
     }
 
     override fun onInterrupt() {}

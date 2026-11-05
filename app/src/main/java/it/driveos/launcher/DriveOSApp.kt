@@ -1,5 +1,6 @@
 package it.driveos.launcher
 
+import it.driveos.launcher.system.WakeGuard
 import android.app.Application
 import it.driveos.launcher.apps.AppRepository
 import it.driveos.launcher.automation.BluetoothWatcher
@@ -110,16 +111,7 @@ class DriveOSApp : Application() {
                                 reconnectAll()
                             }
                             // al risveglio la radio rimette davanti la sua app: si torna sulla Home DriveOS
-                            wakeScope.launch {
-                                kotlinx.coroutines.delay(6_000)
-                                val keep = runCatching { settingsRepository.settings.first().keepHome }.getOrDefault(true)
-                                if (keep && it.driveos.launcher.vehicle.WindowWatcher.currentPackage() == "com.ts.MainUI") {
-                                    runCatching {
-                                        startActivity(android.content.Intent(this@DriveOSApp, MainActivity::class.java)
-                                            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
-                                    }
-                                }
-                            }
+                            scheduleWakeReturn()
                         }
                     }
                 }
@@ -131,13 +123,15 @@ class DriveOSApp : Application() {
             })
         }
         it.driveos.launcher.system.PowerGate.screenOn = getSystemService(android.os.PowerManager::class.java)?.isInteractive != false
+        // processo appena partito (avvio radio, o processo chiuso durante la sospensione): stesso controllo
+        scheduleWakeReturn()
         wakeScope.launch {
             // avvio (anche dopo che la radio ha chiuso le app): prima si lascia finire la radio
             while (!it.driveos.launcher.system.PowerGate.ready()) kotlinx.coroutines.delay(1000)
             reconnectAll()
         }
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-        scope.launch { settingsRepository.settings.collect { keyMapper.bindings = it.keyBindings } }
+        scope.launch { settingsRepository.settings.collect { keyMapper.bindings = it.keyBindings; WakeGuard.keepHome = it.keepHome } }
         scope.launch {
             logcatReader.names.collect { m ->
                 val cur = settingsRepository.settings.first().radioPresets
@@ -152,6 +146,35 @@ class DriveOSApp : Application() {
             scope.launch {
                 val cur = settingsRepository.settings.first().keyBindings
                 settingsRepository.setKeyBindings(KeyBindingCodec.set(cur, b))
+            }
+        }
+    }
+
+    private var wakeReturnJob: kotlinx.coroutines.Job? = null
+
+    /**
+     * Dopo l'accensione la radio può rimettere davanti la sua app anche più volte e con ritardo
+     * (riaggancio MCU). Si controlla a più riprese per [WakeGuard.WINDOW_MS]; si smette appena tocchi
+     * DriveOS. Le finestre che compaiono tra un controllo e l'altro le copre il servizio di Accessibilità.
+     */
+    fun scheduleWakeReturn() {
+        WakeGuard.arm(System.currentTimeMillis())
+        wakeReturnJob?.cancel()
+        wakeReturnJob = wakeScope.launch {
+            for (wait in longArrayOf(3_000, 3_000, 3_000, 4_000, 5_000, 6_000)) {
+                kotlinx.coroutines.delay(wait)
+                val now = System.currentTimeMillis()
+                if (!WakeGuard.active(now)) break
+                val fg = it.driveos.launcher.vehicle.WindowWatcher.currentPackage()
+                    ?: vehicleRepository.signals.value["prop:forfan.want2start"]
+                val reverse = it.driveos.launcher.vehicle.KnownVehicleSignals.reverseOn(vehicleRepository.signals.value) == true
+                if (WakeGuard.shouldBounce(fg, null, now, WakeGuard.homeInFront, reverse)) {
+                    WakeGuard.bounced()
+                    if (!it.driveos.launcher.vehicle.WindowWatcher.goHome()) runCatching {
+                        startActivity(android.content.Intent(this@DriveOSApp, MainActivity::class.java)
+                            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
+                    }
+                }
             }
         }
     }

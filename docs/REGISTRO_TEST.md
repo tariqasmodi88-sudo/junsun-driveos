@@ -71,3 +71,18 @@ della scansione veicolo, radio integrata (non apre più l'app Junsun).
 | Export scansione veicolo (pulsante dedicato) | Da verificare | Salva driveos_veicolo_*.json in Download/DriveOS e su chiavetta |
 | Radio integrata: lettura stato dai broadcast | **Da verificare sul veicolo** | Mostra la frequenza solo se il firmware la pubblica |
 | Radio integrata: comandi (sintonizza/cerca) | **Sperimentale** | Prova protocolli MTK/FYT; da adattare con l'export reale |
+
+## 2026-11-05 — v1.0.3
+
+Correzione: a volte, girando la chiave, partiva la radio nativa e DriveOS restava dietro. La radio
+esce dalla sospensione (non si riavvia) e il firmware rimette davanti la sua app, anche più volte e
+con ritardo. Ora per 30 s dopo l'accensione DriveOS torna davanti se compare un'app Junsun (mai sopra
+retromarcia, radar, impostazioni o proiezione); si ferma appena tocchi DriveOS.
+
+| Test | Esito | Note |
+|---|---|---|
+| 7 test unitari WakeGuard (finestra 30 s, retro/radar/impostazioni esclusi, tocco utente, limite ritorni) | **7/7 superati** | Compilatore Kotlin standalone 2.0.20 |
+| Accensione dopo sosta breve (10 min): DriveOS davanti entro pochi secondi | **Da verificare sul veicolo** | |
+| Accensione dopo una notte ferma | **Da verificare sul veicolo** | |
+| Accensione con retromarcia subito inserita: resta la vista retro/sensori | **Da verificare sul veicolo** | |
+| Toccando DriveOS e aprendo la radio nativa entro 30 s: la radio resta aperta | **Da verificare sul veicolo** | |

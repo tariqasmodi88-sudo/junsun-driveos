@@ -160,6 +160,8 @@ class MainActivity : ComponentActivity() {
     /** Limite tocchi in marcia (come Android Auto): i tocchi oltre la riserva vengono bloccati. */
     override fun dispatchTouchEvent(ev: android.view.MotionEvent): Boolean {
         val lock = driveApp.driveLock
+        // un tocco su DriveOS dopo l'accensione: da qui in poi le app Junsun aperte sono volute
+        if (ev.actionMasked == android.view.MotionEvent.ACTION_DOWN) it.driveos.launcher.system.WakeGuard.userActed()
         if (ev.actionMasked == android.view.MotionEvent.ACTION_DOWN) {
             if (!lock.onTouch()) return true
         } else if (lock.isLocked()) return true
@@ -264,6 +266,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         isForeground = true
+        it.driveos.launcher.system.WakeGuard.homeInFront = true
         // Se la radio si e' risvegliata senza avvisare (nessun segnale di riaccensione), la Home visibile
         // vale come risveglio: DriveOS si ricollega comunque 20 s dopo.
         if (!it.driveos.launcher.system.PowerGate.screenOn &&
@@ -284,6 +287,7 @@ class MainActivity : ComponentActivity() {
     override fun onPause() {
         super.onPause()
         isForeground = false
+        it.driveos.launcher.system.WakeGuard.homeInFront = false
         // vehicleRepository resta attivo anche in secondo piano: serve a riprendere lo schermo dopo la retromarcia
         driveApp.bluetoothWatcher.stop()
         driveApp.speedWatcher.stop()

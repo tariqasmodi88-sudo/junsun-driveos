@@ -23,6 +23,12 @@ object WindowRules {
         }
     }
 
+    /** Pagine di impostazioni Junsun (es. FsBackCarSetActivity): aperte da te, mai coprirle. */
+    fun isSettingsPage(cls: String?): Boolean {
+        val simple = cls.orEmpty().lowercase().substringAfterLast('.')
+        return simple.startsWith("fs") || simple.contains("set")
+    }
+
     /** Finestre di sistema da cui tornare alla Home (la proiezione solo se richiesto). */
     fun bounceHome(kind: WindowKind, includeProjection: Boolean): Boolean = when (kind) {
         WindowKind.DOOR, WindowKind.RADAR, WindowKind.REVERSE -> true

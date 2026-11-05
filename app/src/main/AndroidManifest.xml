@@ -17,6 +17,9 @@
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
+    <!-- Avvio della radio: DriveOS torna davanti anche se il firmware riapre la sua app. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
     <!-- Registrazione continua dei dati del veicolo in background (servizio in primo piano). -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
@@ -106,6 +109,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Avvio e riaccensione rapida della radio (anche se il processo DriveOS era chiuso). -->
+        <receiver
+            android:name=".system.BootReceiver"
+            android:directBootAware="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="autochips.intent.action.QB_POWERON" />
+                <action android:name="com.ts.main.uiaccon" />
+            </intent-filter>
+        </receiver>
 
         <!-- Registrazione continua dei dati del veicolo (foreground service). -->
         <service
