@@ -34,7 +34,7 @@ class DriveAccessibilityService : AccessibilityService() {
         handler.postDelayed({
             if (WindowWatcher.currentPackage() == pkg) {
                 guard.bounced()
-                goHome()
+                WindowWatcher.goHome()
             }
         }, 800)
     }

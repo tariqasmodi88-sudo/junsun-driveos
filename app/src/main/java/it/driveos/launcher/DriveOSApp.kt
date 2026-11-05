@@ -165,8 +165,10 @@ class DriveOSApp : Application() {
                 kotlinx.coroutines.delay(wait)
                 val now = System.currentTimeMillis()
                 if (!WakeGuard.active(now)) break
+                // senza Accessibilita' non si vede quale app e' davanti: se la Home DriveOS non e' visibile
+                // si assume la radio Junsun (e' lei che il firmware rimette davanti al risveglio)
                 val fg = it.driveos.launcher.vehicle.WindowWatcher.currentPackage()
-                    ?: vehicleRepository.signals.value["prop:forfan.want2start"]
+                    ?: if (!it.driveos.launcher.vehicle.WindowWatcher.enabled()) "com.ts.MainUI" else null
                 val reverse = it.driveos.launcher.vehicle.KnownVehicleSignals.reverseOn(vehicleRepository.signals.value) == true
                 if (WakeGuard.shouldBounce(fg, null, now, WakeGuard.homeInFront, reverse)) {
                     WakeGuard.bounced()

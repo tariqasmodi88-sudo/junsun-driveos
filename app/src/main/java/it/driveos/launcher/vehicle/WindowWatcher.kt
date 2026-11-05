@@ -19,6 +19,25 @@ object WindowWatcher {
     fun currentPackage(): String? = lastPkg
     fun emit(e: WindowEvent) { lastPkg = e.pkg; _events.tryEmit(e) }
 
-    /** Azione "Home" di Android: con DriveOS come launcher porta davanti la sua Home. */
-    fun goHome(): Boolean = service?.goHome() ?: false
+    /**
+     * Porta davanti la Home DriveOS. Il tasto "Home" di Android si usa solo se DriveOS e' davvero
+     * il launcher predefinito: altrimenti porterebbe davanti la Home Junsun (com.ts.MainUI) e la
+     * radio nativa resterebbe li'. In quel caso si apre direttamente DriveOS.
+     */
+    fun goHome(): Boolean {
+        val s = service ?: return false
+        if (isDefaultHome(s) && s.goHome()) return true
+        return runCatching {
+            s.startActivity(android.content.Intent(s, it.driveos.launcher.MainActivity::class.java)
+                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                    or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP))
+            true
+        }.getOrDefault(false)
+    }
+
+    fun isDefaultHome(ctx: android.content.Context): Boolean = runCatching {
+        val home = android.content.Intent(android.content.Intent.ACTION_MAIN).addCategory(android.content.Intent.CATEGORY_HOME)
+        ctx.packageManager.resolveActivity(home, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY)
+            ?.activityInfo?.packageName == ctx.packageName
+    }.getOrDefault(false)
 }
