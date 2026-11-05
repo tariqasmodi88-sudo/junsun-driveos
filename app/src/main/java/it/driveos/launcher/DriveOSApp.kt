@@ -189,5 +189,15 @@ class DriveOSApp : Application() {
         speedWatcher.start()
         canReader.resumeIfPaused()
         mediaRepository.resumeAfterPower()
+        // Al risveglio la radio Junsun riaccende da sola il sintonizzatore: se intanto e' ripartita la
+        // musica di DriveOS si sentirebbero tutte e due. Si chiude la radio (anche se riparte in ritardo).
+        wakeScope.launch {
+            for (wait in longArrayOf(1_500, 3_000, 5_000, 10_000)) {
+                kotlinx.coroutines.delay(wait)
+                if (!it.driveos.launcher.system.PowerGate.ready()) return@launch
+                if (mediaRepository.media.value?.isPlaying != true) continue
+                if (runCatching { tsBridge.workMode() }.getOrNull() == 1) tsBridge.radioNow { r -> r.CloseRadioCh() }
+            }
+        }
     }
 }
