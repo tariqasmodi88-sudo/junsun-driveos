@@ -1052,6 +1052,9 @@ class MainActivity : ComponentActivity() {
                     KeyAction.PHONE -> openOrPick(s.phoneApp, PickerTarget.PHONE)
                     KeyAction.MUSIC -> openOrPick(s.musicApp, PickerTarget.MUSIC)
                     KeyAction.VOICE -> startOfflineVoice()
+                    // tasto Indietro dell'autoradio letto da DriveOS (la radio non l'ha visto): indietro di un livello
+                    KeyAction.BACK -> if (isForeground) this@MainActivity.onBackPressedDispatcher.onBackPressed()
+                        else WindowWatcher.service?.back()
                     else -> {}
                 }
             }

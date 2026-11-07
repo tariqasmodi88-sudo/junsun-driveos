@@ -373,6 +373,9 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
                             val changes = LinkedHashMap<String, String>()
                             for (f in parser.feed(buf, n)) {
                                 framesSeen++
+                                // diagnostica tasti fisici (07/11): i tasti dell'autoradio arrivano dall'MCU su questa
+                                // linea; si registrano i messaggi non-CAN per riconoscerli
+                                if (f.type != 'C') android.util.Log.i("DriveOSKey", f.type + " " + f.payload.joinToString(" ") { "%02x".format(it.toInt() and 0xFF) })
                                 for ((k, v) in CanDecoder.decode(f)) {
                                     if (k == CanDecoder.REAR_SENSORS || k == CanDecoder.FRONT_SENSORS) sensorSeen[k] = System.currentTimeMillis()
                                     // I tasti (byte "X") sono eventi: ogni pressione conta, anche se identica alla precedente.

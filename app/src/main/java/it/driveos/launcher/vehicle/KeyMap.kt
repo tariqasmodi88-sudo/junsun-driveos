@@ -13,6 +13,7 @@ enum class KeyAction(val label: String) {
     VOL_UP("Volume +"), VOL_DOWN("Volume −"), MUTE("Muto"),
     NEXT("Avanti (brano / stazione)"), PREV("Indietro (brano / stazione)"), PLAY_PAUSE("Play / pausa"),
     HOME("Home DriveOS"), RADIO("Radio"), NAV("Navigatore"), PHONE("Telefono"), MUSIC("Musica"), VOICE("Comandi vocali"),
+    BACK("Indietro"), SCREEN("Spegni / accendi schermo"),
 }
 
 /** Un tasto "imparato": quando il segnale [signal] della seriale assume [value], si esegue [action]. */
@@ -101,6 +102,7 @@ class KeyMapper(context: Context) {
             KeyAction.NEXT -> media(audio, KeyEvent.KEYCODE_MEDIA_NEXT)
             KeyAction.PREV -> media(audio, KeyEvent.KEYCODE_MEDIA_PREVIOUS)
             KeyAction.PLAY_PAUSE -> media(audio, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE)
+            KeyAction.SCREEN -> Thread { bridge?.backlightToggle() }.start()
             else -> KeyEvents.flow.tryEmit(a)
         }
     }

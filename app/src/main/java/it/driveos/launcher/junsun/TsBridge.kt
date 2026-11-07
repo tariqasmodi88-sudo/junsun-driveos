@@ -92,6 +92,19 @@ class TsBridge(context: Context) {
     // nativa libcan59 da un altro thread e fa crollare MainUI ("JNI ERROR: accessed stale Local",
     // registro del 07/11, CanJni.GetCarInfoAidl). Provato nella 1.1.4 e tolto.
 
+    /** Spegne/riaccende la retroilluminazione come il tasto accensione della radio (ITsCommon.BklTurn, transazione 22 -> Mcu.BklTurn). */
+    fun backlightToggle(): Boolean {
+        if (!it.driveos.launcher.system.PowerGate.ready()) return false
+        val c = common ?: run { bindCommon(); return false }
+        val data = android.os.Parcel.obtain(); val reply = android.os.Parcel.obtain()
+        return try {
+            data.writeInterfaceToken("com.ts.main.common.ITsCommon")
+            c.transact(22, data, reply, 0)
+            reply.readException(); true
+        } catch (t: Throwable) { commonError = t.message; false }
+        finally { data.recycle(); reply.recycle() }
+    }
+
     fun connect() {
         if (!it.driveos.launcher.system.PowerGate.ready()) return
         bindCommon()
