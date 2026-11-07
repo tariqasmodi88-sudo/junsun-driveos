@@ -35,14 +35,6 @@ object WindowWatcher {
         }.getOrDefault(false)
     }
 
-    /** Tasto Indietro di sistema (per chiudere la finestrella porte della radio). */
-    @Volatile var ignoreBackUntil = 0L
-    fun back(): Boolean {
-        val s = service ?: return false
-        ignoreBackUntil = System.currentTimeMillis() + 1_500
-        return s.back()
-    }
-
     fun isDefaultHome(ctx: android.content.Context): Boolean = runCatching {
         val home = android.content.Intent(android.content.Intent.ACTION_MAIN).addCategory(android.content.Intent.CATEGORY_HOME)
         ctx.packageManager.resolveActivity(home, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY)
