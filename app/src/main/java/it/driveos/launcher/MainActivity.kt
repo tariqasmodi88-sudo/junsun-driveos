@@ -660,6 +660,13 @@ class MainActivity : ComponentActivity() {
             bringHomeToFront()
             if (!reverseSig && screen != Screen.VEHICLE) { overviewAuto = true; screen = Screen.OVERVIEW }
         }
+        // riportata davanti dall'app per i sensori (es. da AutoLink): si apre la schermata Veicolo
+        LaunchedEffect(isForeground) {
+            if (isForeground && DriveOSApp.openOverview) {
+                DriveOSApp.openOverview = false
+                if (KnownVehicleSignals.reverseOn(vehicleSignals) != true && screen != Screen.VEHICLE) { overviewAuto = true; screen = Screen.OVERVIEW }
+            }
+        }
         var a11yOn by remember { mutableStateOf(WindowWatcher.enabled()) }
         LaunchedEffect(Unit) { while (true) { a11yOn = WindowWatcher.enabled(); kotlinx.coroutines.delay(2000) } }
 
@@ -1291,6 +1298,10 @@ class MainActivity : ComponentActivity() {
                             Screen.VEHICLE -> VehicleScreen(
                                 signals = vehicleSignals,
                                 logsGranted = driveApp.logcatReader.available(),
+                                onAutoSetup = {
+                                    message(tr("Configuro i permessi…"))
+                                    Thread { it.driveos.launcher.system.SelfSetup.run(driveApp) }.start()
+                                },
                                 loggingOn = loggingOn,
                                 loggedChanges = loggedChanges,
                                 onToggleLogging = { on -> scope.launch { driveApp.settingsRepository.setVehicleLogging(on) } },

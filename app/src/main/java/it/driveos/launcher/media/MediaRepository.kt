@@ -285,6 +285,10 @@ class MediaRepository(context: Context) {
 
     @Volatile private var pausedForPower = false
     /** Quadro spento: ferma la musica (la radio sta andando in standby). */
+    /** Un'altra sorgente (AutoLink/telefono) prende l'audio: il lettore interno si ferma. */
+    fun pauseLocalForOther() = handler.post { if (localActive && local.isPlaying) local.pause() }
+    fun isLocalPlaying(): Boolean = localActive && local.isPlaying
+
     fun pauseForPower() = handler.post {
         val playing = if (localActive) local.isPlaying else controller?.playbackState?.state == PlaybackState.STATE_PLAYING
         if (playing) { pausedForPower = true; if (localActive) local.pause() else runCatching { controller?.transportControls?.pause() } }

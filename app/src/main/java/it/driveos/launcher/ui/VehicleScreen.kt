@@ -68,6 +68,7 @@ fun VehicleScreen(
     rearCameraOn: Boolean = false,
     onToggleRearCamera: (Boolean) -> Unit = {},
     onToggleTouchLimit: (Boolean) -> Unit = {},
+    onAutoSetup: (() -> Unit)? = null,
 ) {
     var showAll by remember { mutableStateOf(false) }
     val colors = MaterialTheme.colorScheme
@@ -146,6 +147,18 @@ fun VehicleScreen(
                         Spacer(Modifier.height(6.dp))
                         Text(tr("Serve per radio e finestre Junsun. Si concede una volta via ADB, poi riapri DriveOS:"),
                             fontSize = 14.sp, color = colors.onSurfaceVariant)
+                        if (onAutoSetup != null) {
+                            Spacer(Modifier.height(10.dp))
+                            Surface(onClick = onAutoSetup, shape = RoundedCornerShape(12.dp), color = colors.primary, modifier = Modifier.fillMaxWidth()) {
+                                Column(Modifier.padding(14.dp)) {
+                                    Text(tr("Concedi da solo"), fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = colors.onPrimary)
+                                    Text(tr("Se la radio chiede \"Consentire il debug?\" tocca Consenti sempre. DriveOS poi si riapre."),
+                                        fontSize = 13.sp, color = colors.onPrimary.copy(alpha = 0.85f))
+                                }
+                            }
+                            Spacer(Modifier.height(6.dp))
+                            Text(tr("Oppure dal telefono:"), fontSize = 13.sp, color = colors.onSurfaceVariant)
+                        }
                         Spacer(Modifier.height(8.dp))
                         androidx.compose.foundation.text.selection.SelectionContainer {
                             Surface(shape = RoundedCornerShape(10.dp), color = colors.surfaceVariant, modifier = Modifier.fillMaxWidth()) {

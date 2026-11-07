@@ -14,6 +14,7 @@ import it.driveos.launcher.system.CrashLog
 import it.driveos.launcher.vehicle.CanSerialReader
 import it.driveos.launcher.vehicle.KeyBindingCodec
 import it.driveos.launcher.vehicle.KeyMapper
+import it.driveos.launcher.vehicle.WindowWatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -25,6 +26,11 @@ import it.driveos.launcher.vehicle.VehicleRepository
 
 /** Contenitore delle dipendenze condivise (nessun framework DI: non serve a questa scala). */
 class DriveOSApp : Application() {
+    companion object {
+        /** DriveOS riportata davanti per i sensori: la Home apre la schermata Veicolo. */
+        @Volatile var openOverview = false
+    }
+
     lateinit var settingsRepository: SettingsRepository
         private set
     lateinit var appRepository: AppRepository
@@ -142,6 +148,28 @@ class DriveOSApp : Application() {
                 if (upd != cur) settingsRepository.setRadioPresets(upd)
             }
         }
+        // Retromarcia/sensori e AutoLink controllati qui, a livello di app: quando davanti c'e' un'altra app
+        // (es. AutoLink) la Home DriveOS e' ferma e non si accorgerebbe della retro.
+        scope.launch {
+            var wasRev = false; var wasSens = false; var wasProj = false
+            vehicleRepository.signals.collect { sig ->
+                val rev = it.driveos.launcher.vehicle.KnownVehicleSignals.reverseOn(sig) == true
+                val sens = it.driveos.launcher.vehicle.CanDecoder.sensorLevels(sig, it.driveos.launcher.vehicle.CanDecoder.REAR_SENSORS)?.any { l -> l > 0 } == true
+                val proj = it.driveos.launcher.vehicle.KnownVehicleSignals.projectionActive(sig)
+                if (rev != wasRev) android.util.Log.i("DriveOS", "retromarcia=$rev davanti=${WakeGuard.homeInFront} schermo=${it.driveos.launcher.system.PowerGate.screenOn} proiezione=$proj")
+                if ((rev && !wasRev) || (sens && !wasSens)) {
+                    val keep = runCatching { settingsRepository.settings.first().keepHome }.getOrDefault(true)
+                    if (keep && !WakeGuard.homeInFront && it.driveos.launcher.system.PowerGate.screenOn) {
+                        if (!rev) openOverview = true
+                        bringMainToFront()
+                    }
+                }
+                // AutoLink appena collegato: porta il suo audio, il lettore interno si ferma
+                if (proj && !wasProj) mediaRepository.pauseLocalForOther()
+                wasRev = rev; wasSens = sens; wasProj = proj
+            }
+        }
+        watchOtherPlayers()
         keyMapper.onLearned = { b ->
             scope.launch {
                 val cur = settingsRepository.settings.first().keyBindings
@@ -150,7 +178,50 @@ class DriveOSApp : Application() {
         }
     }
 
+    /** Apre/porta davanti la Home DriveOS da qualunque app (anche AutoLink). */
+    fun bringMainToFront() {
+        // Android 10 blocca in silenzio le app in secondo piano che aprono schermate, salvo eccezioni:
+        // il servizio di Accessibilita' (legato dal sistema) e' una di queste, quindi si parte da li'.
+        val ctx: android.content.Context = WindowWatcher.service ?: this
+        val i = android.content.Intent(this, MainActivity::class.java)
+            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        android.util.Log.i("DriveOS", "retro/sensori: porto davanti DriveOS (via ${if (ctx === this) "app" else "accessibilita'"})")
+        runCatching { ctx.startActivity(i) }.onFailure { e -> android.util.Log.w("DriveOS", "apertura bloccata: $e"); WindowWatcher.goHome() }
+        // seconda prova: se dopo 1,5 s la Home non e' ancora davanti
+        wakeScope.launch {
+            kotlinx.coroutines.delay(1500)
+            if (!WakeGuard.homeInFront) {
+                android.util.Log.w("DriveOS", "DriveOS non e' davanti dopo 1,5 s: riprovo")
+                runCatching { (WindowWatcher.service ?: this@DriveOSApp).startActivity(i) }
+            }
+        }
+    }
+
+    /**
+     * Se mentre suona il lettore interno parte l'audio di un'altra app (AutoLink, telefono, Spotify…),
+     * il lettore interno si mette in pausa. Il lettore DriveOS non usa il "focus audio" (lo perdeva da solo),
+     * quindi si guardano i lettori audio attivi del sistema: piu' di uno = qualcun altro sta suonando.
+     */
+    private fun watchOtherPlayers() {
+        val am = getSystemService(android.media.AudioManager::class.java) ?: return
+        runCatching {
+            am.registerAudioPlaybackCallback(object : android.media.AudioManager.AudioPlaybackCallback() {
+                override fun onPlaybackConfigChanged(configs: MutableList<android.media.AudioPlaybackConfiguration>) {
+                    if (!mediaRepository.isLocalPlaying()) return
+                    val media = configs.count { c ->
+                        val u = c.audioAttributes.usage
+                        u == android.media.AudioAttributes.USAGE_MEDIA || u == android.media.AudioAttributes.USAGE_GAME ||
+                            u == android.media.AudioAttributes.USAGE_UNKNOWN
+                    }
+                    if (media >= 2) mediaRepository.pauseLocalForOther()
+                }
+            }, android.os.Handler(android.os.Looper.getMainLooper()))
+        }
+    }
+
     private var wakeReturnJob: kotlinx.coroutines.Job? = null
+    @Volatile private var setupTried = false
 
     /**
      * Dopo l'accensione la radio può rimettere davanti la sua app anche più volte e con ritardo
@@ -184,6 +255,11 @@ class DriveOSApp : Application() {
     /** Dopo il cancello di accensione: riaggancia servizi Junsun, log, GPS e seriale. */
     private fun reconnectAll() {
         if (!it.driveos.launcher.system.PowerGate.ready()) return
+        // dopo un reset di Android il permesso ai log sparisce: DriveOS se lo ridà da solo (una volta per avvio)
+        if (!setupTried && !it.driveos.launcher.system.SelfSetup.logsGranted(this)) {
+            setupTried = true
+            Thread { it.driveos.launcher.system.SelfSetup.run(this) }.start()
+        }
         tsBridge.connect()
         logcatReader.start()
         speedWatcher.start()
