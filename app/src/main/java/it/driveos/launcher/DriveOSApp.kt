@@ -294,7 +294,7 @@ class DriveOSApp : Application() {
     private fun reconnectAll() {
         if (!it.driveos.launcher.system.PowerGate.ready()) return
         // dopo un reset di Android il permesso ai log sparisce: DriveOS se lo ridà da solo (una volta per avvio)
-        if (!setupTried && !it.driveos.launcher.system.SelfSetup.logsGranted(this)) {
+        if (!setupTried && it.driveos.launcher.system.SelfSetup.needed(this)) {
             setupTried = true
             Thread { it.driveos.launcher.system.SelfSetup.run(this) }.start()
         }

@@ -24,6 +24,14 @@ object SelfSetup {
     @Volatile var lastResult: String? = null
         private set
 
+    /** true se manca qualcosa (registro, Accessibilita', sovrapposizione): dopo un reset di Android spariscono. */
+    fun needed(ctx: Context): Boolean {
+        val a11y = runCatching {
+            android.provider.Settings.Secure.getString(ctx.contentResolver, android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
+        }.getOrNull().orEmpty()
+        return !logsGranted(ctx) || !a11y.contains(ctx.packageName) || !android.provider.Settings.canDrawOverlays(ctx)
+    }
+
     fun logsGranted(ctx: Context) =
         ctx.checkSelfPermission(android.Manifest.permission.READ_LOGS) == PackageManager.PERMISSION_GRANTED
 
