@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Work
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
@@ -116,7 +117,7 @@ fun NavDetailScreen(
                 Spacer(Modifier.height(14.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     PlaceTile(tr("Casa"), homeAddress, Icons.Filled.Home, onHome, onEditHome, Modifier.weight(1f))
-                    PlaceTile(tr("Lavoro"), workAddress, Icons.Filled.Star, onWork, onEditWork, Modifier.weight(1f))
+                    PlaceTile(tr("Lavoro"), workAddress, Icons.Rounded.Work, onWork, onEditWork, Modifier.weight(1f))
                 }
                 Spacer(Modifier.height(14.dp))
                 if (guidance != null) {

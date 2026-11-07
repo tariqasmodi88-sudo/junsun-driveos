@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Work
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Place
@@ -153,13 +154,13 @@ private fun ColumnScope.Idle(
             if (wide) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     CardButton(tr("Casa"), Icons.Filled.Home, onHome, Modifier.weight(1f), height = 68.dp, primary = true)
-                    CardButton(tr("Lavoro"), Icons.Filled.Star, onWork, Modifier.weight(1f), height = 68.dp)
+                    CardButton(tr("Lavoro"), Icons.Rounded.Work, onWork, Modifier.weight(1f), height = 68.dp)
                     CardButton(tr("Cerca"), Icons.Filled.Search, onSearch, Modifier.weight(1f), height = 68.dp)
                 }
             } else {
                 CardButton(tr("Casa"), Icons.Filled.Home, onHome, Modifier.fillMaxWidth(), height = 64.dp, primary = true)
                 Spacer(Modifier.height(10.dp))
-                CardButton(tr("Lavoro"), Icons.Filled.Star, onWork, Modifier.fillMaxWidth(), height = 64.dp)
+                CardButton(tr("Lavoro"), Icons.Rounded.Work, onWork, Modifier.fillMaxWidth(), height = 64.dp)
                 Spacer(Modifier.height(10.dp))
                 CardButton(tr("Cerca"), Icons.Filled.Search, onSearch, Modifier.fillMaxWidth(), height = 64.dp)
             }
@@ -183,7 +184,7 @@ private fun ColumnScope.Idle(
             Spacer(Modifier.height(12.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 CardButton(tr("Casa"), Icons.Filled.Home, onHome, Modifier.weight(1f), height = 76.dp, primary = true)
-                CardButton(tr("Lavoro"), Icons.Filled.Star, onWork, Modifier.weight(1f), height = 76.dp)
+                CardButton(tr("Lavoro"), Icons.Rounded.Work, onWork, Modifier.weight(1f), height = 76.dp)
             }
             if (recent.isNotEmpty()) {
                 Spacer(Modifier.height(12.dp))
