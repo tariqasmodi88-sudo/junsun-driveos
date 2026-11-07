@@ -1040,6 +1040,8 @@ class MainActivity : ComponentActivity() {
 
         // Indietro: chiude i controlli; dalle viste a tutto schermo torna alla Home.
         BackHandler(enabled = true) {
+            // Indietro mandato da DriveOS per chiudere la finestra porte Junsun: non e' per noi
+            if (System.currentTimeMillis() < WindowWatcher.ignoreBackUntil) return@BackHandler
             if (controlsOpen) { controlsOpen = false } else screen = when (screen) {
                 Screen.DEVICE_INFO -> Screen.SETTINGS
                 Screen.VEHICLE -> if (debugFromOverview) { debugFromOverview = false; Screen.OVERVIEW } else Screen.SETTINGS

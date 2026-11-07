@@ -69,4 +69,5 @@ class DriveAccessibilityService : AccessibilityService() {
     }
 
     fun goHome(): Boolean = performGlobalAction(GLOBAL_ACTION_HOME)
+    fun back(): Boolean = performGlobalAction(GLOBAL_ACTION_BACK)
 }
