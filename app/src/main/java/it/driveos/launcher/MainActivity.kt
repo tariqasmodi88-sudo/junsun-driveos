@@ -1459,10 +1459,13 @@ class MainActivity : ComponentActivity() {
                                     projection = KnownVehicleSignals.projectionActive(vehicleSignals),
                                     radioKhz = vehicleSignals[LogcatParser.RADIO_FREQ]?.toIntOrNull(),
                                     lightsDetail = run {
-                                        val pos = vehicleSignals[CanDecoder.LIGHTS]; val low = vehicleSignals[CanDecoder.LOWBEAM]; val fog = vehicleSignals[CanDecoder.FOG]
-                                        if (pos == null && low == null) null else {
-                                            val base = when { low == "1" -> "anabbaglianti"; pos == "1" -> "posizione"; else -> "spente" }
-                                            if (fog == "1") "$base + retronebbia" else base
+                                        // verificato in auto il 07/11: 0x7D/01 bit 0x40 = anabbaglianti; le luci di posizione
+                                        // non passano dalla CAN ma accendono l'illuminazione della radio (forfan_light_state)
+                                        val low = vehicleSignals[CanDecoder.LIGHTS]; val high = vehicleSignals[CanDecoder.LOWBEAM]
+                                        val fog = vehicleSignals[CanDecoder.FOG]; val ill = KnownVehicleSignals.lightsOn(vehicleSignals)
+                                        if (low == null && ill == null) null else {
+                                            val base = when { low == "1" -> "anabbaglianti"; ill == true -> "posizione"; else -> "spente" }
+                                            base + (if (high == "1") " + abbaglianti" else "") + (if (fog == "1") " + retronebbia" else "")
                                         }
                                     },
                                     speedKmh = speedKmh,
