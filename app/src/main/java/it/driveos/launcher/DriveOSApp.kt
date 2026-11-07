@@ -58,6 +58,7 @@ class DriveOSApp : Application() {
         private set
     val driveLock = it.driveos.launcher.system.DriveLock()
     private val wakeScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var wakeJob: kotlinx.coroutines.Job? = null
     lateinit var voice: it.driveos.launcher.voice.OfflineVoice
         private set
@@ -187,6 +188,38 @@ class DriveOSApp : Application() {
             }
         }
         watchOtherPlayers()
+        // Porte lette dal servizio CarInfo della radio (affidabile, dice quale porta) ogni 400 ms
+        ioScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(400)
+                if (!it.driveos.launcher.system.PowerGate.ready()) continue
+                val d = runCatching { tsBridge.doorInfo() }.getOrNull() ?: continue
+                if (d.size < 6 || d[0] == 0) continue
+                fun b(v: Int) = if (v != 0) "1" else "0"
+                val C = it.driveos.launcher.vehicle.CanDecoder
+                vehicleRepository.ingest(mapOf(C.DOOR_FL to b(d[1]), C.DOOR_FR to b(d[2]), C.DOOR_RL to b(d[3]),
+                    C.DOOR_RR to b(d[4]), C.TRUNK to b(d[5])))
+            }
+        }
+        // La finestrella porte della radio Junsun (CanDoorMsgbox) si chiude da sola con "Indietro":
+        // le porte le mostra DriveOS. Al massimo una volta ogni 2 s.
+        scope.launch {
+            var last = "chiuse"; var lastBack = 0L
+            vehicleRepository.signals.collect { sig ->
+                val v = sig[it.driveos.launcher.vehicle.LogcatParser.DOOR] ?: return@collect
+                if (v == "aperta" && last != "aperta") {
+                    val now = System.currentTimeMillis()
+                    val keep = runCatching { settingsRepository.settings.first().keepHome }.getOrDefault(true)
+                    if (keep && now - lastBack > 2_000 && WindowWatcher.enabled() && WakeGuard.homeInFront) {
+                        lastBack = now
+                        kotlinx.coroutines.delay(350)
+                        android.util.Log.i("DriveOS", "chiudo la finestra porte Junsun")
+                        kotlinx.coroutines.withContext(Dispatchers.Main) { WindowWatcher.back() }
+                    }
+                }
+                last = v
+            }
+        }
         keyMapper.onLearned = { b ->
             scope.launch {
                 val cur = settingsRepository.settings.first().keyBindings

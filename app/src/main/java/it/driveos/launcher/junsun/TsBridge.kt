@@ -88,6 +88,35 @@ class TsBridge(context: Context) {
         finally { data.recycle(); reply.recycle() }
     }
 
+    // --- CarInfoService della radio (com.ts.can.carinfo.ICarInfoService, esportato da MainUI) ---
+    // Le porte come le vede la radio stessa (la stessa fonte della sua finestra porte): la seriale
+    // condivisa a volte perde il messaggio "porta aperta", questo no.
+    @Volatile private var carInfo: IBinder? = null
+    private val carInfoConn = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) { carInfo = service }
+        override fun onServiceDisconnected(name: ComponentName?) { carInfo = null }
+    }
+
+    /**
+     * requestCarDoorInfo (transazione 4): int[18] = [valido, ant.sx, ant.dx, post.sx, post.dx, baule, cofano, …]
+     * (ricavato da CarInfoService$ISettings.requestCarDoorInfo). null se non disponibile.
+     */
+    fun doorInfo(): IntArray? {
+        if (!it.driveos.launcher.system.PowerGate.ready()) return null
+        val b = carInfo ?: run {
+            runCatching { app.bindService(Intent("com.ts.can.carinfo.CarInfoService").setPackage(PKG), carInfoConn, Context.BIND_AUTO_CREATE) }
+            return null
+        }
+        val data = android.os.Parcel.obtain(); val reply = android.os.Parcel.obtain()
+        return try {
+            data.writeInterfaceToken("com.ts.can.carinfo.ICarInfoService")
+            b.transact(4, data, reply, 0)
+            reply.readException()
+            reply.createIntArray()
+        } catch (t: Throwable) { carInfo = null; null }
+        finally { data.recycle(); reply.recycle() }
+    }
+
     fun connect() {
         if (!it.driveos.launcher.system.PowerGate.ready()) return
         bindCommon()
@@ -97,8 +126,8 @@ class TsBridge(context: Context) {
 
     /** Scollega tutto dai servizi Junsun (quadro spento): la radio puo' andare in standby libera. */
     fun disconnect() {
-        listOf(radioConn, functionConn, commonConn).forEach { c -> runCatching { app.unbindService(c) } }
-        radio = null; function = null; common = null; radioCommon = null
+        listOf(radioConn, functionConn, commonConn, carInfoConn).forEach { c -> runCatching { app.unbindService(c) } }
+        radio = null; function = null; common = null; radioCommon = null; carInfo = null
     }
 
     private fun bind(action: String, conn: ServiceConnection) {
