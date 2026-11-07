@@ -1075,7 +1075,22 @@ class MainActivity : ComponentActivity() {
         }
 
         DriveOSTheme(s.themeMode, s.accentIndex, autoDark) {
-            if (!s.setupDone) {
+            val appInfo = remember {
+                runCatching { context.packageManager.getPackageInfo(context.packageName, 0) }.getOrNull()
+            }
+            val appVersion = appInfo?.longVersionCode ?: 0L
+            if (s.termsAccepted != appVersion) {
+                // condizioni d'uso: a ogni installazione e a ogni aggiornamento
+                it.driveos.launcher.ui.TermsScreen(
+                    version = appInfo?.versionName ?: "",
+                    onAccept = { scope.launch { repo.setTermsAccepted(appVersion) } },
+                    onDecline = {
+                        // senza accettazione DriveOS non si usa: si apre la scelta della schermata Home
+                        runCatching { context.startActivity(Intent(android.provider.Settings.ACTION_HOME_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                        this@MainActivity.finish()
+                    },
+                )
+            } else if (!s.setupDone) {
                 // primo avvio: lingua, avvertenze e preferenze
                 it.driveos.launcher.ui.SetupWizard(
                     current = it.driveos.launcher.ui.SetupChoices(s.voiceLang, s.rearCamera, s.frontSensors, s.touchLimit, s.canSerial),

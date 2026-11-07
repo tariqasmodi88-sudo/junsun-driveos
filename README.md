@@ -4,7 +4,7 @@ Launcher (schermata Home) per l'autoradio **Junsun FF_866X** ("V1 Pro") montata 
 **VW Tiguan 2016**. È una normale app Android: **non modifica firmware, partizioni,
 impostazioni di fabbrica né l'MCU** e non richiede root né permessi speciali.
 
-Versione attuale: **0.9.87**
+Versione attuale: **1.2.0**
 
 > ## ⚠️ Avvertenze — leggere prima di installare
 >
@@ -17,7 +17,27 @@ Versione attuale: **0.9.87**
 > - **Non distrarti alla guida.** Sensori, telecamera e avvisi sono un aiuto e non sostituiscono specchietti,
 >   sguardo e codice della strada.
 > - **Uso a proprio rischio:** l'autore non risponde di danni alla radio, all'auto, a persone o cose.
-> - Al primo avvio l'app mostra queste avvertenze e chiede di accettarle.
+> - A ogni installazione e a ogni aggiornamento l'app mostra le **Condizioni d'uso** (sotto) e chiede di accettarle.
+
+## ⚖️ Condizioni d'uso / Terms of use
+
+1. **Natura del software.** DriveOS è un software sperimentale sviluppato da un privato a titolo personale e amatoriale, senza scopo di lucro. Non è un prodotto commerciale e non è stato sottoposto a verifiche di sicurezza, omologazione o certificazione di alcun tipo.
+2. **Nessuna affiliazione.** DriveOS non è prodotto, approvato, sponsorizzato né in alcun modo collegato a Junsun, ForFan, MediaTek, Volkswagen, Google, Waze o ad altri titolari dei marchi citati. Tutti i marchi appartengono ai rispettivi proprietari e sono menzionati al solo scopo di indicare la compatibilità.
+3. **Esclusione di garanzia.** Il software è fornito «così com'è» («as is»), senza garanzie di alcun tipo, espresse o implicite, comprese, a titolo esemplificativo, quelle di funzionamento, di idoneità a uno scopo particolare e di assenza di errori.
+4. **Limitazione di responsabilità.** Nei limiti massimi consentiti dalla legge applicabile, l'autore non risponde di alcun danno, diretto o indiretto, a dispositivi, veicoli, persone o cose, né di perdite di dati o della garanzia del produttore, derivante dall'installazione, dall'aggiornamento o dall'uso del software.
+5. **Uso alla guida.** Il conducente resta l'unico responsabile della guida e del rispetto del Codice della Strada. Le informazioni mostrate (sensori, telecamera, stato del veicolo, indicazioni) sono puramente indicative e non sostituiscono specchietti, controlli diretti e attenzione alla strada.
+6. **Accettazione.** Installando, aggiornando o utilizzando DriveOS l'utente dichiara di aver letto e accettato integralmente le presenti condizioni e di utilizzare il software a proprio esclusivo rischio. Le condizioni sono riproposte a ogni installazione e a ogni aggiornamento.
+
+<details><summary>English</summary>
+
+1. **Nature of the software.** DriveOS is experimental software developed by a private individual as a personal, non-commercial hobby project. It is not a commercial product and has not undergone any safety testing, homologation or certification.
+2. **No affiliation.** DriveOS is not made, endorsed, sponsored by or in any way affiliated with Junsun, ForFan, MediaTek, Volkswagen, Google, Waze or any other owner of the trademarks mentioned. All trademarks belong to their respective owners and are mentioned solely to indicate compatibility.
+3. **Disclaimer of warranty.** The software is provided "as is", without warranty of any kind, express or implied, including but not limited to warranties of operation, fitness for a particular purpose and freedom from errors.
+4. **Limitation of liability.** To the maximum extent permitted by applicable law, the author shall not be liable for any direct or indirect damage to devices, vehicles, persons or property, nor for loss of data or of the manufacturer's warranty, arising from installing, updating or using the software.
+5. **Use while driving.** The driver remains solely responsible for driving and for complying with traffic laws. Information shown (sensors, camera, vehicle status, directions) is indicative only and does not replace mirrors, direct checks and attention to the road.
+6. **Acceptance.** By installing, updating or using DriveOS the user declares to have read and fully accepted these terms and to use the software entirely at their own risk. These terms are shown again at every installation and every update.
+
+</details>
 
 ### Funzioni principali (0.9.x)
 
