@@ -20,13 +20,16 @@ object KnownVehicleSignals {
 
     /** Rileva i fari dai segnali letti, senza bisogno di calibrazione. null = non noto. */
     fun lightsOn(signals: Map<String, String>): Boolean? {
-        // la seriale auto e' immediata (le proprieta' si rileggono ogni pochi secondi): ha la precedenza
-        signals["can:lights"]?.let { return it == "1" }
+        // L'illuminazione della radio (ILL, filo luci di posizione) e' la fonte giusta per il tema: c'e' sempre,
+        // anche all'accensione, e vale anche con le sole luci di posizione. La seriale (0x7D/01) arriva solo ai
+        // cambi e a luci di posizione puo' dire "spente" (07/11: manopola su posizione = tema chiaro).
         for (p in lights) {
             val v = signals[p.id] ?: continue
             if (v.equals(p.on, ignoreCase = true)) return true
             if (v.equals(p.off, ignoreCase = true)) return false
         }
+        signals["log:luci"]?.let { return it == "on" }
+        signals["can:lights"]?.let { return it == "1" }
         return null
     }
 
@@ -146,8 +149,8 @@ object VehicleStatus {
 
     /** Stato fari: dal collegamento esplicito, altrimenti dai segnali noti automatici. */
     fun lightsOn(lightsBinding: SignalBinding?, signals: Map<String, String>): Boolean? {
-        // la seriale dell'auto e' immediata e affidabile: ha la precedenza su un vecchio collegamento che si rilegge a intervalli
-        signals["can:lights"]?.let { return it == "1" }
+        // prima l'illuminazione della radio e il registro (vedi KnownVehicleSignals.lightsOn), poi il collegamento
+        KnownVehicleSignals.lightsOn(signals)?.let { return it }
         if (lightsBinding != null) {
             val v = signals[lightsBinding.id]
             if (v != null) {
