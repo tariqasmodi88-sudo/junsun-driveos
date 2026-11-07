@@ -92,9 +92,17 @@ class KeyMapper(context: Context) {
             // Tasti fissi dell'autoradio che DriveOS legge al posto della radio (la seriale e' condivisa):
             // li esegue DriveOS, altrimenti andrebbero persi (07/11).
             if (k == CanDecoder.KEY && bindings.none { b -> b.signal == k && b.value == v }) {
+                // Codici ricavati dalla cattura del 31/10 (tasti premuti da sinistra a destra):
+                // 02 Vol−, 03 Vol+, 04 Home, 01 Accensione, 05 Indietro, 07 Navigatore. Muto non catturato: 06 presunto.
                 when (v) {
-                    "05" -> perform(KeyAction.BACK)
+                    "02" -> perform(KeyAction.VOL_DOWN)
+                    "03" -> perform(KeyAction.VOL_UP)
+                    "04" -> perform(KeyAction.HOME)
                     "01" -> perform(KeyAction.SCREEN)
+                    "05" -> perform(KeyAction.BACK)
+                    "07" -> perform(KeyAction.NAV)
+                    "06" -> perform(KeyAction.MUTE)
+                    else -> android.util.Log.i("DriveOSKey", "tasto sconosciuto: $v")
                 }
             }
             bindings.filter { it.signal == k && it.value == v }.forEach { perform(it.action) }
