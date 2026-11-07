@@ -24,8 +24,12 @@ object WindowWatcher {
      * il launcher predefinito: altrimenti porterebbe davanti la Home Junsun (com.ts.MainUI) e la
      * radio nativa resterebbe li'. In quel caso si apre direttamente DriveOS.
      */
+    /** Fino a quando un "Home" ricevuto da DriveOS e' stato mandato da DriveOS stesso (non riporta alla dashboard). */
+    @Volatile var selfHomeUntil = 0L
+
     fun goHome(): Boolean {
         val s = service ?: return false
+        selfHomeUntil = System.currentTimeMillis() + 2_500
         if (isDefaultHome(s) && s.goHome()) return true
         return runCatching {
             s.startActivity(android.content.Intent(s, it.driveos.launcher.MainActivity::class.java)

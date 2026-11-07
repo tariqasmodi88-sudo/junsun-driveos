@@ -296,7 +296,10 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         // Tasto Home premuto mentre DriveOS e' gia' aperto: torna alla dashboard.
-        if (intent.hasCategory(Intent.CATEGORY_HOME)) screen = Screen.DASHBOARD
+        // Ma non se il "Home" l'ha mandato DriveOS stesso per tornare davanti (es. in retromarcia):
+        // altrimenti la schermata retro veniva subito sostituita dalla dashboard/Veicolo (07/11).
+        if (intent.hasCategory(Intent.CATEGORY_HOME) && System.currentTimeMillis() > WindowWatcher.selfHomeUntil &&
+            KnownVehicleSignals.reverseOn(driveApp.vehicleRepository.signals.value) != true) screen = Screen.DASHBOARD
     }
 
     override fun onDestroy() {
@@ -686,7 +689,7 @@ class MainActivity : ComponentActivity() {
                 // schermata retromarcia (telecamera o solo sensori)
                 val target = if (settingsNowRev.rearCamera) Screen.REAR_CAM else Screen.OVERVIEW
                 if (screen != target && screen != Screen.VEHICLE) { overviewAuto = true; screen = target }
-                WindowWatcher.goHome()
+                if (!fgNow) WindowWatcher.goHome()
             } else if (reverseOpened) {
                 reverseOpened = false
                 kotlinx.coroutines.delay(1500)
