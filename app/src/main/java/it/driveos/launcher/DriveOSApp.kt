@@ -156,6 +156,7 @@ class DriveOSApp : Application() {
                 val rev = it.driveos.launcher.vehicle.KnownVehicleSignals.reverseOn(sig) == true
                 val sens = it.driveos.launcher.vehicle.CanDecoder.sensorLevels(sig, it.driveos.launcher.vehicle.CanDecoder.REAR_SENSORS)?.any { l -> l > 0 } == true
                 val proj = it.driveos.launcher.vehicle.KnownVehicleSignals.projectionActive(sig)
+                if (rev != wasRev) android.util.Log.i("DriveOS", "retromarcia=$rev davanti=${WakeGuard.homeInFront} schermo=${it.driveos.launcher.system.PowerGate.screenOn} proiezione=$proj")
                 if ((rev && !wasRev) || (sens && !wasSens)) {
                     val keep = runCatching { settingsRepository.settings.first().keepHome }.getOrDefault(true)
                     if (keep && !WakeGuard.homeInFront && it.driveos.launcher.system.PowerGate.screenOn) {
@@ -179,11 +180,22 @@ class DriveOSApp : Application() {
 
     /** Apre/porta davanti la Home DriveOS da qualunque app (anche AutoLink). */
     fun bringMainToFront() {
-        runCatching {
-            startActivity(android.content.Intent(this, MainActivity::class.java)
-                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-                    or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP))
-        }.onFailure { _ -> WindowWatcher.goHome() }
+        // Android 10 blocca in silenzio le app in secondo piano che aprono schermate, salvo eccezioni:
+        // il servizio di Accessibilita' (legato dal sistema) e' una di queste, quindi si parte da li'.
+        val ctx: android.content.Context = WindowWatcher.service ?: this
+        val i = android.content.Intent(this, MainActivity::class.java)
+            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        android.util.Log.i("DriveOS", "retro/sensori: porto davanti DriveOS (via ${if (ctx === this) "app" else "accessibilita'"})")
+        runCatching { ctx.startActivity(i) }.onFailure { e -> android.util.Log.w("DriveOS", "apertura bloccata: $e"); WindowWatcher.goHome() }
+        // seconda prova: se dopo 1,5 s la Home non e' ancora davanti
+        wakeScope.launch {
+            kotlinx.coroutines.delay(1500)
+            if (!WakeGuard.homeInFront) {
+                android.util.Log.w("DriveOS", "DriveOS non e' davanti dopo 1,5 s: riprovo")
+                runCatching { (WindowWatcher.service ?: this@DriveOSApp).startActivity(i) }
+            }
+        }
     }
 
     /**
