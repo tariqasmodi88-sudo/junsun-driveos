@@ -197,6 +197,11 @@ dell'auto, quindi le finestre native si possono spegnere. Si fa dalle impostazio
 |  | `1 CAM+OPS(only rear)` | alternativa: in avanti niente sensori Junsun, in retro resta la loro schermata |
 | **Camera detect** | `Not detect` | la Junsun non apre la sua schermata telecamera in retromarcia (con `Detect` la apre sempre, anche senza telecamera: "No Signal") |
 
+**Attenzione:** con `Camera detect = Not detect` la radio non manda piu' il segnale di retromarcia
+`com.forfan.operator_reversing` (MainUI lo invia solo dentro `EnterCamera`). DriveOS legge allora la
+retromarcia dalla seriale e dal registro di sistema: concedere il permesso ai log
+(`adb shell pm grant it.driveos.launcher android.permission.READ_LOGS`), da rifare dopo ogni reset.
+
 Gli altri valori (Park mute, Line, CamType, CamFormat, mirror, back option, RadarType) non vanno toccati.
 
 Verificato sul firmware ForFan FF_866X (MainUI): `Reverse mode` e' il parametro `CanS(43)`
