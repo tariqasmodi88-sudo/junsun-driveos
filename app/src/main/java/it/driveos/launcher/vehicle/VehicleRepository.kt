@@ -95,6 +95,13 @@ class VehicleRepository(context: Context) {
     /** Inietta segnali provenienti dal registro di sistema (LogcatReader). */
     fun ingest(updates: Map<String, String>) = merge(updates)
 
+    /** Dimentica dei segnali (es. fari al quadro spento: al risveglio il vecchio valore sarebbe sbagliato). */
+    fun forget(keys: Collection<String>) {
+        val cur = _signals.value
+        if (keys.none { it in cur }) return
+        _signals.value = cur - keys.toSet()
+    }
+
     private fun readSettings(out: MutableMap<String, String>) {
         val cr = app.contentResolver
         INTERESTING_SETTINGS.forEach { (table, key) ->

@@ -47,6 +47,9 @@ object CanQuery {
     val STATUS: ByteArray = frame(raise(0x90, 0x41, 0x01))
     /** Richiesta angolo volante (EPS): la radio la manda ogni ~60 ms in retromarcia (libcan59, CCanVolkswagen::QueryEPS). */
     val EPS: ByteArray = frame(raise(0x90, 0x26, 0x00))
+    /** Richieste generiche Raise (0x90 [comando, sotto]): stato porte/fari (0x24) e luci (0x7D/01). */
+    val DOORS_FLAGS: ByteArray = frame(raise(0x90, 0x24, 0x00))
+    val LIGHTS: ByteArray = frame(raise(0x90, 0x7D, 0x01))
 }
 
 /**
@@ -433,7 +436,13 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
                             if (now - lastEngine >= periodMs) {
                                 lastEngine = now
                                 out.write(CanQuery.ENGINE); out.flush()
-                                if (n++ % 5 == 0) { delay(50); out.write(CanQuery.STATUS); out.flush() }
+                                if (n++ % 5 == 0) {
+                                    delay(50); out.write(CanQuery.STATUS); out.flush()
+                                    // fari e porte: la centralina li manda solo quando cambiano, quindi
+                                    // all'accensione DriveOS non li sapeva finche' non si toccavano i fari
+                                    delay(50); out.write(CanQuery.LIGHTS); out.flush()
+                                    delay(50); out.write(CanQuery.DOORS_FLAGS); out.flush()
+                                }
                                 queryError = null
                             }
                             // in retromarcia: angolo volante per le linee che curvano

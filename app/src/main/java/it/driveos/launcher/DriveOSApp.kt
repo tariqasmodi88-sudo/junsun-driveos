@@ -116,6 +116,9 @@ class DriveOSApp : Application() {
                             // quadro spento: si stacca TUTTO dalla radio Junsun
                             it.driveos.launcher.system.PowerGate.screenOn = false
                             wakeJob?.cancel(); canReader.pause(); voice.stop(); mediaRepository.pauseForPower()
+                            // i fari di adesso non valgono alla prossima accensione (tema giusto da subito)
+                            vehicleRepository.forget(listOf(it.driveos.launcher.vehicle.CanDecoder.LIGHTS,
+                                it.driveos.launcher.vehicle.CanDecoder.LOWBEAM, "can:C24/flags"))
                             logcatReader.stop(); speedWatcher.stop(); tsBridge.disconnect()
                         }
                         android.content.Intent.ACTION_SCREEN_ON, "com.ts.main.uiaccon", "autochips.intent.action.QB_POWERON" -> {
