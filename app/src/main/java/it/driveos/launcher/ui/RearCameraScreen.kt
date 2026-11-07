@@ -175,6 +175,8 @@ private fun CameraPreview(onFrames: () -> Unit, onFail: () -> Unit, modifier: Mo
     AndroidView(modifier = modifier, factory = { c ->
         TextureView(c).apply {
             var framed = false
+            // la schermata puo' chiudersi (retro tolta subito) prima che la telecamera finisca di aprirsi
+            var alive = true
             surfaceTextureListener = object : TextureView.SurfaceTextureListener {
                 override fun onSurfaceTextureAvailable(st: SurfaceTexture, w: Int, h: Int) {
                     val cm = c.getSystemService(CameraManager::class.java)
@@ -191,14 +193,18 @@ private fun CameraPreview(onFrames: () -> Unit, onFail: () -> Unit, modifier: Mo
                     runCatching {
                         cm.openCamera(id, object : CameraDevice.StateCallback() {
                             override fun onOpened(cd: CameraDevice) {
+                                if (!alive) { runCatching { cd.close() }; return }
                                 device = cd
-                                st.setDefaultBufferSize(1280, 720)
-                                val surface = Surface(st)
-                                val req = cd.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply { addTarget(surface) }
-                                cd.createCaptureSession(listOf(surface), object : CameraCaptureSession.StateCallback() {
-                                    override fun onConfigured(s: CameraCaptureSession) { runCatching { s.setRepeatingRequest(req.build(), null, main) } }
-                                    override fun onConfigureFailed(s: CameraCaptureSession) = onFail()
-                                }, main)
+                                // "Surface was abandoned" (07/11): mai far cadere l'app, al massimo niente immagine
+                                runCatching {
+                                    st.setDefaultBufferSize(1280, 720)
+                                    val surface = Surface(st)
+                                    val req = cd.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply { addTarget(surface) }
+                                    cd.createCaptureSession(listOf(surface), object : CameraCaptureSession.StateCallback() {
+                                        override fun onConfigured(s: CameraCaptureSession) { runCatching { s.setRepeatingRequest(req.build(), null, main) } }
+                                        override fun onConfigureFailed(s: CameraCaptureSession) = onFail()
+                                    }, main)
+                                }.onFailure { runCatching { cd.close() }; device = null; onFail() }
                             }
                             override fun onDisconnected(cd: CameraDevice) { cd.close(); onFail() }
                             override fun onError(cd: CameraDevice, error: Int) { cd.close(); onFail() }
@@ -206,7 +212,7 @@ private fun CameraPreview(onFrames: () -> Unit, onFail: () -> Unit, modifier: Mo
                     }.onFailure { onFail() }
                 }
                 override fun onSurfaceTextureSizeChanged(st: SurfaceTexture, w: Int, h: Int) {}
-                override fun onSurfaceTextureDestroyed(st: SurfaceTexture): Boolean { runCatching { device?.close() }; return true }
+                override fun onSurfaceTextureDestroyed(st: SurfaceTexture): Boolean { alive = false; runCatching { device?.close() }; device = null; return true }
                 override fun onSurfaceTextureUpdated(st: SurfaceTexture) { if (!framed) { framed = true; onFrames() } }
             }
         }
