@@ -59,6 +59,7 @@ android {
     }
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        resources.excludes += "/META-INF/LICENSE*"
     }
 }
 
@@ -68,7 +69,11 @@ dependencies {
 
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.media3:media3-exoplayer:1.4.1")
-    implementation("dev.mobile:dadb:1.2.9") // permessi via adb locale (SelfSetup)
+    implementation("dev.mobile:dadb:1.2.9") { // permessi via adb locale (SelfSetup)
+        // dadb si porta dietro per errore le librerie di test JUnit: non servono nell'app
+        exclude(group = "org.junit.platform"); exclude(group = "org.junit.jupiter")
+        exclude(group = "org.opentest4j"); exclude(group = "org.apiguardian"); exclude(group = "junit")
+    }
     implementation("com.alphacephei:vosk-android:0.3.47")
     implementation("net.java.dev.jna:jna:5.13.0@aar")
     implementation("androidx.activity:activity-compose:1.9.2")
