@@ -93,15 +93,15 @@ class KeyMapper(context: Context) {
             // li esegue DriveOS, altrimenti andrebbero persi (07/11).
             if (k == CanDecoder.KEY && bindings.none { b -> b.signal == k && b.value == v }) {
                 // Codici ricavati dalla cattura del 31/10 (tasti premuti da sinistra a destra):
-                // 02 Vol−, 03 Vol+, 04 Home, 01 Accensione, 05 Indietro, 07 Navigatore. Muto non catturato: 06 presunto.
+                // 02 Vol−, 03 Vol+, 04 Home, 01 Accensione, 05 Indietro, 07 Muto (verificato 07/11).
+                // Navigatore: codice non ancora visto, finisce nel registro come "sconosciuto".
                 when (v) {
                     "02" -> perform(KeyAction.VOL_DOWN)
                     "03" -> perform(KeyAction.VOL_UP)
                     "04" -> perform(KeyAction.HOME)
                     "01" -> perform(KeyAction.SCREEN)
                     "05" -> perform(KeyAction.BACK)
-                    "07" -> perform(KeyAction.NAV)
-                    "06" -> perform(KeyAction.MUTE)
+                    "07" -> perform(KeyAction.MUTE)
                     else -> android.util.Log.i("DriveOSKey", "tasto sconosciuto: $v")
                 }
             }
