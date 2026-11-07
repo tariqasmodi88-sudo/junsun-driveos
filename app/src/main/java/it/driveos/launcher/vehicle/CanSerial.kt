@@ -88,7 +88,7 @@ class CanStreamParser {
 
 /**
  * Traduce i messaggi in segnali (id → valore). Decodifica verificata sul giro del 30/10 (Tiguan 2016):
- *  - C 0x24 sotto-tipo 04: maschera porte (1 ant.sx, 2 ant.dx, 4 post.sx, 8 post.dx, 0x10 baule);
+ *  - C 0x24: 1° byte bit di stato (0x04 = fari), 2° byte maschera porte (1 ant.sx, 2 ant.dx, 4 post.sx, 8 post.dx, 0x10 baule);
  *  - C 0x41 sotto-tipo 01: bit 0x20 a 0 = freno a mano tirato (verificato dall'utente);
  *  - C 0x22 / 0x23: 4 sensori di parcheggio posteriori / anteriori (valore basso = ostacolo vicino; 0 o >= 10 = nulla);
  *  - S 0x41: bit 0 del 2° byte = retromarcia;
@@ -184,7 +184,10 @@ object CanDecoder {
         val sub = d[0].toInt() and 0xFF
         val v = if (len >= 2) d[1].toInt() and 0xFF else -1
         when {
-            id == 0x24 && sub == 0x04 && v >= 0 -> doors(v, out)
+            // 0x24: il 1° byte NON e' un sotto-tipo ma bit di stato (0x04 = anabbaglianti accesi, come nel
+            // protocollo Raise VW PQ). Prima si leggevano le porte solo con 0x04, cioe' solo a fari accesi
+            // (07/11: "a fari spenti le porte non si vedono"). Le porte sono sempre nel 2° byte.
+            id == 0x24 && v >= 0 -> { doors(v, out); out["can:C24/flags"] = sub.toString(16) }
             id == 0x41 && sub == 0x01 && v >= 0 -> out[HANDBRAKE] = if ((v and 0x20) == 0) "1" else "0" // verificato in auto: bit a 0 = tirato
             id == 0x7D && sub == 0x01 && v >= 0 -> {
                 out[LIGHTS] = if ((v and 0x40) != 0) "1" else "0"
