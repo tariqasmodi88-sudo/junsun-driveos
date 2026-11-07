@@ -197,6 +197,7 @@ class DriveOSApp : Application() {
                 if (v == "aperta" && last != "aperta") {
                     val now = System.currentTimeMillis()
                     val keep = runCatching { settingsRepository.settings.first().keepHome }.getOrDefault(true)
+                    android.util.Log.i("DriveOS", "finestra porte Junsun aperta: keepHome=$keep accessibilita=${WindowWatcher.enabled()} davanti=${WakeGuard.homeInFront}")
                     if (keep && now - lastBack > 2_000 && WindowWatcher.enabled() && WakeGuard.homeInFront) {
                         lastBack = now
                         kotlinx.coroutines.delay(350)

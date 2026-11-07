@@ -340,8 +340,14 @@ private fun DrawScope.drawDoors(left: Float, top: Float, w: Float, h: Float, ope
     val midY = top + h * 0.52f
     val rearY = top + h * 0.68f
     val doorLen = h * 0.15f
-    // Con la seriale sappiamo quale porta e' aperta; senza (solo log) le mostriamo tutte in evidenza.
-    fun isOpen(name: String) = if (openNames != null) name in openNames else anyOpen
+    // Con la seriale sappiamo quale porta e' aperta. Se lo sappiamo solo dal registro (la seriale ha perso
+    // il messaggio) non si accendono tutte: si evidenzia il contorno dell'auto ("una porta e' aperta").
+    val known = !openNames.isNullOrEmpty()
+    if (anyOpen && !known) {
+        drawRoundRect(openColor, topLeft = Offset(left - 6f, top - 6f), size = androidx.compose.ui.geometry.Size(w + 12f, h + 12f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(w * 0.35f), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 6f))
+    }
+    fun isOpen(name: String) = known && name in openNames!!
     fun side(y: Float, leftSide: Boolean, name: String) {
         val x = if (leftSide) left else left + w
         val dir = if (leftSide) -1f else 1f
