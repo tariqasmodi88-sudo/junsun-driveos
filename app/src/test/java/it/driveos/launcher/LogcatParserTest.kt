@@ -24,8 +24,8 @@ class LogcatParserTest {
     @Test fun parkingAndReverse() {
         assertEquals(LogcatParser.PARKING to "1",
             LogcatParser.parse("2163 2163 D CanFunc : CanFunc.mbRadarUIUpdate = true"))
-        assertEquals(LogcatParser.REVERSE to "1",
-            LogcatParser.parse("START u0 {cmp=com.ts.MainUI/com.ts.backcar.BackcarMainActivity}"))
+        // la finestra retro Junsun non vale piu' come retromarcia (dava 1 senza mai 0)
+        assertEquals(null, LogcatParser.parse("START u0 {cmp=com.ts.MainUI/com.ts.backcar.BackcarMainActivity}")?.takeIf { it.first == LogcatParser.REVERSE })
     }
 
     @Test fun reverseOnAndOffFromCarEventHandler() {

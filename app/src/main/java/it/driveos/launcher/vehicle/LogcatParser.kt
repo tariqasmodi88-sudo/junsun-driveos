@@ -54,7 +54,7 @@ object LogcatParser {
         light.find(line)?.let { return LIGHTS to if (it.groupValues[1].equals("on", true)) "on" else "off" }
         radar.find(line)?.let { return PARKING to if (it.groupValues[1].equals("true", true)) "1" else "0" }
         carStatus.find(line)?.let { return REVERSE to if (it.groupValues[1].equals("reverse", true)) "1" else "0" }
-        if (backcarIn.containsMatchIn(line)) return REVERSE to "1"
+        // (tolto: "BackcarMainActivity" nel registro metteva la retro a 1 ma mai a 0 -> retro "bloccata")
         // Radio: solo se il contesto parla di FM/radio, per non prendere numeri a caso
         radioName.find(line)?.let { m ->
             val n = m.groupValues[1].trim()
