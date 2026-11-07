@@ -13,8 +13,8 @@ android {
         // La Junsun FF_866X monta Android 10 (API 29): e' il minimo supportato.
         minSdk = 29
         targetSdk = 34
-        versionCode = 131
-        versionName = "1.0.7"
+        versionCode = 132
+        versionName = "1.0.8"
         // solo processori ARM (la radio e' ARM): via le librerie x86 di Vosk/JNA, APK molto piu' leggero
         ndk { abiFilters += listOf("armeabi-v7a", "arm64-v8a") }
     }
