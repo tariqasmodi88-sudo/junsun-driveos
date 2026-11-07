@@ -37,7 +37,9 @@ class LogcatReader(context: Context, private val repo: VehicleRepository) {
 
     fun start() {
         if (!available() || job?.isActive == true) return
-        if (!it.driveos.launcher.system.PowerGate.ready()) return
+        // Il registro si legge e basta: non tocca l'MCU ne' i servizi Junsun, quindi parte subito
+        // all'accensione (serve per la retromarcia), senza aspettare i 20 s del cancello.
+        if (!it.driveos.launcher.system.PowerGate.screenOn) return
         job = scope.launch { readLoop() }
         if (ticker?.isActive != true) ticker = scope.launch { while (isActive) { tick(); delay(300) } }
     }
@@ -106,7 +108,10 @@ class LogcatReader(context: Context, private val repo: VehicleRepository) {
         // filtra per tag: molto meno rumore e consumo. "*:S" silenzia tutto il resto.
         // Tutto il log da livello Debug in su: poi si tiene solo ciò che riguarda il veicolo
         // (LogcatParser per i segnali noti).
-        val cmd = mutableListOf("logcat", "-v", "brief", "*:V")
+        // solo le righe degli ultimi 10 s: niente storia vecchia (retro di ieri che farebbe scattare schermate),
+        // ma si prende la retro inserita appena prima dell'accensione di DriveOS
+        val since = java.text.SimpleDateFormat("MM-dd HH:mm:ss.SSS", java.util.Locale.US).format(java.util.Date(System.currentTimeMillis() - 10_000))
+        val cmd = mutableListOf("logcat", "-v", "brief", "-T", since, "*:V")
         runCatching {
             val p = ProcessBuilder(cmd).redirectErrorStream(true).start()
             process = p

@@ -108,6 +108,8 @@ class DriveOSApp : Application() {
                             wakeJob?.cancel()
                             it.driveos.launcher.system.PowerGate.screenOn = true
                             it.driveos.launcher.system.PowerGate.notBefore = System.currentTimeMillis() + 20_000
+                            // PRIMA i servizi di sicurezza: retromarcia dal registro subito (telecamera e linee)
+                            logcatReader.start()
                             wakeJob = wakeScope.launch {
                                 // lascia alla radio Junsun il tempo di riagganciare l'MCU, poi riprende la seriale
                                 canReader.notBefore = System.currentTimeMillis() + 20_000
@@ -131,6 +133,8 @@ class DriveOSApp : Application() {
         it.driveos.launcher.system.PowerGate.screenOn = getSystemService(android.os.PowerManager::class.java)?.isInteractive != false
         // processo appena partito (avvio radio, o processo chiuso durante la sospensione): stesso controllo
         scheduleWakeReturn()
+        // retromarcia dal registro subito, il resto dopo il cancello
+        logcatReader.start()
         wakeScope.launch {
             // avvio (anche dopo che la radio ha chiuso le app): prima si lascia finire la radio
             while (!it.driveos.launcher.system.PowerGate.ready()) kotlinx.coroutines.delay(1000)
