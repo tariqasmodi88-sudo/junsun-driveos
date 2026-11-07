@@ -145,6 +145,8 @@ class VehicleRepository(context: Context) {
                 if (current.containsKey(k)) counts[k] = (counts[k] ?: 0) + 1
                 next[k] = v
                 changed = true
+                // Retromarcia da piu' fonti: vale l'ultima che e' cambiata (vedi KnownVehicleSignals.reverseOn)
+                if (k in KnownVehicleSignals.REVERSE_SOURCES) next[KnownVehicleSignals.REVERSE_MERGED] = if (v == "1") "1" else "0"
             }
         }
         if (changed) {

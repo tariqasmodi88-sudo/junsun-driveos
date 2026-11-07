@@ -47,7 +47,18 @@ object KnownVehicleSignals {
     const val REARVIEW_ID = "bc:com.ts.rearview_state|show_state"
 
     /** true = in retromarcia, false = no, null = segnale mai visto. */
-    fun reverseOn(signals: Map<String, String>): Boolean? = when (signals["can:reverse"] ?: signals[REVERSE_ID]) {
+    /**
+     * Fonti della retromarcia. Il broadcast com.forfan.operator_reversing lo manda MainUI solo dentro
+     * EnterCamera (AmapAuto.SetBackStateToWeNavi), cioe' solo con "Camera detect = Detect": con la
+     * telecamera Junsun spenta non arriva piu'. Restano la seriale (S 0x41, condivisa con MainUI: si
+     * possono perdere messaggi) e il registro di sistema (SmartPlatformService CarEventHandler
+     * "car status: reverse|normal", serve il permesso READ_LOGS).
+     */
+    val REVERSE_SOURCES = setOf("can:reverse", REVERSE_ID, "log:retromarcia")
+    /** Ultimo valore cambiato tra le fonti (calcolato da VehicleRepository). */
+    const val REVERSE_MERGED = "rev:merged"
+
+    fun reverseOn(signals: Map<String, String>): Boolean? = when (signals[REVERSE_MERGED] ?: signals["can:reverse"] ?: signals[REVERSE_ID]) {
         null -> null
         "1" -> true
         else -> false
