@@ -72,7 +72,8 @@ class CanStreamParser {
         var i = 0
         while (i + 3 <= buf.size) {
             val t = buf[i + 1].toInt()
-            if (buf[i].toInt() == 0x23 && (t == 'C'.code || t == 'S'.code) && (buf[i + 2].toInt() and 0xFF) in 1..40) {
+            // 'K' = tasti dell'autoradio (registro 07/11: "# K 03 10 <tasto> <1=premuto|2=rilasciato> xor")
+            if (buf[i].toInt() == 0x23 && (t == 'C'.code || t == 'S'.code || t == 'K'.code) && (buf[i + 2].toInt() and 0xFF) in 1..40) {
                 val n = buf[i + 2].toInt() and 0xFF
                 if (i + 4 + n > buf.size) break // messaggio incompleto: aspetta altri byte
                 flushJunk()
@@ -158,10 +159,17 @@ object CanDecoder {
 
     /** Byte della seriale che non sono un messaggio noto (probabili tasti dell'autoradio). */
     const val RAW_BYTES = "can:X"
+    /** Tasto dell'autoradio premuto (messaggio 'K'): codice esadecimale. 05 = Indietro, 01 = Accensione. */
+    const val KEY = "can:key"
 
     fun decode(f: CanFrame): Map<String, String> {
         val p = f.payload
         val out = LinkedHashMap<String, String>()
+        if (f.type == 'K') {
+            // solo la pressione (3° byte 1); il rilascio (2) si ignora
+            if (p.size >= 3 && (p[0].toInt() and 0xFF) == 0x10 && p[2].toInt() == 1) out[KEY] = "%02x".format(p[1].toInt() and 0xFF)
+            return out
+        }
         if (f.type == 'X') {
             out[RAW_BYTES] = hex(p, 0)
             return out
@@ -375,11 +383,11 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
                                 framesSeen++
                                 // diagnostica tasti fisici (07/11): i tasti dell'autoradio arrivano dall'MCU su questa
                                 // linea; si registrano i messaggi non-CAN per riconoscerli
-                                if (f.type != 'C') android.util.Log.i("DriveOSKey", f.type + " " + f.payload.joinToString(" ") { "%02x".format(it.toInt() and 0xFF) })
+                                if (f.type == 'K') android.util.Log.i("DriveOSKey", f.payload.joinToString(" ") { "%02x".format(it.toInt() and 0xFF) })
                                 for ((k, v) in CanDecoder.decode(f)) {
                                     if (k == CanDecoder.REAR_SENSORS || k == CanDecoder.FRONT_SENSORS) sensorSeen[k] = System.currentTimeMillis()
                                     // I tasti (byte "X") sono eventi: ogni pressione conta, anche se identica alla precedente.
-                                    if (k == CanDecoder.RAW_BYTES) changes[k] = v
+                                    if (k == CanDecoder.RAW_BYTES || k == CanDecoder.KEY) changes[k] = v
                                     else if (last[k] != v) { last[k] = v; changes[k] = v }
                                 }
                             }

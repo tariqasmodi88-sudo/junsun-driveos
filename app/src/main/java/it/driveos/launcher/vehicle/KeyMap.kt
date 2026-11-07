@@ -89,6 +89,14 @@ class KeyMapper(context: Context) {
             return
         }
         for ((k, v) in changes) {
+            // Tasti fissi dell'autoradio che DriveOS legge al posto della radio (la seriale e' condivisa):
+            // li esegue DriveOS, altrimenti andrebbero persi (07/11).
+            if (k == CanDecoder.KEY && bindings.none { b -> b.signal == k && b.value == v }) {
+                when (v) {
+                    "05" -> perform(KeyAction.BACK)
+                    "01" -> perform(KeyAction.SCREEN)
+                }
+            }
             bindings.filter { it.signal == k && it.value == v }.forEach { perform(it.action) }
         }
     }
