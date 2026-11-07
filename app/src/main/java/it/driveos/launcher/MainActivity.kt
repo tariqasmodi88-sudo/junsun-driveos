@@ -739,7 +739,9 @@ class MainActivity : ComponentActivity() {
         // solo partendo dalla Home (non interrompe navigazione, radio, impostazioni);
         // si richiude da sola quando riparti, se era stata aperta in automatico.
         val handbrakeOn = vehicleSignals[CanDecoder.HANDBRAKE] == "1"
-        val doorOpenNow = CanDecoder.openDoors(vehicleSignals)?.isNotEmpty() ?: (vehicleSignals[LogcatParser.DOOR] == "aperta")
+        // Porte: dalla seriale (si perde qualche messaggio, la linea e' condivisa con la radio) OPPURE dal
+        // registro (finestra porte di MainUI): basta una delle due.
+        val doorOpenNow = CanDecoder.openDoors(vehicleSignals)?.isNotEmpty() == true || vehicleSignals[LogcatParser.DOOR] == "aperta"
         LaunchedEffect(parked, handbrakeOn, doorOpenNow, reverseNow, s.autoOverview) {
             if (!s.autoOverview) return@LaunchedEffect
             if ((parked || handbrakeOn || doorOpenNow || reverseNow) && screen == Screen.DASHBOARD) {
@@ -1418,7 +1420,7 @@ class MainActivity : ComponentActivity() {
                                     lightsOn = lightsResolved,
                                     reverse = KnownVehicleSignals.reverseOn(vehicleSignals),
                                     rearview = KnownVehicleSignals.rearviewOn(vehicleSignals),
-                                    doorOpen = CanDecoder.openDoors(vehicleSignals)?.isNotEmpty() ?: vehicleSignals[LogcatParser.DOOR]?.let { v -> v == "aperta" },
+                                    doorOpen = doorOpenNow,
                                     openDoors = CanDecoder.openDoors(vehicleSignals),
                                     handbrake = vehicleSignals[CanDecoder.HANDBRAKE]?.let { it == "1" },
                                     batteryV = vehicleSignals[CanDecoder.BATTERY_V] ?: vehicleSignals[CanDecoder.VOLTAGE],
