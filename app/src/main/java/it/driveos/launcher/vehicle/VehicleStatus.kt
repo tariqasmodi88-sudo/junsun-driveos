@@ -58,7 +58,9 @@ object KnownVehicleSignals {
     /** Ultimo valore cambiato tra le fonti (calcolato da VehicleRepository). */
     const val REVERSE_MERGED = "rev:merged"
 
-    fun reverseOn(signals: Map<String, String>): Boolean? = when (signals[REVERSE_MERGED] ?: signals["can:reverse"] ?: signals[REVERSE_ID]) {
+    // Il registro (CarEventHandler "reverse|normal") e' la fonte piu' affidabile: se c'e', comanda lui.
+    // La seriale S 0x41 non e' sicura (07/11: la retro si chiudeva da sola un istante dopo l'apertura).
+    fun reverseOn(signals: Map<String, String>): Boolean? = when (signals["log:retromarcia"] ?: signals[REVERSE_MERGED] ?: signals["can:reverse"] ?: signals[REVERSE_ID]) {
         null -> null
         "1" -> true
         else -> false

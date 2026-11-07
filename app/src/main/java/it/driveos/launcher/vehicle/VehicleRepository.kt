@@ -146,7 +146,10 @@ class VehicleRepository(context: Context) {
                 next[k] = v
                 changed = true
                 // Retromarcia da piu' fonti: vale l'ultima che e' cambiata (vedi KnownVehicleSignals.reverseOn)
-                if (k in KnownVehicleSignals.REVERSE_SOURCES) next[KnownVehicleSignals.REVERSE_MERGED] = if (v == "1") "1" else "0"
+                if (k in KnownVehicleSignals.REVERSE_SOURCES) {
+                    next[KnownVehicleSignals.REVERSE_MERGED] = if (v == "1") "1" else "0"
+                    android.util.Log.i("DriveOS", "retromarcia: $k=$v")
+                }
             }
         }
         if (changed) {
