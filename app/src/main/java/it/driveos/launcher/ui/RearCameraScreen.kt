@@ -119,7 +119,9 @@ private fun Guides(levels: List<Int>?, steer: Int?, modifier: Modifier) {
         fun pt(t: Float, side: Float): Offset {
             val y = bottom - (bottom - far) * (1f - (1f - t) * (1f - t) * 0.15f) * t
             val half = w * (0.30f - 0.19f * t)          // meta' larghezza auto, si stringe in lontananza
-            val bend = k * w * 0.32f * t * t             // la traiettoria piega con lo sterzo
+            // In retro con volante a sinistra (antiorario, angolo positivo) il retro dell'auto va a SINISTRA;
+            // l'immagine della telecamera e' a specchio (sinistra auto = sinistra schermo) -> linee a sinistra.
+            val bend = -k * w * 0.32f * t * t
             return Offset(w / 2 + side * half + bend, y)
         }
         fun colorAt(t: Float) = when { t < 0.25f -> Red; t < 0.5f -> Orange; t < 0.75f -> Yellow; else -> Green }
