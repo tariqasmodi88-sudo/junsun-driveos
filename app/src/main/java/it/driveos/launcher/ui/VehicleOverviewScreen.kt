@@ -81,6 +81,8 @@ data class VehicleOverviewState(
     val frontLevels: List<Int>? = null,
     /** Numeri grezzi dei sensori posteriori, mostrati piccoli per tarare i colori. */
     val rearRaw: List<Int>? = null,
+    /** Luci: "spente" / "posizione" / "anabbaglianti" (+ retronebbia). null = non noto. */
+    val lightsDetail: String? = null,
 )
 
 private val DRAWN_ALERTS = setOf("Retromarcia", "Portiera", "Sensori parcheggio")
@@ -107,6 +109,7 @@ fun VehicleOverviewScreen(state: VehicleOverviewState, onDebug: () -> Unit /* = 
                 }
                 // Fari, portiere, baule, retromarcia e sensori sono già disegnati sull'auto: qui solo il resto.
                 StatusRow(tr("Freno a mano"), state.handbrake?.let { if (it) "tirato" else "giù" }, state.handbrake == true, Amber)
+                state.lightsDetail?.let { StatusRow(tr("Luci"), it, it != "spente", Ok) }
                 state.belt?.let { StatusRow(tr("Cintura guida"), if (it) "allacciata" else "slacciata", false, Ok) }
                 if (state.beltPassenger == false) StatusRow(tr("Cintura passeggero"), "slacciata", false, Ok)
                 StatusRow(tr("Telefono"), state.phone?.let { if (it) "collegato" else "scollegato" }, state.phone == true, Ok)

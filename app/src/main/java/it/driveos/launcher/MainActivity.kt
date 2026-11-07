@@ -755,8 +755,24 @@ class MainActivity : ComponentActivity() {
         }
         // In marcia (velocita' dalla centralina, non serve il GPS): la schermata aperta da sola si richiude.
         val movingCan = (vehicleSignals[CanDecoder.SPEED]?.toDoubleOrNull() ?: 0.0) >= 8.0
+        // Porta o baule aperti (anche in marcia): si apre la schermata Veicolo; richiusi, si torna dov'eri.
+        val doorLive by androidx.compose.runtime.rememberUpdatedState(doorOpenNow)
+        var doorPrev by remember { mutableStateOf<Screen?>(null) }
+        LaunchedEffect(doorOpenNow) {
+            if (!s.autoOverview) return@LaunchedEffect
+            if (doorOpenNow) {
+                if (screen != Screen.OVERVIEW && screen != Screen.REAR_CAM && screen != Screen.VEHICLE) {
+                    doorPrev = screen; screen = Screen.OVERVIEW; overviewAuto = true
+                }
+            } else doorPrev?.let { prev ->
+                kotlinx.coroutines.delay(1500)
+                val movingNow = (driveApp.vehicleRepository.signals.value[CanDecoder.SPEED]?.toDoubleOrNull() ?: 0.0) >= 8.0
+                if (!doorLive && screen == Screen.OVERVIEW && (!parkedNow || movingNow)) { screen = prev; overviewAuto = false }
+                doorPrev = null
+            }
+        }
         LaunchedEffect(movingCan) {
-            if (movingCan && overviewAuto && !reverseNow && (screen == Screen.OVERVIEW || screen == Screen.REAR_CAM)) {
+            if (movingCan && overviewAuto && !reverseNow && !doorLive && (screen == Screen.OVERVIEW || screen == Screen.REAR_CAM)) {
                 screen = Screen.DASHBOARD; overviewAuto = false
             }
         }
@@ -1442,6 +1458,13 @@ class MainActivity : ComponentActivity() {
                                     phone = KnownVehicleSignals.phoneConnected(vehicleSignals),
                                     projection = KnownVehicleSignals.projectionActive(vehicleSignals),
                                     radioKhz = vehicleSignals[LogcatParser.RADIO_FREQ]?.toIntOrNull(),
+                                    lightsDetail = run {
+                                        val pos = vehicleSignals[CanDecoder.LIGHTS]; val low = vehicleSignals[CanDecoder.LOWBEAM]; val fog = vehicleSignals[CanDecoder.FOG]
+                                        if (pos == null && low == null) null else {
+                                            val base = when { low == "1" -> "anabbaglianti"; pos == "1" -> "posizione"; else -> "spente" }
+                                            if (fog == "1") "$base + retronebbia" else base
+                                        }
+                                    },
                                     speedKmh = speedKmh,
                                     alerts = vehicleAlerts,
                                     logsGranted = driveApp.logcatReader.available(),
