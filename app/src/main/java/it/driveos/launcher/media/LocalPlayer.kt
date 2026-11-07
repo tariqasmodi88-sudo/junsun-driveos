@@ -39,6 +39,9 @@ class LocalPlayer(context: Context, private val onChange: (MediaInfo?) -> Unit) 
             )
             .setHandleAudioBecomingNoisy(false)
             .build().also { p ->
+                // casuale e ripeti come li avevi lasciati (anche dopo un riavvio)
+                p.shuffleModeEnabled = prefs.getBoolean("shuffle", false)
+                p.repeatMode = prefs.getInt("repeat", Player.REPEAT_MODE_OFF)
                 p.addListener(object : Player.Listener {
                     override fun onEvents(player: Player, events: Player.Events) { publish() }
                     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) { loadMeta(mediaItem) }
@@ -165,7 +168,11 @@ class LocalPlayer(context: Context, private val onChange: (MediaInfo?) -> Unit) 
     fun next() { if (hasItems) { if (player.hasNextMediaItem()) player.seekToNextMediaItem() else player.seekTo(0, 0L) } }
     fun previous() { if (hasItems) { if (player.currentPosition > 3000 || !player.hasPreviousMediaItem()) player.seekTo(0) else player.seekToPreviousMediaItem() } }
     fun seekTo(ms: Long) { if (hasItems) { player.seekTo(ms); publish() } }
-    fun toggleShuffle() { if (hasItems) player.shuffleModeEnabled = !player.shuffleModeEnabled }
+    fun toggleShuffle() {
+        if (!hasItems) return
+        player.shuffleModeEnabled = !player.shuffleModeEnabled
+        prefs.edit().putBoolean("shuffle", player.shuffleModeEnabled).apply()
+    }
     fun cycleRepeat() {
         if (!hasItems) return
         player.repeatMode = when (player.repeatMode) {
@@ -173,5 +180,6 @@ class LocalPlayer(context: Context, private val onChange: (MediaInfo?) -> Unit) 
             Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
             else -> Player.REPEAT_MODE_OFF
         }
+        prefs.edit().putInt("repeat", player.repeatMode).apply()
     }
 }
