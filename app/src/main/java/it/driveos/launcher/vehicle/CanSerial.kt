@@ -337,11 +337,23 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
                         }
                         val parser = CanStreamParser()
                         val buf = ByteArray(512)
-                        // Sensori: sopra i 12 km/h il Park Pilot e' spento e la centralina smette di mandarli,
-                        // l'ultimo valore resterebbe "rosso": si azzerano. (Niente timeout a tempo: da fermi
-                        // davanti a un muro i valori non cambiano e la centralina puo' non rimandarli.)
-                        var speedKmh = 0.0
+                        // Sensori: la centralina smette di mandarli quando il Park Pilot si spegne (es. in marcia
+                        // sopra i 15 km/h). Senza aggiornamenti per 1,5 s si azzerano, altrimenti resterebbero "rossi".
+                        val sensorSeen = HashMap<String, Long>()
+                        var lastExpiryCheck = 0L
                         while (isActive) {
+                            val nowMs = System.currentTimeMillis()
+                            if (nowMs - lastExpiryCheck > 300) {
+                                lastExpiryCheck = nowMs
+                                val expired = LinkedHashMap<String, String>()
+                                for (k in listOf(CanDecoder.REAR_SENSORS, CanDecoder.FRONT_SENSORS)) {
+                                    val seen = sensorSeen[k] ?: continue
+                                    if (nowMs - seen > 2000 && last[k] != null && last[k] != "0 0 0 0") {
+                                        last[k] = "0 0 0 0"; expired[k] = "0 0 0 0"
+                                    }
+                                }
+                                if (expired.isNotEmpty()) sinks.forEach { runCatching { it(expired) } }
+                            }
                             // Lettura SENZA attesa bloccata: si legge solo cio' che e' gia' arrivato.
                             // Cosi' allo spegnimento si smette all'istante e non resta una lettura "in sospeso"
                             // che ruberebbe alla radio la risposta dell'MCU (saluto di spegnimento/riaccensione).
@@ -356,15 +368,11 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
                             for (f in parser.feed(buf, n)) {
                                 framesSeen++
                                 for ((k, v) in CanDecoder.decode(f)) {
-                                    if (k == CanDecoder.SPEED) speedKmh = v.toDoubleOrNull() ?: speedKmh
+                                    if (k == CanDecoder.REAR_SENSORS || k == CanDecoder.FRONT_SENSORS) sensorSeen[k] = System.currentTimeMillis()
                                     // I tasti (byte "X") sono eventi: ogni pressione conta, anche se identica alla precedente.
                                     if (k == CanDecoder.RAW_BYTES) changes[k] = v
                                     else if (last[k] != v) { last[k] = v; changes[k] = v }
                                 }
-                            }
-                            if (speedKmh >= 12.0) for (k in arrayOf(CanDecoder.REAR_SENSORS, CanDecoder.FRONT_SENSORS)) {
-                                val cur = last[k]
-                                if (cur != null && cur.split(' ').any { x -> x != "0" }) { last[k] = "0 0 0 0"; changes[k] = "0 0 0 0" }
                             }
                             if (changes.isNotEmpty()) sinks.forEach { runCatching { it(changes) } }
                         }
@@ -426,7 +434,7 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
                                 queryError = null
                             }
                             // in retromarcia: angolo volante per le linee che curvano
-                            if (steerWanted) { delay(20); out.write(CanQuery.EPS); out.flush(); delay(230) }
+                            if (steerWanted) { delay(20); out.write(CanQuery.EPS); out.flush(); delay(120) }
                             else delay(100)
                         }
                     }
