@@ -79,7 +79,20 @@ class DriveOSApp : Application() {
         bluetoothWatcher = BluetoothWatcher(this)
         connectivityWatcher = ConnectivityWatcher(this)
         radioController = RadioController(this)
-        logcatReader = LogcatReader(this, vehicleRepository)
+        logcatReader = LogcatReader(this, vehicleRepository).also { lr ->
+            // La radio dice quando ha finito di riagganciare la centralina: da li' +2 s di margine si
+            // aprono seriale (sensori) e servizi, invece di aspettare sempre 20 s.
+            lr.onRadioReady = {
+                val now = System.currentTimeMillis()
+                val gate = it.driveos.launcher.system.PowerGate
+                if (gate.screenOn && gate.notBefore > now + 2_000) {
+                    android.util.Log.i("DriveOS", "radio pronta (WakeUpInint ok): seriale tra 2 s invece di ${(gate.notBefore - now) / 1000} s")
+                    gate.notBefore = now + 2_000
+                    canReader.notBefore = now + 2_000
+                    wakeScope.launch { kotlinx.coroutines.delay(2_100); reconnectAll() }
+                }
+            }
+        }
         speedWatcher = SpeedWatcher(this)
         voice = it.driveos.launcher.voice.OfflineVoice(this)
         // far partire la musica spegne la radio Junsun (altrimenti tiene l'audio e mette in pausa i brani)

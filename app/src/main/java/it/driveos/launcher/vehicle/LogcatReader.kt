@@ -44,6 +44,9 @@ class LogcatReader(context: Context, private val repo: VehicleRepository) {
         if (ticker?.isActive != true) ticker = scope.launch { while (isActive) { tick(); delay(300) } }
     }
 
+    /** Chiamata quando la radio Junsun ha finito l'accensione ("WakeUpInint == ok" di MainUI). */
+    @Volatile var onRadioReady: (() -> Unit)? = null
+
     fun stop() {
         job?.cancel()
         runCatching { process?.destroy() }
@@ -118,6 +121,8 @@ class LogcatReader(context: Context, private val repo: VehicleRepository) {
             BufferedReader(InputStreamReader(p.inputStream)).use { reader ->
                 while (scope.isActive) {
                     val line = reader.readLine() ?: break
+                    // MainUI ha finito di riagganciare la centralina (registro del 07/11: ~4 s dopo il risveglio)
+                    if (line.contains("WakeUpInint == ok")) runCatching { onRadioReady?.invoke() }
                     setFreq.find(line)?.let { m -> onTuned(m.groupValues[1].toInt() * 10) }
                     LogcatParser.parse(line)?.let { (id, value) ->
                         if (id == LogcatParser.RADIO_NAME) { tracker.onPs(value); _rds.value = tracker.state }
