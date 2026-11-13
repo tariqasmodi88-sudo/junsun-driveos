@@ -101,7 +101,7 @@ fun NavDetailScreen(
                         onValueChange = onQueryChange,
                         singleLine = true,
                         textStyle = TextStyle(fontSize = 22.sp, color = colors.onSurface),
-                        placeholder = { Text(tr("Indirizzo o luogo"), fontSize = 18.sp, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis) },
+                        placeholder = { Text(tr("Dove andiamo?"), fontSize = 18.sp, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis) },
                         leadingIcon = { Icon(Icons.Filled.Search, null, Modifier.size(28.dp)) },
                         trailingIcon = {
                             if (query.isNotEmpty()) IconButton(onClick = { onQueryChange("") }) { Icon(Icons.Filled.Clear, tr("Cancella")) }
@@ -122,13 +122,17 @@ fun NavDetailScreen(
                 Spacer(Modifier.height(14.dp))
                 if (guidance != null) {
                     Surface(shape = RoundedCornerShape(20.dp), color = colors.primary.copy(alpha = 0.15f), modifier = Modifier.fillMaxWidth().weight(1f)) {
-                        Column(Modifier.padding(16.dp)) {
-                            Text("GUIDA IN CORSO", fontSize = 12.sp, letterSpacing = 1.2.sp, color = colors.primary)
-                            Text(guidance.title, fontSize = 28.sp, fontWeight = FontWeight.Bold, color = colors.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text(guidance.text, fontSize = 19.sp, color = colors.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                            if (guidance.subText.isNotBlank()) Text(guidance.subText, fontSize = 17.sp, color = colors.primary, maxLines = 1)
-                            Spacer(Modifier.weight(1f))
-                            CardButton(tr("Torna alla guida"), Icons.Filled.PlayArrow, onOpenApp, Modifier.fillMaxWidth(), height = 64.dp, primary = true)
+                        // In orizzontale: su questo schermo la scheda e' bassa e il tasto "Torna alla guida",
+                        // messo sotto il testo, finiva fuori dalla scheda (non si vedeva).
+                        Row(Modifier.fillMaxSize().padding(16.dp), verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Column(Modifier.weight(1f)) {
+                                Text("GUIDA IN CORSO", fontSize = 12.sp, letterSpacing = 1.2.sp, color = colors.primary)
+                                Text(guidance.title, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = colors.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(listOf(guidance.text, guidance.subText).filter { it.isNotBlank() }.joinToString(" · "),
+                                    fontSize = 18.sp, color = colors.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+                            CardButton(null, Icons.Filled.PlayArrow, onOpenApp, Modifier.width(96.dp), height = 64.dp, primary = true)
                         }
                     }
                 } else {
