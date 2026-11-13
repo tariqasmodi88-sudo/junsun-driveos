@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="it.driveos.launcher.ScreenshotTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-13T19:39:44" hostname="runnervmccnms" time="9.611">
+  <properties/>
+  <testcase name="overviewDayDoors" classname="it.driveos.launcher.ScreenshotTest" time="8.815"/>
+  <testcase name="keys" classname="it.driveos.launcher.ScreenshotTest" time="0.244"/>
+  <testcase name="debug" classname="it.driveos.launcher.ScreenshotTest" time="0.184"/>
+  <testcase name="overviewNightReverse" classname="it.driveos.launcher.ScreenshotTest" time="0.188"/>
+  <testcase name="overviewNightDriving" classname="it.driveos.launcher.ScreenshotTest" time="0.179"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="it.driveos.launcher.ScreenshotTest2" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-11-13T19:39:54" hostname="runnervmccnms" time="2.586">
+  <properties/>
+  <testcase name="musica" classname="it.driveos.launcher.ScreenshotTest2" time="0.248"/>
+  <testcase name="home_giorno" classname="it.driveos.launcher.ScreenshotTest2" time="0.338"/>
+  <testcase name="controlli" classname="it.driveos.launcher.ScreenshotTest2" time="0.205"/>
+  <testcase name="nav" classname="it.driveos.launcher.ScreenshotTest2" time="0.329"/>
+  <testcase name="info" classname="it.driveos.launcher.ScreenshotTest2" time="0.14"/>
+  <testcase name="impostazioni" classname="it.driveos.launcher.ScreenshotTest2" time="0.259"/>
+  <testcase name="radio" classname="it.driveos.launcher.ScreenshotTest2" time="0.17"/>
+  <testcase name="smart" classname="it.driveos.launcher.ScreenshotTest2" time="0.147"/>
+  <testcase name="calendario" classname="it.driveos.launcher.ScreenshotTest2" time="0.155"/>
+  <testcase name="appDrawer" classname="it.driveos.launcher.ScreenshotTest2" time="0.185"/>
+  <testcase name="home_notte" classname="it.driveos.launcher.ScreenshotTest2" time="0.164"/>
+  <testcase name="orologio" classname="it.driveos.launcher.ScreenshotTest2" time="0.109"/>
+  <testcase name="home_spie" classname="it.driveos.launcher.ScreenshotTest2" time="0.135"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

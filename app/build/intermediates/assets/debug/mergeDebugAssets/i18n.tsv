@@ -1,0 +1,347 @@
+it	en	fr	de	es	pt
+ (solo DriveOS)	 (DriveOS only)	 (DriveOS uniquement)	 (nur DriveOS)	 (solo DriveOS)	 (só DriveOS)
+(Spotify se c'è rete, altrimenti i brani locali) senza cambiare schermata.	(Spotify when online, otherwise local tracks) without changing screen.	(Spotify si connecté, sinon les morceaux locaux) sans changer d'écran.	(Spotify bei Verbindung, sonst lokale Titel) ohne den Bildschirm zu wechseln.	(Spotify si hay conexión, si no las canciones locales) sin cambiar de pantalla.	(Spotify se houver rede, senão as faixas locais) sem mudar de ecrã.
+Accessibilità DriveOS	DriveOS accessibility	Accessibilité DriveOS	DriveOS-Bedienungshilfe	Accesibilidad DriveOS	Acessibilidade DriveOS
+Accesso alle notifiche	Notification access	Accès aux notifications	Benachrichtigungszugriff	Acceso a notificaciones	Acesso às notificações
+Agenda	Agenda	Agenda	Termine	Agenda	Agenda
+Aggiorna voce	Update voice	Mettre à jour la voix	Sprache aktualisieren	Actualizar voz	Atualizar voz
+Aggiungi	Add	Ajouter	Hinzufügen	Añadir	Adicionar
+Aggiungi canale	Add station	Ajouter une station	Sender hinzufügen	Añadir emisora	Adicionar estação
+Alla connessione del telefono	When the phone connects	À la connexion du téléphone	Beim Verbinden des Telefons	Al conectar el teléfono	Ao ligar o telemóvel
+Ambra	Amber	Ambre	Bernstein	Ámbar	Âmbar
+Android Auto non risulta installato	Android Auto is not installed	Android Auto n'est pas installé	Android Auto ist nicht installiert	Android Auto no está instalado	O Android Auto não está instalado
+Annulla	Cancel	Annuler	Abbrechen	Cancelar	Cancelar
+App	Apps	Apps	Apps	Apps	Apps
+App di navigazione	Navigation app	App de navigation	Navigations-App	App de navegación	App de navegação
+App musica	Music app	App musique	Musik-App	App de música	App de música
+App musica offline (locale)	Offline music app (local)	App musique hors ligne (locale)	Offline-Musik-App (lokal)	App de música sin conexión (local)	App de música offline (local)
+App musica online (streaming)	Online music app (streaming)	App musique en ligne (streaming)	Online-Musik-App (Streaming)	App de música online (streaming)	App de música online (streaming)
+App non trovata	App not found	App introuvable	App nicht gefunden	App no encontrada	App não encontrada
+App non trovata ({0})	App not found ({0})	App introuvable ({0})	App nicht gefunden ({0})	App no encontrada ({0})	App não encontrada ({0})
+App radio	Radio app	App radio	Radio-App	App de radio	App de rádio
+App radio (ripiego esterno)	Radio app (external fallback)	App radio (secours externe)	Radio-App (externer Ersatz)	App de radio (alternativa externa)	App de rádio (alternativa externa)
+App telefono	Phone app	App téléphone	Telefon-App	App de teléfono	App de telefone
+Applicazioni	Applications	Applications	Anwendungen	Aplicaciones	Aplicações
+Apre l'app di navigazione scelta	Opens the chosen navigation app	Ouvre l'app de navigation choisie	Öffnet die gewählte Navigations-App	Abre la app de navegación elegida	Abre a app de navegação escolhida
+Apre le impostazioni di sistema	Opens system settings	Ouvre les paramètres système	Öffnet die Systemeinstellungen	Abre los ajustes del sistema	Abre as definições do sistema
+Apri Calendar	Open Calendar	Ouvrir Agenda	Kalender öffnen	Abrir Calendar	Abrir Calendar
+Apri {0}	Open {0}	Ouvrir {0}	{0} öffnen	Abrir {0}	Abrir {0}
+Apro la cartella…	Opening folder…	Ouverture du dossier…	Ordner wird geöffnet…	Abriendo carpeta…	A abrir a pasta…
+Arrivano dalla centralina dell'auto appena tocchi un comando del clima (quadro acceso).	They come from the car's CAN box as soon as you touch a climate control (ignition on).	Ils arrivent du boîtier CAN dès que vous touchez une commande de climatisation (contact mis).	Sie kommen von der CAN-Box, sobald Sie eine Klimataste berühren (Zündung an).	Llegan de la centralita del coche al tocar un mando del clima (contacto puesto).	Chegam da central do carro ao tocar num comando do clima (ignição ligada).
+Aspetto	Appearance	Apparence	Darstellung	Apariencia	Aparência
+Attiva	Enable	Activer	Aktivieren	Activar	Ativar
+Attiva DriveOS nell'elenco, poi torna indietro.	Enable DriveOS in the list, then go back.	Activez DriveOS dans la liste, puis revenez.	DriveOS in der Liste aktivieren, dann zurück.	Activa DriveOS en la lista y vuelve atrás.	Ative o DriveOS na lista e volte atrás.
+Attiva accesso	Grant access	Autoriser l'accès	Zugriff erlauben	Conceder acceso	Conceder acesso
+Attiva avvio intelligente	Enable smart start	Activer le démarrage intelligent	Smart-Start aktivieren	Activar inicio inteligente	Ativar início inteligente
+Attiva l'accesso per vedere il brano in riproduzione.	Grant access to see the playing track.	Autorisez l'accès pour voir le morceau en cours.	Zugriff erlauben, um den aktuellen Titel zu sehen.	Concede acceso para ver la canción en curso.	Conceda acesso para ver a faixa em reprodução.
+Attiva solo con le portiere. Tocca e consenti la posizione per usarla da fermo	Doors only. Tap and allow location to use it when stopped	Portières uniquement. Touchez et autorisez la position pour l'arrêt	Nur mit Türen. Tippen und Standort erlauben für den Stillstand	Solo con las puertas. Toca y permite la ubicación para usarla parado	Só com as portas. Toque e permita a localização para usar parado
+Attiva · {0} valori letti. Porte, baule, freno a mano, retromarcia, batteria, sensori.	On · {0} values read. Doors, boot, handbrake, reverse, battery, sensors.	Activée · {0} valeurs lues. Portes, coffre, frein à main, marche arrière, batterie, capteurs.	An · {0} Werte gelesen. Türen, Kofferraum, Handbremse, Rückwärtsgang, Batterie, Sensoren.	Activa · {0} valores leídos. Puertas, maletero, freno de mano, marcha atrás, batería, sensores.	Ativa · {0} valores lidos. Portas, mala, travão de mão, marcha-atrás, bateria, sensores.
+Attiva: DriveOS vede le finestre Junsun e riporta la Home davanti	On: DriveOS sees Junsun windows and brings Home back	Activée : DriveOS voit les fenêtres Junsun et ramène l'accueil	An: DriveOS erkennt Junsun-Fenster und holt den Startbildschirm zurück	Activa: DriveOS ve las ventanas Junsun y recupera el inicio	Ativa: o DriveOS vê as janelas Junsun e traz o início de volta
+Attiva: si apre quando l'auto è ferma o apri una portiera	On: opens when the car is stopped or a door opens	Activée : s'ouvre à l'arrêt ou à l'ouverture d'une portière	An: öffnet sich im Stand oder beim Öffnen einer Tür	Activa: se abre con el coche parado o al abrir una puerta	Ativa: abre com o carro parado ou ao abrir uma porta
+Attivo: brano in riproduzione e indicazioni del navigatore	On: playing track and navigation directions	Activé : morceau en cours et indications de navigation	An: aktueller Titel und Navigationshinweise	Activo: canción en curso e indicaciones del navegador	Ativo: faixa em reprodução e indicações do navegador
+Attivo: musica/nav all'arrivo del telefono	On: music/navigation when the phone connects	Activé : musique/nav à la connexion du téléphone	An: Musik/Navi beim Verbinden des Telefons	Activo: música/navegación al conectar el teléfono	Ativo: música/navegação ao ligar o telemóvel
+Attivo: oltre i 6 tocchi ravvicinati, schermo bloccato 10 s (come Android Auto).	On: after 6 quick taps the screen locks for 10 s (like Android Auto).	Activé : après 6 touches rapprochées, écran bloqué 10 s (comme Android Auto).	An: nach 6 schnellen Berührungen 10 s gesperrt (wie Android Auto).	Activo: tras 6 toques seguidos, pantalla bloqueada 10 s (como Android Auto).	Ativo: após 6 toques seguidos, ecrã bloqueado 10 s (como o Android Auto).
+Auto vista dall'alto: portiere, fari, retro, sensori, spie	Car from above: doors, lights, reverse, sensors, warnings	Voiture vue de dessus : portières, feux, recul, capteurs, voyants	Auto von oben: Türen, Licht, Rückwärts, Sensoren, Warnungen	Coche visto desde arriba: puertas, luces, marcha atrás, sensores, testigos	Carro visto de cima: portas, faróis, marcha-atrás, sensores, avisos
+Automatico	Automatic	Automatique	Automatisch	Automático	Automático
+Automatico: scuro di notte, chiaro di giorno. 	Automatic: dark at night, light by day. 	Automatique : sombre la nuit, clair le jour. 	Automatisch: nachts dunkel, tagsüber hell. 	Automático: oscuro de noche, claro de día. 	Automático: escuro à noite, claro de dia. 
+Avvia la musica	Start music	Lancer la musique	Musik starten	Iniciar música	Iniciar música
+Avvia la navigazione	Start navigation	Lancer la navigation	Navigation starten	Iniciar navegación	Iniciar navegação
+Avvia ora (prova)	Start now (test)	Lancer maintenant (test)	Jetzt starten (Test)	Iniciar ahora (prueba)	Iniciar agora (teste)
+Avvio intelligente	Smart start	Démarrage intelligent	Smart-Start	Inicio inteligente	Início inteligente
+Avvio intelligente (Bluetooth)	Smart start (Bluetooth)	Démarrage intelligent (Bluetooth)	Smart-Start (Bluetooth)	Inicio inteligente (Bluetooth)	Início inteligente (Bluetooth)
+Avvio intelligente: niente da fare (controlla le app scelte).	Smart start: nothing to do (check the chosen apps).	Démarrage intelligent : rien à faire (vérifiez les apps).	Smart-Start: nichts zu tun (gewählte Apps prüfen).	Inicio inteligente: nada que hacer (revisa las apps).	Início inteligente: nada a fazer (verifique as apps).
+Azzurro	Light blue	Bleu clair	Hellblau	Celeste	Azul-claro
+Batteria	Battery	Batterie	Batterie	Batería	Bateria
+Calendario	Calendar	Agenda	Kalender	Calendario	Calendário
+Cancella	Delete	Effacer	Löschen	Borrar	Apagar
+CarPlay/AA	CarPlay/AA	CarPlay/AA	CarPlay/AA	CarPlay/AA	CarPlay/AA
+CarPlay/Android Auto è già attivo: l'avvio intelligente non fa nulla per non sovrapporsi.	CarPlay/Android Auto is already on: smart start does nothing to avoid overlapping.	CarPlay/Android Auto est déjà actif : le démarrage intelligent ne fait rien.	CarPlay/Android Auto ist schon aktiv: Smart-Start tut nichts.	CarPlay/Android Auto ya está activo: el inicio inteligente no hace nada.	CarPlay/Android Auto já está ativo: o início inteligente não faz nada.
+Carburante	Fuel	Carburant	Kraftstoff	Combustible	Combustível
+Caricamento…	Loading…	Chargement…	Wird geladen…	Cargando…	A carregar…
+Cartella vuota (nessun brano).	Empty folder (no tracks).	Dossier vide (aucun morceau).	Leerer Ordner (keine Titel).	Carpeta vacía (sin canciones).	Pasta vazia (sem faixas).
+Casa	Home	Maison	Zuhause	Casa	Casa
+Casuale	Shuffle	Aléatoire	Zufall	Aleatorio	Aleatório
+Cerca	Search	Rechercher	Suchen	Buscar	Pesquisar
+Cerca app	Search apps	Rechercher une app	Apps suchen	Buscar apps	Pesquisar apps
+Cerca giù	Seek down	Recherche ↓	Suchlauf ↓	Buscar ↓	Procurar ↓
+Cerca indirizzo o luogo	Search address or place	Rechercher une adresse ou un lieu	Adresse oder Ort suchen	Buscar dirección o lugar	Pesquisar morada ou local
+Cerca su	Seek up	Recherche ↑	Suchlauf ↑	Buscar ↑	Procurar ↑
+Cerco la musica…	Looking for music…	Recherche de musique…	Suche Musik…	Buscando música…	A procurar música…
+Chiaro	Light	Clair	Hell	Claro	Claro
+Chiudi	Close	Fermer	Schließen	Cerrar	Fechar
+Cintura guida	Driver belt	Ceinture conducteur	Gurt Fahrer	Cinturón conductor	Cinto condutor
+Cintura passeggero	Passenger belt	Ceinture passager	Gurt Beifahrer	Cinturón pasajero	Cinto passageiro
+Clima	Climate	Clim	Klima	Clima	Clima
+Collega	Connect	Connecter	Verbinden	Conectar	Ligar
+Collega CarPlay/Android Auto	Connect CarPlay/Android Auto	Connecter CarPlay/Android Auto	CarPlay/Android Auto verbinden	Conectar CarPlay/Android Auto	Ligar CarPlay/Android Auto
+Collega calendario	Connect calendar	Connecter l'agenda	Kalender verbinden	Conectar calendario	Ligar calendário
+Collega i fari in Veicolo per usarli.	Link the headlights in Vehicle to use them.	Reliez les feux dans Véhicule pour les utiliser.	Verbinde das Licht unter Fahrzeug, um es zu nutzen.	Vincula las luces en Vehículo para usarlas.	Ligue os faróis em Veículo para os usar.
+Collegato (sola lettura)	Connected (read only)	Connecté (lecture seule)	Verbunden (nur lesen)	Conectado (solo lectura)	Ligado (só leitura)
+Comandi vocali e tasti al volante restano attivi.	Voice commands and steering wheel keys stay active.	Les commandes vocales et les touches au volant restent actives.	Sprachbefehle und Lenkradtasten bleiben aktiv.	Los comandos de voz y los botones del volante siguen activos.	Os comandos de voz e os botões do volante continuam ativos.
+Comandi vocali offline	Offline voice commands	Commandes vocales hors ligne	Offline-Sprachbefehle	Comandos de voz sin conexión	Comandos de voz offline
+Comando radio ancora in corso, riprova tra un attimo.	Radio command still running, try again in a moment.	Commande radio en cours, réessayez dans un instant.	Radiobefehl läuft noch, gleich erneut versuchen.	Comando de radio en curso, inténtalo en un momento.	Comando de rádio em curso, tente daqui a pouco.
+Come il sistema	Same as system	Comme le système	Wie das System	Como el sistema	Como o sistema
+Concentrati sulla strada	Keep your eyes on the road	Concentrez-vous sur la route	Achten Sie auf die Straße	Concéntrate en la carretera	Concentre-se na estrada
+Consentita: DriveOS può tornare davanti da solo	Allowed: DriveOS can come back to the front by itself	Autorisée : DriveOS peut revenir au premier plan seul	Erlaubt: DriveOS kann selbst nach vorne kommen	Permitida: DriveOS puede volver al frente solo	Permitida: o DriveOS pode voltar à frente sozinho
+Controlli rapidi	Quick controls	Commandes rapides	Schnellsteuerung	Controles rápidos	Controlos rápidos
+Controllo se c'e' una voce piu' recente…	Checking for a newer voice…	Recherche d'une voix plus récente…	Suche nach neuerer Sprache…	Buscando una voz más reciente…	A procurar uma voz mais recente…
+Domani	Tomorrow	Demain	Morgen	Mañana	Amanhã
+Dove andiamo?	Where to?	On va où ?	Wohin?	¿Adónde vamos?	Para onde vamos?
+DriveOS	DriveOS	DriveOS	DriveOS	DriveOS	DriveOS
+DriveOS legge soltanto: non crea né modifica eventi.	DriveOS only reads: it never creates or edits events.	DriveOS lit seulement : il ne crée ni ne modifie d'événements.	DriveOS liest nur: keine Termine erstellen oder ändern.	DriveOS solo lee: no crea ni modifica eventos.	O DriveOS só lê: não cria nem altera eventos.
+DriveOS lo usa solo per leggere il lettore attivo e le indicazioni del navigatore. Le altre notifiche vengono ignorate.	DriveOS only uses it to read the active player and navigation directions. Other notifications are ignored.	DriveOS l'utilise seulement pour le lecteur actif et les indications de navigation. Les autres notifications sont ignorées.	DriveOS nutzt es nur für den aktiven Player und Navigationshinweise. Andere Benachrichtigungen werden ignoriert.	DriveOS solo lo usa para el reproductor activo y las indicaciones del navegador. Las demás notificaciones se ignoran.	O DriveOS só o usa para o leitor ativo e as indicações do navegador. As outras notificações são ignoradas.
+DriveOS {0}. Radio, Bluetooth, CANBUS e retrocamera restano 	DriveOS {0}. Radio, Bluetooth, CANBUS and rear camera stay 	DriveOS {0}. Radio, Bluetooth, CANBUS et caméra de recul restent 	DriveOS {0}. Radio, Bluetooth, CANBUS und Rückfahrkamera bleiben 	DriveOS {0}. Radio, Bluetooth, CANBUS y cámara trasera siguen 	DriveOS {0}. Rádio, Bluetooth, CANBUS e câmara traseira continuam 
+Es. "portami a casa", "metti radio deejay", "prossima canzone", "alza il volume"	E.g. "take me home", "put on radio deejay", "next song", "volume up"	Ex. « emmène moi à la maison », « mets radio nova », « chanson suivante », « monte le son »	Z. B. „bring mich nach Hause“, „spiele Radio Bayern“, „nächster Titel“, „lauter“	Ej. «llévame a casa», «pon radio cadena ser», «siguiente», «sube el volumen»	Ex. «leva me para casa», «põe rádio comercial», «próxima», «aumenta»
+Esporta JSON	Export JSON	Exporter JSON	JSON exportieren	Exportar JSON	Exportar JSON
+Esportazione non riuscita. 	Export failed. 	Échec de l'export. 	Export fehlgeschlagen. 	Exportación fallida. 	Exportação falhou. 
+Esterno 	Outside 	Extérieur 	Außen 	Exterior 	Exterior 
+Export registro non riuscito. 	Log export failed. 	Échec de l'export du journal. 	Log-Export fehlgeschlagen. 	Exportación del registro fallida. 	Exportação do registo falhou. 
+Formato: latitudine, longitudine (es. 45.07, 7.69)	Format: latitude, longitude (e.g. 45.07, 7.69)	Format : latitude, longitude (ex. 45.07, 7.69)	Format: Breite, Länge (z. B. 45.07, 7.69)	Formato: latitud, longitud (ej. 45.07, 7.69)	Formato: latitude, longitude (ex. 45.07, 7.69)
+Freno a mano	Handbrake	Frein à main	Handbremse	Freno de mano	Travão de mão
+Frequenza FM (es. 101.5)	FM frequency (e.g. 101.5)	Fréquence FM (ex. 101.5)	FM-Frequenz (z. B. 101.5)	Frecuencia FM (ej. 101.5)	Frequência FM (ex. 101.5)
+Frequenza dal sistema	Frequency from system	Fréquence du système	Frequenz vom System	Frecuencia del sistema	Frequência do sistema
+Frequenza non valida (87.5 – 108.0 MHz).	Invalid frequency (87.5 – 108.0 MHz).	Fréquence invalide (87.5 – 108.0 MHz).	Ungültige Frequenz (87.5 – 108.0 MHz).	Frecuencia no válida (87.5 – 108.0 MHz).	Frequência inválida (87.5 – 108.0 MHz).
+Funziona solo con i tasti che passano dalla seriale dell'auto.	Only works with keys that go through the car serial line.	Fonctionne seulement avec les touches passant par la liaison série.	Nur für Tasten, die über die serielle Leitung des Autos kommen.	Solo funciona con botones que pasan por la línea serie del coche.	Só funciona com botões que passam pela linha série do carro.
+Giri	RPM	Régime	Drehzahl	RPM	Rotações
+Guidatore	Driver	Conducteur	Fahrer	Conductor	Condutor
+Hai già 6 stazioni: rimuovine una.	You already have 6 stations: remove one.	Vous avez déjà 6 stations : supprimez-en une.	Schon 6 Sender: einen entfernen.	Ya tienes 6 emisoras: quita una.	Já tem 6 estações: remova uma.
+Home	Home	Accueil	Start	Inicio	Início
+Il file esportato contiene app, launcher, servizi vocali, sensori, dispositivi di input, 	The exported file contains apps, launchers, voice services, sensors, input devices, 	Le fichier exporté contient apps, lanceurs, services vocaux, capteurs, périphériques d'entrée, 	Die exportierte Datei enthält Apps, Launcher, Sprachdienste, Sensoren, Eingabegeräte, 	El archivo exportado contiene apps, lanzadores, servicios de voz, sensores, dispositivos de entrada, 	O ficheiro exportado contém apps, launchers, serviços de voz, sensores, dispositivos de entrada, 
+Impara	Learn	Apprendre	Lernen	Aprender	Aprender
+Impostazioni	Settings	Paramètres	Einstellungen	Ajustes	Definições
+Impostazioni Android	Android settings	Paramètres Android	Android-Einstellungen	Ajustes de Android	Definições Android
+Impostazioni audio di sistema	System sound settings	Paramètres audio système	System-Audioeinstellungen	Ajustes de sonido del sistema	Definições de som do sistema
+In Impostazioni Android → Account aggiungi il tuo account Google e attiva la sincronizzazione 	In Android Settings → Accounts add your Google account and turn on sync 	Dans Paramètres Android → Comptes, ajoutez votre compte Google et activez la synchro 	In Android-Einstellungen → Konten Google-Konto hinzufügen und Synchronisierung aktivieren 	En Ajustes de Android → Cuentas añade tu cuenta de Google y activa la sincronización 	Em Definições Android → Contas adicione a sua conta Google e ative a sincronização 
+In ascolto	Playing	En écoute	Läuft	Sonando	A tocar
+In ascolto…	Listening…	À l'écoute…	Höre zu…	Escuchando…	A ouvir…
+In attesa dei dati del climatizzatore.	Waiting for climate data.	En attente des données de climatisation.	Warte auf Klimadaten.	Esperando los datos del clima.	À espera dos dados do clima.
+In attesa dei dati motore dalla centralina (si chiedono ogni secondo a quadro acceso).	Waiting for engine data from the CAN box (requested every second with ignition on).	En attente des données moteur (demandées chaque seconde contact mis).	Warte auf Motordaten von der CAN-Box (jede Sekunde bei Zündung an).	Esperando datos del motor (se piden cada segundo con el contacto puesto).	À espera dos dados do motor (pedidos a cada segundo com a ignição ligada).
+In attesa del GPS	Waiting for GPS	En attente du GPS	Warte auf GPS	Esperando GPS	À espera do GPS
+In marcia	Driving	En marche	In Fahrt	En marcha	Em andamento
+In navigazione	Navigating	Navigation en cours	Navigation läuft	Navegando	A navegar
+In pausa	Paused	En pause	Pausiert	En pausa	Em pausa
+Indietro	Back	Retour	Zurück	Atrás	Voltar
+Indirizzo di casa	Home address	Adresse du domicile	Heimadresse	Dirección de casa	Morada de casa
+Indirizzo di lavoro	Work address	Adresse du travail	Arbeitsadresse	Dirección del trabajo	Morada do trabalho
+Indirizzo o luogo	Address or place	Adresse ou lieu	Adresse oder Ort	Dirección o lugar	Morada ou local
+Info dispositivo	Device info	Infos appareil	Geräteinfo	Info del dispositivo	Info do dispositivo
+Informazioni	Information	Informations	Informationen	Información	Informações
+Installata: {0} · tocca per cercare una versione nuova	Installed: {0} · tap to look for a newer version	Installée : {0} · touchez pour chercher une version plus récente	Installiert: {0} · tippen für neuere Version	Instalada: {0} · toca para buscar una versión nueva	Instalada: {0} · toque para procurar uma versão nova
+Italiano	Italiano	Italiano	Italiano	Italiano	Italiano
+Km totali	Odometer	Kilométrage	Kilometerstand	Km totales	Km totais
+L'app di navigazione non offre il comando per terminare: aprila e chiudi il percorso da lì.	The navigation app has no stop command: open it and end the route there.	L'app de navigation n'offre pas de commande d'arrêt : ouvrez-la et terminez l'itinéraire.	Die Navigations-App bietet keinen Stopp-Befehl: öffnen und Route dort beenden.	La app de navegación no ofrece terminar: ábrela y cierra la ruta allí.	A app de navegação não tem comando para terminar: abra-a e feche a rota lá.
+L'app scelta non è più installata.	The chosen app is no longer installed.	L'app choisie n'est plus installée.	Die gewählte App ist nicht mehr installiert.	La app elegida ya no está instalada.	A app escolhida já não está instalada.
+La nuova lingua si scarica (circa 40-50 MB) la prima volta che premi Voce.	The new language downloads (about 40-50 MB) the first time you press Voice.	La nouvelle langue se télécharge (40-50 Mo) la première fois que vous appuyez sur Voix.	Die neue Sprache wird beim ersten Drücken von Sprache geladen (ca. 40-50 MB).	El nuevo idioma se descarga (unos 40-50 MB) la primera vez que pulses Voz.	O novo idioma é descarregado (cerca de 40-50 MB) na primeira vez que tocar em Voz.
+La voce e' gia' la piu' recente.	The voice is already up to date.	La voix est déjà à jour.	Die Sprache ist schon aktuell.	La voz ya está actualizada.	A voz já está atualizada.
+Launcher predefinito	Default launcher	Lanceur par défaut	Standard-Launcher	Lanzador predeterminado	Launcher predefinido
+Lavoro	Work	Travail	Arbeit	Trabajo	Trabalho
+Le destinazioni cercate compariranno qui.	Searched destinations will appear here.	Les destinations recherchées apparaîtront ici.	Gesuchte Ziele erscheinen hier.	Los destinos buscados aparecerán aquí.	Os destinos pesquisados aparecerão aqui.
+Lettura log Junsun: attiva ✓	Junsun log reading: on ✓	Lecture des logs Junsun : activée ✓	Junsun-Log lesen: an ✓	Lectura de logs Junsun: activa ✓	Leitura de logs Junsun: ativa ✓
+Lettura log Junsun: non attiva	Junsun log reading: off	Lecture des logs Junsun : désactivée	Junsun-Log lesen: aus	Lectura de logs Junsun: inactiva	Leitura de logs Junsun: inativa
+Limite tocchi in marcia	Touch limit while driving	Limite de touches en roulant	Berührungslimit während der Fahrt	Límite de toques en marcha	Limite de toques em andamento
+Lingua comandi vocali	Language	Langue	Sprache	Idioma	Idioma
+Luminosità	Brightness	Luminosité	Helligkeit	Brillo	Brilho
+Lunotto	Rear defrost	Lunette arrière	Heckscheibe	Luneta	Óculo traseiro
+MAX sbrin.	MAX defrost	MAX dégivr.	MAX Defrost	MAX desemp.	MAX desemb.
+MHz	MHz	MHz	MHz	MHz	MHz
+Memoria interna	Internal storage	Mémoire interne	Interner Speicher	Memoria interna	Memória interna
+Microfono	Microphone	Micro	Mikrofon	Micrófono	Microfone
+Modifica {0}	Edit {0}	Modifier {0}	{0} bearbeiten	Editar {0}	Editar {0}
+Montata: in retromarcia DriveOS mostra immagine, linee guida e sensori.	Fitted: in reverse DriveOS shows image, guide lines and sensors.	Montée : en marche arrière, DriveOS affiche l'image, les lignes et les capteurs.	Verbaut: im Rückwärtsgang zeigt DriveOS Bild, Hilfslinien und Sensoren.	Instalada: en marcha atrás DriveOS muestra imagen, guías y sensores.	Instalada: em marcha-atrás o DriveOS mostra imagem, guias e sensores.
+Montati: si disegnano a bassa velocità.	Fitted: drawn at low speed.	Montés : affichés à basse vitesse.	Verbaut: bei niedriger Geschwindigkeit angezeigt.	Instalados: se muestran a baja velocidad.	Instalados: mostrados a baixa velocidade.
+Mostra qui gli impegni del tuo Google Calendar.	Shows your Google Calendar events here.	Affiche ici les événements de votre Google Agenda.	Zeigt hier Ihre Google-Kalender-Termine.	Muestra aquí los eventos de tu Google Calendar.	Mostra aqui os eventos do seu Google Calendar.
+Mostra qui i tuoi impegni di Google Calendar.	Shows your Google Calendar events here.	Affiche ici vos événements Google Agenda.	Zeigt hier Ihre Google-Kalender-Termine.	Muestra aquí tus eventos de Google Calendar.	Mostra aqui os seus eventos do Google Calendar.
+Mostra sopra altre app	Display over other apps	Afficher par-dessus les autres apps	Über anderen Apps anzeigen	Mostrar sobre otras apps	Mostrar sobre outras apps
+Motore	Engine	Moteur	Motor	Motor	Motor
+Musica	Music	Musique	Musik	Música	Música
+Musica offline (locale)	Offline music (local)	Musique hors ligne (locale)	Offline-Musik (lokal)	Música sin conexión (local)	Música offline (local)
+Musica online (streaming)	Online music (streaming)	Musique en ligne (streaming)	Online-Musik (Streaming)	Música online (streaming)	Música online (streaming)
+Naviga	Navigate	Naviguer	Navi	Navegar	Navegar
+Navigazione	Navigation	Navigation	Navigation	Navegación	Navegação
+Nessun brano trovato sul dispositivo.	No tracks found on the device.	Aucun morceau trouvé sur l'appareil.	Keine Titel auf dem Gerät gefunden.	No hay canciones en el dispositivo.	Nenhuma faixa encontrada no dispositivo.
+Nessun calendario sincronizzato su questa radio.	No calendar synced on this radio.	Aucun agenda synchronisé sur cet autoradio.	Kein Kalender auf diesem Radio synchronisiert.	Ningún calendario sincronizado en esta radio.	Nenhum calendário sincronizado neste rádio.
+Nessun impegno nei prossimi 14 giorni.	No events in the next 14 days.	Aucun événement dans les 14 prochains jours.	Keine Termine in den nächsten 14 Tagen.	Sin eventos en los próximos 14 días.	Sem eventos nos próximos 14 dias.
+Nessun impegno nei prossimi giorni.	No events in the coming days.	Aucun événement dans les prochains jours.	Keine Termine in den nächsten Tagen.	Sin eventos en los próximos días.	Sem eventos nos próximos dias.
+Nessuna (non configurata)	None (not set)	Aucune (non configurée)	Keine (nicht eingestellt)	Ninguna (no configurada)	Nenhuma (não configurada)
+Nessuna app trovata.	No apps found.	Aucune app trouvée.	Keine Apps gefunden.	No se encontraron apps.	Nenhuma app encontrada.
+Nessuna immagine dalla telecamera	No image from the camera	Aucune image de la caméra	Kein Kamerabild	Sin imagen de la cámara	Sem imagem da câmara
+Nessuna riproduzione in corso.	Nothing playing.	Aucune lecture en cours.	Keine Wiedergabe.	Nada en reproducción.	Nada a reproduzir.
+Nessuna spia attiva	No warning lights	Aucun voyant actif	Keine Warnleuchten	Ningún testigo activo	Nenhum aviso ativo
+No: le finestre Junsun restano sopra. Tocca per attivare	No: Junsun windows stay on top. Tap to enable	Non : les fenêtres Junsun restent devant. Touchez pour activer	Nein: Junsun-Fenster bleiben vorne. Tippen zum Aktivieren	No: las ventanas Junsun quedan encima. Toca para activar	Não: as janelas Junsun ficam por cima. Toque para ativar
+Nome (es. Radio Deejay)	Name (e.g. BBC Radio 1)	Nom (ex. NRJ)	Name (z. B. Bayern 3)	Nombre (ej. Los 40)	Nome (ex. Rádio Comercial)
+Nome RDS non leggibile: manca il permesso ai log (vedi istruzioni in chat)	RDS name unreadable: log permission missing	Nom RDS illisible : permission des logs manquante	RDS-Name nicht lesbar: Log-Berechtigung fehlt	Nombre RDS ilegible: falta el permiso de logs	Nome RDS ilegível: falta a permissão de logs
+Non ancora scaricata	Not downloaded yet	Pas encore téléchargée	Noch nicht geladen	Aún no descargada	Ainda não descarregada
+Non attivo: tocca per abilitare DriveOS (serve per Musica e guida)	Off: tap to enable DriveOS (needed for Music and guidance)	Désactivé : touchez pour autoriser DriveOS (Musique et guidage)	Aus: tippen, um DriveOS zu erlauben (für Musik und Navi)	Inactivo: toca para habilitar DriveOS (para Música y guía)	Inativo: toque para ativar o DriveOS (para Música e navegação)
+Non collegato: tocca per mostrare i tuoi impegni	Not connected: tap to show your events	Non connecté : touchez pour afficher vos événements	Nicht verbunden: tippen, um Termine zu zeigen	No conectado: toca para ver tus eventos	Não ligado: toque para mostrar os seus eventos
+Non configurata	Not set	Non configurée	Nicht eingestellt	No configurada	Não configurada
+Non consentita: tocca e attivala per DriveOS (serve a riportare la Home davanti)	Not allowed: tap and enable it for DriveOS (brings Home back)	Non autorisée : touchez et activez-la pour DriveOS	Nicht erlaubt: tippen und für DriveOS aktivieren	No permitida: toca y actívala para DriveOS	Não permitida: toque e ative-a para o DriveOS
+Non ho capito: "{0}"	I didn't understand: "{0}"	Je n'ai pas compris : « {0} »	Nicht verstanden: „{0}“	No he entendido: «{0}»	Não percebi: «{0}»
+Non ho sentito nulla.	I didn't hear anything.	Je n'ai rien entendu.	Nichts gehört.	No he oído nada.	Não ouvi nada.
+Non impostato	Not set	Non défini	Nicht festgelegt	No configurado	Não definido
+Non montata: in retromarcia solo i sensori.	Not fitted: in reverse only the sensors.	Non montée : en marche arrière, capteurs seuls.	Nicht verbaut: im Rückwärtsgang nur Sensoren.	No instalada: en marcha atrás solo sensores.	Não instalada: em marcha-atrás só os sensores.
+Non montati: non si disegnano.	Not fitted: not drawn.	Non montés : non affichés.	Nicht verbaut: nicht angezeigt.	No instalados: no se muestran.	Não instalados: não são mostrados.
+Non riesco a leggere questa cartella (permesso file mancante?).	Can't read this folder (file permission missing?).	Impossible de lire ce dossier (permission manquante ?).	Ordner nicht lesbar (Dateiberechtigung fehlt?).	No puedo leer esta carpeta (¿falta permiso?).	Não consigo ler esta pasta (falta permissão?).
+Non riesco ad aprire la schermata dei permessi.	Can't open the permissions screen.	Impossible d'ouvrir l'écran des autorisations.	Berechtigungsbildschirm lässt sich nicht öffnen.	No puedo abrir la pantalla de permisos.	Não consigo abrir o ecrã de permissões.
+Non trovo la stazione "{0}" tra quelle conosciute.	Station "{0}" not found among known ones.	Station « {0} » introuvable.	Sender „{0}“ nicht gefunden.	No encuentro la emisora «{0}».	Não encontro a estação «{0}».
+Nota: l'avvio della riproduzione è «best-effort» — alcune app partono solo se 	Note: starting playback is best-effort — some apps only start if 	Note : le démarrage de la lecture est « au mieux » — certaines apps ne démarrent que si 	Hinweis: Wiedergabestart ohne Garantie — manche Apps starten nur, wenn 	Nota: iniciar la reproducción no está garantizado — algunas apps solo arrancan si 	Nota: iniciar a reprodução não é garantido — algumas apps só arrancam se 
+Oggi	Today	Aujourd'hui	Heute	Hoy	Hoje
+Ora decide da: {0}. 	Now based on: {0}. 	Décide maintenant selon : {0}. 	Jetzt nach: {0}. 	Ahora decide según: {0}. 	Agora decide por: {0}. 
+Ostacolo	Obstacle	Obstacle	Hindernis	Obstáculo	Obstáculo
+Parabrezza	Windscreen	Pare-brise	Scheibe	Parabrisas	Para-brisas
+Passeggero	Passenger	Passager	Beifahrer	Pasajero	Passageiro
+Pausa	Pause	Pause	Pause	Pausa	Pausa
+Per comandare la radio attiva il servizio Accessibilità di DriveOS (Impostazioni → Veicolo).	To control the radio enable the DriveOS Accessibility service.	Pour commander la radio activez le service Accessibilité de DriveOS.	Zur Radiosteuerung den DriveOS-Bedienungshilfedienst aktivieren.	Para controlar la radio activa el servicio de Accesibilidad de DriveOS.	Para controlar o rádio ative o serviço de Acessibilidade do DriveOS.
+Per mostrare brano, copertina e comandi serve l'accesso alle notifiche.	Notification access is needed to show track, cover and controls.	L'accès aux notifications est requis pour le morceau, la pochette et les commandes.	Für Titel, Cover und Steuerung wird Benachrichtigungszugriff benötigt.	Se necesita acceso a notificaciones para mostrar canción, carátula y controles.	É preciso acesso às notificações para mostrar faixa, capa e controlos.
+Permessi	Permissions	Autorisations	Berechtigungen	Permisos	Permissões
+Permesso negato. Puoi concederlo in Impostazioni Android → App → DriveOS → Autorizzazioni.	Permission denied. Grant it in Android Settings → Apps → DriveOS → Permissions.	Autorisation refusée. Accordez-la dans Paramètres → Apps → DriveOS → Autorisations.	Berechtigung verweigert. In Einstellungen → Apps → DriveOS → Berechtigungen erteilen.	Permiso denegado. Concédelo en Ajustes → Apps → DriveOS → Permisos.	Permissão negada. Conceda em Definições → Apps → DriveOS → Permissões.
+Piedi	Feet	Pieds	Fußraum	Pies	Pés
+Play	Play	Lecture	Wiedergabe	Reproducir	Reproduzir
+Portiera	Door	Portière	Tür	Puerta	Porta
+Posizione (alba/tramonto)	Location (sunrise/sunset)	Position (lever/coucher du soleil)	Standort (Sonnenauf-/untergang)	Ubicación (amanecer/atardecer)	Localização (nascer/pôr do sol)
+Posizione (latitudine, longitudine)	Location (latitude, longitude)	Position (latitude, longitude)	Standort (Breite, Länge)	Ubicación (latitud, longitud)	Localização (latitude, longitude)
+Precedente	Previous	Précédent	Zurück	Anterior	Anterior
+Predefinita (Italia centrale)	Default (central Italy)	Par défaut (Italie centrale)	Standard (Mittelitalien)	Predeterminada (Italia central)	Predefinida (Itália central)
+Preferiti	Favourites	Favoris	Favoriten	Favoritos	Favoritos
+Preferito	Favourite	Favori	Favorit	Favorito	Favorito
+Preparo il riconoscimento…	Preparing recognition…	Préparation de la reconnaissance…	Erkennung wird vorbereitet…	Preparando el reconocimiento…	A preparar o reconhecimento…
+Prossimo: {0} · {1}	Next: {0} · {1}	Prochain : {0} · {1}	Nächster: {0} · {1}	Próximo: {0} · {1}	Próximo: {0} · {1}
+Puoi chiudere: continua in sottofondo.	You can close: it continues in the background.	Vous pouvez fermer : cela continue en arrière-plan.	Sie können schließen: läuft im Hintergrund weiter.	Puedes cerrar: sigue en segundo plano.	Pode fechar: continua em segundo plano.
+Quando il telefono si collega in Bluetooth, DriveOS avvia da solo la musica 	When the phone connects via Bluetooth, DriveOS starts the music by itself 	Quand le téléphone se connecte en Bluetooth, DriveOS lance la musique tout seul 	Wenn sich das Telefon per Bluetooth verbindet, startet DriveOS die Musik selbst 	Cuando el teléfono se conecta por Bluetooth, DriveOS inicia la música solo 	Quando o telemóvel liga por Bluetooth, o DriveOS inicia a música sozinho 
+Questo lettore non permette di cambiare la ripetizione.	This player doesn't allow changing repeat.	Ce lecteur ne permet pas de changer la répétition.	Dieser Player erlaubt keine Wiederholungsänderung.	Este reproductor no permite cambiar la repetición.	Este leitor não permite mudar a repetição.
+Questo lettore non permette di cambiare la riproduzione casuale.	This player doesn't allow changing shuffle.	Ce lecteur ne permet pas de changer l'aléatoire.	Dieser Player erlaubt keine Zufallsänderung.	Este reproductor no permite cambiar el aleatorio.	Este leitor não permite mudar o aleatório.
+R  Retromarcia	R  Reverse	R  Marche arrière	R  Rückwärtsgang	R  Marcha atrás	R  Marcha-atrás
+Raccolta informazioni in corso…	Collecting information…	Collecte des informations…	Informationen werden gesammelt…	Recopilando información…	A recolher informações…
+Radio	Radio	Radio	Radio	Radio	Rádio
+Radio integrata	Built-in radio	Radio intégrée	Integriertes Radio	Radio integrada	Rádio integrado
+Registro ({0} variazioni) salvato in: 	Log ({0} changes) saved in: 	Journal ({0} changements) enregistré dans : 	Log ({0} Änderungen) gespeichert in: 	Registro ({0} cambios) guardado en: 	Registo ({0} alterações) guardado em: 
+Registro azzerato.	Log cleared.	Journal effacé.	Log gelöscht.	Registro borrado.	Registo limpo.
+Resta sulla Home DriveOS	Stay on DriveOS Home	Rester sur l'accueil DriveOS	Auf DriveOS-Start bleiben	Quedarse en el inicio DriveOS	Ficar no início DriveOS
+Retromarcia	Reverse	Marche arrière	Rückwärtsgang	Marcha atrás	Marcha-atrás
+Ricircolo	Recirculation	Recyclage	Umluft	Recirculación	Recirculação
+Riepilogo hardware ed esportazione dei dati per lo sviluppo	Hardware summary and data export for development	Résumé matériel et export des données pour le développement	Hardware-Übersicht und Datenexport für die Entwicklung	Resumen de hardware y exportación de datos para desarrollo	Resumo de hardware e exportação de dados para desenvolvimento
+Rimuovi	Remove	Supprimer	Entfernen	Quitar	Remover
+Ripeti	Repeat	Répéter	Wiederholen	Repetir	Repetir
+Riproduci l'ultima cartella	Play last folder	Lire le dernier dossier	Letzten Ordner abspielen	Reproducir la última carpeta	Reproduzir a última pasta
+Riproduci tutto	Play all	Tout lire	Alles abspielen	Reproducir todo	Reproduzir tudo
+Riprova	Retry	Réessayer	Erneut versuchen	Reintentar	Tentar de novo
+Rosso	Red	Rouge	Rot	Rojo	Vermelho
+Salva	Save	Enregistrer	Speichern	Guardar	Guardar
+Salva questa	Save this one	Enregistrer celle-ci	Diesen speichern	Guardar esta	Guardar esta
+Salvato in:\n• 	Saved in:\n• 	Enregistré dans :\n• 	Gespeichert in:\n• 	Guardado en:\n• 	Guardado em:\n• 
+Scarica ora	Download now	Télécharger	Jetzt laden	Descargar ahora	Descarregar agora
+Scarico la voce… {0}%	Downloading voice… {0}%	Téléchargement de la voix… {0}%	Sprache wird geladen… {0}%	Descargando voz… {0}%	A descarregar a voz… {0}%
+Scegli app	Choose app	Choisir l'app	App wählen	Elegir app	Escolher app
+Scegli app di navigazione	Choose navigation app	Choisir l'app de navigation	Navigations-App wählen	Elegir app de navegación	Escolher app de navegação
+Scegli l'app con cui navigare.	Choose the app to navigate with.	Choisissez l'app de navigation.	Wählen Sie die Navigations-App.	Elige la app para navegar.	Escolha a app para navegar.
+Scegli la cartella	Choose folder	Choisir le dossier	Ordner wählen	Elegir carpeta	Escolher pasta
+Scegli la musica	Choose music	Choisir la musique	Musik wählen	Elegir música	Escolher música
+Scegli musica	Choose music	Choisir la musique	Musik wählen	Elegir música	Escolher música
+Scegli quale schermata Home usare (DriveOS o quella Junsun)	Choose which Home screen to use (DriveOS or Junsun)	Choisir l'écran d'accueil (DriveOS ou Junsun)	Startbildschirm wählen (DriveOS oder Junsun)	Elige qué pantalla de inicio usar (DriveOS o Junsun)	Escolha o ecrã inicial (DriveOS ou Junsun)
+Scegli una cartella di brani o avvia una sorgente.	Choose a music folder or start a source.	Choisissez un dossier de musique ou une source.	Musikordner wählen oder Quelle starten.	Elige una carpeta de música o inicia una fuente.	Escolha uma pasta de música ou inicie uma fonte.
+Schermata Home	Home screen	Écran d'accueil	Startbildschirm	Pantalla de inicio	Ecrã inicial
+Schermata veicolo	Vehicle screen	Écran véhicule	Fahrzeugansicht	Pantalla del vehículo	Ecrã do veículo
+Schermata veicolo automatica	Automatic vehicle screen	Écran véhicule automatique	Automatische Fahrzeugansicht	Pantalla del vehículo automática	Ecrã do veículo automático
+Scuro	Dark	Sombre	Dunkel	Oscuro	Escuro
+Sedile riscaldato	Heated seat	Siège chauffant	Sitzheizung	Asiento calefactado	Banco aquecido
+Sensori di parcheggio anteriori	Front parking sensors	Capteurs de stationnement avant	Parksensoren vorne	Sensores de aparcamiento delanteros	Sensores de estacionamento dianteiros
+Sensori parcheggio	Parking sensors	Capteurs de stationnement	Parksensoren	Sensores de aparcamiento	Sensores de estacionamento
+Senza accesso ai file audio la musica del dispositivo non parte.	Without access to audio files the device music can't start.	Sans accès aux fichiers audio, la musique ne démarre pas.	Ohne Zugriff auf Audiodateien startet die Musik nicht.	Sin acceso a los archivos de audio la música no arranca.	Sem acesso aos ficheiros de áudio a música não arranca.
+Senza il permesso del microfono i comandi vocali non funzionano.	Voice commands don't work without microphone permission.	Sans le micro, les commandes vocales ne fonctionnent pas.	Ohne Mikrofonberechtigung keine Sprachbefehle.	Sin permiso de micrófono los comandos de voz no funcionan.	Sem permissão do microfone os comandos de voz não funcionam.
+Senza posizione la schermata veicolo si apre solo quando apri una portiera.	Without location the vehicle screen only opens when a door opens.	Sans position, l'écran véhicule ne s'ouvre qu'à l'ouverture d'une portière.	Ohne Standort öffnet sich die Fahrzeugansicht nur beim Türöffnen.	Sin ubicación la pantalla del vehículo solo se abre al abrir una puerta.	Sem localização o ecrã do veículo só abre ao abrir uma porta.
+Seriale auto	Car serial line	Liaison série auto	Serielle Autoleitung	Línea serie del coche	Linha série do carro
+Seriale auto, sensori anteriori, limite tocchi, tasti volante	Car serial, front sensors, touch limit, wheel keys	Liaison série, capteurs avant, limite de touches, touches volant	Seriell, Sensoren vorne, Berührungslimit, Lenkradtasten	Línea serie, sensores delanteros, límite de toques, botones del volante	Linha série, sensores dianteiros, limite de toques, botões do volante
+Serve il permesso posizione	Location permission needed	Permission de position requise	Standortberechtigung nötig	Se necesita permiso de ubicación	É preciso permissão de localização
+Serve per radio e finestre Junsun. Si concede una volta via ADB, poi riapri DriveOS:	Needed for radio and Junsun windows. Granted once via ADB, then reopen DriveOS:	Nécessaire pour la radio et les fenêtres Junsun. Accordé une fois via ADB :	Für Radio und Junsun-Fenster. Einmalig per ADB erteilen, dann DriveOS neu öffnen:	Necesario para radio y ventanas Junsun. Se concede una vez por ADB:	Necessário para rádio e janelas Junsun. Concedido uma vez por ADB:
+Serve scaricare una volta il riconoscimento vocale (circa 50 MB). Poi funziona anche senza internet.	The speech recognition must be downloaded once (about 50 MB). Then it works offline.	La reconnaissance vocale doit être téléchargée une fois (50 Mo). Ensuite elle marche hors ligne.	Die Spracherkennung muss einmal geladen werden (ca. 50 MB). Danach offline nutzbar.	Hay que descargar una vez el reconocimiento de voz (unos 50 MB). Luego funciona sin internet.	É preciso descarregar uma vez o reconhecimento de voz (cerca de 50 MB). Depois funciona offline.
+Si collega in secondo piano: resti sulla Home DriveOS	Connects in the background: you stay on DriveOS Home	Se connecte en arrière-plan : vous restez sur l'accueil	Verbindet im Hintergrund: Sie bleiben auf dem Startbildschirm	Se conecta en segundo plano: sigues en el inicio	Liga em segundo plano: fica no início do DriveOS
+Sintonizzatore e canali memorizzati	Tuner and saved stations	Tuner et stations mémorisées	Tuner und gespeicherte Sender	Sintonizador y emisoras guardadas	Sintonizador e estações guardadas
+Sistema	System	Système	System	Sistema	Sistema
+Sola lettura. Se la radio nativa si comporta male, spegni qui.	Read only. If the stock radio misbehaves, switch off here.	Lecture seule. Si la radio d'origine se comporte mal, désactivez ici.	Nur lesen. Wenn das Originalradio Probleme macht, hier ausschalten.	Solo lectura. Si la radio original falla, apágala aquí.	Só leitura. Se o rádio original falhar, desligue aqui.
+Sostituisce AutoLink	Replaces AutoLink	Remplace AutoLink	Ersetzt AutoLink	Sustituye a AutoLink	Substitui o AutoLink
+Spenta. Accendila per leggere porte, baule, freno a mano e batteria.	Off. Turn it on to read doors, boot, handbrake and battery.	Désactivée. Activez-la pour lire portes, coffre, frein à main et batterie.	Aus. Einschalten für Türen, Kofferraum, Handbremse und Batterie.	Apagada. Enciéndela para leer puertas, maletero, freno de mano y batería.	Desligada. Ligue-a para ler portas, mala, travão de mão e bateria.
+Spenta: si apre solo a mano. Tocca per attivare	Off: opens manually only. Tap to enable	Désactivée : ouverture manuelle. Touchez pour activer	Aus: nur manuell. Tippen zum Aktivieren	Apagada: solo a mano. Toca para activar	Desligada: só manualmente. Toque para ativar
+Spenta: tocca, scegli DriveOS e attivala (serve per portiere, retro e CarPlay)	Off: tap, choose DriveOS and enable it (for doors, reverse and CarPlay)	Désactivée : touchez, choisissez DriveOS et activez-la	Aus: tippen, DriveOS wählen und aktivieren	Apagada: toca, elige DriveOS y actívala	Desligada: toque, escolha o DriveOS e ative
+Spento: avvia musica e nav quando colleghi il telefono	Off: starts music and nav when the phone connects	Désactivé : lance musique et nav à la connexion du téléphone	Aus: startet Musik und Navi beim Verbinden	Apagado: inicia música y navegación al conectar el teléfono	Desligado: inicia música e navegação ao ligar o telemóvel
+Spento: nessun limite durante la guida.	Off: no limit while driving.	Désactivé : aucune limite en roulant.	Aus: kein Limit während der Fahrt.	Apagado: sin límite durante la marcha.	Desligado: sem limite durante a condução.
+Spie	Warnings	Voyants	Warnleuchten	Testigos	Avisos
+Stato	Status	État	Status	Estado	Estado
+Su	Up	Haut	Hoch	Arriba	Cima
+Successivo	Next	Suivant	Weiter	Siguiente	Seguinte
+Sì: portiere, radar, retromarcia e CarPlay non coprono lo schermo	Yes: doors, radar, reverse and CarPlay don't cover the screen	Oui : portières, radar, recul et CarPlay ne couvrent pas l'écran	Ja: Türen, Radar, Rückwärts und CarPlay verdecken nichts	Sí: puertas, radar, marcha atrás y CarPlay no tapan la pantalla	Sim: portas, radar, marcha-atrás e CarPlay não tapam o ecrã
+Tasti e volante	Keys and steering wheel	Touches et volant	Tasten und Lenkrad	Botones y volante	Botões e volante
+Tasti e volante (impara i tasti)	Keys and steering wheel (learn keys)	Touches et volant (apprendre)	Tasten und Lenkrad (anlernen)	Botones y volante (aprender)	Botões e volante (aprender)
+Telecamera non impostata	Camera not set	Caméra non configurée	Kamera nicht eingestellt	Cámara no configurada	Câmara não configurada
+Telecamera posteriore	Rear camera	Caméra de recul	Rückfahrkamera	Cámara trasera	Câmara traseira
+Telefono	Phone	Téléphone	Telefon	Teléfono	Telefone
+Temp. esterna	Outside temp.	Temp. extérieure	Außentemp.	Temp. exterior	Temp. exterior
+Termina	End	Terminer	Beenden	Terminar	Terminar
+Ti ascolto…	I'm listening…	Je vous écoute…	Ich höre…	Te escucho…	Estou a ouvir…
+Tocca per aprire · tieni premuto per aggiungere o togliere dai preferiti	Tap to open · long-press to add or remove favourites	Touchez pour ouvrir · appui long pour les favoris	Tippen zum Öffnen · lang drücken für Favoriten	Toca para abrir · mantén pulsado para favoritos	Toque para abrir · mantenha premido para favoritos
+Tocca per impostare	Tap to set	Touchez pour définir	Tippen zum Einstellen	Toca para configurar	Toque para definir
+Tocca «Impara», poi premi il tasto (dell'autoradio o del volante) entro 8 secondi. 	Tap «Learn», then press the key (radio or steering wheel) within 8 seconds. 	Touchez « Apprendre », puis appuyez sur la touche dans les 8 secondes. 	Tippen Sie «Lernen», dann innerhalb von 8 Sekunden die Taste drücken. 	Toca «Aprender» y pulsa el botón en 8 segundos. 	Toque «Aprender» e prima o botão em 8 segundos. 
+Torna alla guida	Back to guidance	Retour au guidage	Zurück zur Navigation	Volver a la guía	Voltar à navegação
+Troppe interazioni durante la guida.\nPotrai usare di nuovo lo schermo tra:	Too many interactions while driving.\nYou can use the screen again in:	Trop d'interactions en roulant.\nVous pourrez réutiliser l'écran dans :	Zu viele Eingaben während der Fahrt.\nBildschirm wieder nutzbar in:	Demasiadas interacciones en marcha.\nPodrás usar la pantalla de nuevo en:	Demasiadas interações a conduzir.\nPoderá usar o ecrã de novo em:
+Tutte le app	All apps	Toutes les apps	Alle Apps	Todas las apps	Todas as apps
+Tutti i brani	All tracks	Tous les morceaux	Alle Titel	Todas las canciones	Todas as faixas
+Ultimo errore registrato	Last recorded error	Dernière erreur enregistrée	Letzter Fehler	Último error registrado	Último erro registado
+Vai	Go	Aller	Los	Ir	Ir
+Veicolo	Vehicle	Véhicule	Fahrzeug	Vehículo	Veículo
+Veicolo e radio	Vehicle and radio	Véhicule et radio	Fahrzeug und Radio	Vehículo y radio	Veículo e rádio
+Veicolo fermo	Vehicle stopped	Véhicule à l'arrêt	Fahrzeug steht	Vehículo parado	Veículo parado
+Verde	Green	Vert	Grün	Verde	Verde
+Via, numero civico, città	Street, number, city	Rue, numéro, ville	Straße, Nummer, Stadt	Calle, número, ciudad	Rua, número, cidade
+Vicino	Close	Proche	Nah	Cerca	Perto
+Viola	Purple	Violet	Lila	Morado	Roxo
+Viso	Face	Visage	Gesicht	Cara	Rosto
+Voce	Voice	Voix	Sprache	Voz	Voz
+Volume   {0}%	Volume   {0}%	Volume   {0}%	Lautstärke   {0}%	Volumen   {0}%	Volume   {0}%
+Volume {0}%	Volume {0}%	Volume {0}%	Lautstärke {0}%	Volumen {0}%	Volume {0}%
+ant. dx	front R	av. D	v. re	del. D	fr. D
+ant. sx	front L	av. G	v. li	del. I	fr. E
+cerca ›	seek ›	cherche ›	Suche ›	buscar ›	procurar ›
+di Calendar. Se l'opzione Calendar non c'è, installa Google Calendar dal Play Store e riprova.	for Calendar. If Calendar isn't listed, install Google Calendar from the Play Store and retry.	de l'agenda. Si l'option n'existe pas, installez Google Agenda depuis le Play Store.	für Kalender. Fehlt die Option, Google Kalender aus dem Play Store installieren.	de Calendar. Si no aparece, instala Google Calendar desde Play Store.	do Calendar. Se não aparecer, instale o Google Calendar da Play Store.
+e sulla chiavetta USB (cartella Android/data/it.driveos.launcher/files).	and on the USB stick (folder Android/data/it.driveos.launcher/files).	et sur la clé USB (dossier Android/data/it.driveos.launcher/files).	und auf dem USB-Stick (Ordner Android/data/it.driveos.launcher/files).	y en la memoria USB (carpeta Android/data/it.driveos.launcher/files).	e na pen USB (pasta Android/data/it.driveos.launcher/files).
+es. 45.07, 7.69	e.g. 45.07, 7.69	ex. 45.07, 7.69	z. B. 45.07, 7.69	ej. 45.07, 7.69	ex. 45.07, 7.69
+fari (segnale CAN collegato)	headlights (CAN signal linked)	feux (signal CAN relié)	Licht (CAN-Signal)	luces (señal CAN vinculada)	faróis (sinal CAN ligado)
+gestiti dalle app Junsun originali: DriveOS non le modifica.	handled by the original Junsun apps: DriveOS doesn't change them.	gérés par les apps Junsun d'origine : DriveOS ne les modifie pas.	von den Junsun-Original-Apps verwaltet: DriveOS ändert sie nicht.	gestionados por las apps Junsun originales: DriveOS no los cambia.	geridos pelas apps Junsun originais: o DriveOS não os altera.
+i segnali del veicolo letti e l'eventuale ultimo errore. Viene salvato in Download/DriveOS 	the vehicle signals read and the last error. It's saved in Download/DriveOS 	les signaux du véhicule lus et la dernière erreur. Enregistré dans Download/DriveOS 	die gelesenen Fahrzeugsignale und den letzten Fehler. Gespeichert in Download/DriveOS 	las señales del vehículo leídas y el último error. Se guarda en Download/DriveOS 	os sinais do veículo lidos e o último erro. É guardado em Download/DriveOS 
+modalità notte di Android	Android night mode	mode nuit d'Android	Android-Nachtmodus	modo noche de Android	modo noturno do Android
+non assegnato	not assigned	non attribué	nicht belegt	sin asignar	não atribuído
+oggi {0}	today {0}	aujourd'hui {0}	heute {0}	hoy {0}	hoje {0}
+orario di alba e tramonto	sunrise and sunset times	heures de lever et coucher du soleil	Sonnenauf- und -untergang	horario de amanecer y atardecer	horário do nascer e pôr do sol
+post. dx	rear R	arr. D	h. re	tras. D	tras. D
+post. sx	rear L	arr. G	h. li	tras. I	tras. E
+sono già state aperte almeno una volta dopo l'accensione.	have been opened at least once since power on.	ont été ouvertes au moins une fois depuis l'allumage.	seit dem Einschalten mindestens einmal geöffnet wurden.	se han abierto al menos una vez desde el encendido.	já foram abertas pelo menos uma vez desde que ligou.
+{0} giri/min	{0} rpm	{0} tr/min	{0} U/min	{0} rpm	{0} rpm
+{0} km	{0} km	{0} km	{0} km	{0} km	{0} km
+{0} km/h	{0} km/h	{0} km/h	{0} km/h	{0} km/h	{0} km/h
+{0} l	{0} l	{0} l	{0} l	{0} l	{0} l
+{0} · Cambia	{0} · Change	{0} · Changer	{0} · Ändern	{0} · Cambiar	{0} · Mudar
+— km/h	— km/h	— km/h	— km/h	— km/h	— km/h
+‹ cerca	‹ seek	‹ cherche	‹ Suche	‹ buscar	‹ procurar
+Stazione	Station	Station	Sender	Emisora	Estação
+Configurazione	Setup	Configuration	Einrichtung	Configuración	Configuração
+Scegli la lingua	Choose your language	Choisissez la langue	Sprache wählen	Elige el idioma	Escolha o idioma
+Avvertenze	Warnings	Avertissements	Hinweise	Advertencias	Avisos
+DriveOS è un progetto personale e sperimentale, non ufficiale e non collegato a Junsun, Volkswagen, Google o Waze.	DriveOS is a personal, experimental project, unofficial and not affiliated with Junsun, Volkswagen, Google or Waze.	DriveOS est un projet personnel et expérimental, non officiel et sans lien avec Junsun, Volkswagen, Google ou Waze.	DriveOS ist ein privates, experimentelles Projekt, inoffiziell und nicht mit Junsun, Volkswagen, Google oder Waze verbunden.	DriveOS es un proyecto personal y experimental, no oficial y sin relación con Junsun, Volkswagen, Google o Waze.	O DriveOS é um projeto pessoal e experimental, não oficial e sem ligação à Junsun, Volkswagen, Google ou Waze.
+È stato provato solo su una radio Junsun FF_866X (Android 10) montata su una Volkswagen Tiguan 2016. Su altre radio, versioni di Android o auto potrebbe non funzionare.	It has only been tested on a Junsun FF_866X radio (Android 10) in a 2016 Volkswagen Tiguan. It may not work on other radios, Android versions or cars.	Testé uniquement sur un autoradio Junsun FF_866X (Android 10) dans un Volkswagen Tiguan 2016. Il peut ne pas fonctionner ailleurs.	Nur getestet auf einem Junsun FF_866X (Android 10) in einem VW Tiguan 2016. Auf anderen Radios, Android-Versionen oder Autos evtl. nicht funktionsfähig.	Solo se ha probado en una radio Junsun FF_866X (Android 10) en un Volkswagen Tiguan 2016. Puede no funcionar en otras radios, versiones o coches.	Só foi testado num rádio Junsun FF_866X (Android 10) num Volkswagen Tiguan 2016. Pode não funcionar noutros rádios, versões ou carros.
+Comunica con la radio e con la centralina dell'auto: in casi rari può causare blocchi, riavvii o malfunzionamenti della radio. Le funzioni dell'auto restano comunque gestite dall'auto.	It talks to the radio and the car's CAN box: in rare cases it may cause freezes, reboots or radio malfunctions. The car's own functions stay managed by the car.	Il communique avec l'autoradio et le boîtier CAN : dans de rares cas il peut provoquer blocages, redémarrages ou dysfonctionnements. Les fonctions de la voiture restent gérées par la voiture.	Es kommuniziert mit Radio und CAN-Box: selten kann es Hänger, Neustarts oder Fehlfunktionen verursachen. Die Fahrzeugfunktionen bleiben beim Auto.	Se comunica con la radio y la centralita del coche: en casos raros puede causar bloqueos, reinicios o fallos de la radio. Las funciones del coche las sigue gestionando el coche.	Comunica com o rádio e a central do carro: em casos raros pode causar bloqueios, reinícios ou falhas do rádio. As funções do carro continuam geridas pelo carro.
+Non distrarti alla guida: usa lo schermo solo quando è sicuro e rispetta il codice della strada. Le indicazioni dei sensori e della telecamera sono un aiuto, non sostituiscono gli specchietti e lo sguardo.	Don't get distracted while driving: use the screen only when safe and follow traffic laws. Sensor and camera aids don't replace mirrors and looking around.	Ne vous distrayez pas en conduisant : utilisez l'écran seulement en sécurité. Capteurs et caméra sont une aide, ils ne remplacent pas les rétroviseurs.	Lassen Sie sich beim Fahren nicht ablenken: Bildschirm nur nutzen, wenn es sicher ist. Sensoren und Kamera ersetzen nicht Spiegel und Schulterblick.	No te distraigas al volante: usa la pantalla solo cuando sea seguro. Sensores y cámara ayudan, no sustituyen a los espejos.	Não se distraia a conduzir: use o ecrã só quando for seguro. Sensores e câmara ajudam, não substituem os espelhos.
+Lo usi a tuo rischio: l'autore non risponde di danni alla radio, all'auto, a persone o cose.	Use it at your own risk: the author is not liable for damage to the radio, the car, people or property.	Utilisation à vos risques : l'auteur n'est pas responsable des dommages à l'autoradio, à la voiture, aux personnes ou aux biens.	Nutzung auf eigenes Risiko: der Autor haftet nicht für Schäden an Radio, Auto, Personen oder Sachen.	Lo usas bajo tu responsabilidad: el autor no responde de daños a la radio, el coche, personas o cosas.	Usa por sua conta e risco: o autor não responde por danos no rádio, no carro, em pessoas ou bens.
+Ho letto e accetto	I have read and accept	J'ai lu et j'accepte	Gelesen und akzeptiert	He leído y acepto	Li e aceito
+La tua auto	Your car	Votre voiture	Ihr Auto	Tu coche	O seu carro
+Legge porte, cinture, sensori, clima e dati motore dalla centralina.	Reads doors, belts, sensors, climate and engine data from the CAN box.	Lit portières, ceintures, capteurs, clim et données moteur.	Liest Türen, Gurte, Sensoren, Klima und Motordaten.	Lee puertas, cinturones, sensores, clima y datos del motor.	Lê portas, cintos, sensores, clima e dados do motor.
+In retromarcia mostra immagine, linee guida e sensori.	In reverse shows image, guide lines and sensors.	En marche arrière : image, lignes et capteurs.	Im Rückwärtsgang Bild, Hilfslinien und Sensoren.	En marcha atrás muestra imagen, guías y sensores.	Em marcha-atrás mostra imagem, guias e sensores.
+Accendi solo se sono montati.	Turn on only if fitted.	Activez seulement s'ils sont montés.	Nur einschalten, wenn verbaut.	Actívalo solo si están instalados.	Ative só se estiverem instalados.
+Come Android Auto: troppi tocchi in marcia bloccano lo schermo per 10 secondi.	Like Android Auto: too many taps while driving lock the screen for 10 seconds.	Comme Android Auto : trop de touches en roulant bloquent l'écran 10 secondes.	Wie Android Auto: zu viele Berührungen sperren den Bildschirm 10 Sekunden.	Como Android Auto: demasiados toques en marcha bloquean la pantalla 10 segundos.	Como o Android Auto: demasiados toques a conduzir bloqueiam o ecrã 10 segundos.
+Tutto pronto	All set	C'est prêt	Alles bereit	Todo listo	Tudo pronto
+Puoi cambiare tutte queste scelte in qualsiasi momento da Impostazioni. Alcune funzioni (musica, guida, finestre Junsun) chiederanno i permessi la prima volta che le usi.	You can change all these choices anytime in Settings. Some features (music, guidance, Junsun windows) will ask for permissions the first time.	Vous pouvez tout modifier à tout moment dans Paramètres. Certaines fonctions demanderont des autorisations la première fois.	Alles jederzeit in den Einstellungen änderbar. Manche Funktionen fragen beim ersten Mal nach Berechtigungen.	Puedes cambiarlo todo en Ajustes cuando quieras. Algunas funciones pedirán permisos la primera vez.	Pode mudar tudo a qualquer momento nas Definições. Algumas funções pedirão permissões na primeira vez.
+Inizia	Start	Commencer	Los geht's	Empezar	Começar
+Avanti	Next	Suivant	Weiter	Siguiente	Seguinte
+Concedi da solo	Grant automatically	Accorder automatiquement	Automatisch erteilen	Conceder automáticamente	Conceder automaticamente
+Se la radio chiede "Consentire il debug?" tocca Consenti sempre. DriveOS poi si riapre.	If the radio asks "Allow debugging?" tap Always allow. DriveOS then restarts.	Si la radio demande "Autoriser le débogage ?" touchez Toujours autoriser. DriveOS redémarre ensuite.	Fragt das Radio "Debugging zulassen?", tippe auf Immer zulassen. DriveOS startet dann neu.	Si la radio pregunta "¿Permitir depuración?" toca Permitir siempre. DriveOS se reiniciará.	Se o rádio perguntar "Permitir depuração?" toque em Permitir sempre. O DriveOS reinicia.
+Oppure dal telefono:	Or from the phone:	Ou depuis le téléphone :	Oder vom Telefon:	O desde el teléfono:	Ou pelo telefone:
+Configuro i permessi…	Setting up permissions…	Configuration des autorisations…	Berechtigungen werden eingerichtet…	Configurando permisos…	Configurando permissões…
+Luci	Lights	Feux	Licht	Luces	Luzes
+Indietro	Back	Retour	Zurück	Atrás	Voltar
+Spegni / accendi schermo	Screen off / on	Écran éteint / allumé	Bildschirm aus / an	Apagar / encender pantalla	Desligar / ligar ecrã
