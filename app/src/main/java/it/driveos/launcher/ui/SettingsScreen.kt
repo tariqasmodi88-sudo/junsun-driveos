@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -284,7 +285,7 @@ private fun LayoutOption(layout: DashboardLayout, selected: Boolean, onClick: ()
         shape = RoundedCornerShape(20.dp),
         color = if (selected) colors.primary.copy(alpha = 0.16f) else colors.surface,
         border = if (selected) androidx.compose.foundation.BorderStroke(3.dp, colors.primary) else null,
-        modifier = androidx.compose.foundation.layout.fillMaxHeight(Modifier.width(236.dp)),
+        modifier = Modifier.width(236.dp).fillMaxHeight(),
     ) {
         Column(Modifier.padding(14.dp)) {
             LayoutPreview(layout, Modifier.width(208.dp).height(117.dp))
