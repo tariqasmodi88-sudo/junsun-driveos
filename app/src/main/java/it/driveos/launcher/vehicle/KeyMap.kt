@@ -153,10 +153,10 @@ class KeyMapper(context: Context) {
             CanDecoder.DOOR_FL, CanDecoder.DOOR_FR, CanDecoder.DOOR_RL, CanDecoder.DOOR_RR, CanDecoder.TRUNK,
             CanDecoder.DOORS_MASK, CanDecoder.HANDBRAKE, CanDecoder.REVERSE, CanDecoder.BATTERY_V,
             CanDecoder.LIGHTS, CanDecoder.LOWBEAM, CanDecoder.FOG, CanDecoder.BELT, CanDecoder.BELT_PASSENGER,
-            CanDecoder.REAR_SENSORS, CanDecoder.FRONT_SENSORS, "can:frames",
+            CanDecoder.REAR_SENSORS, CanDecoder.FRONT_SENSORS, CanDecoder.PARK, CanDecoder.STEER, "can:frames",
             CanDecoder.RPM, CanDecoder.SPEED, CanDecoder.VOLTAGE, CanDecoder.OUT_TEMP, CanDecoder.ODOMETER_KM, CanDecoder.FUEL_L,
         )
-        private val STATE_PREFIXES = listOf("can:S", "can:ac_", "can:seat_", "can:C21/", "can:C28/", "can:C22/", "can:C23/", "can:C24/", "can:C26/", "can:C41/", "can:C7d/")
+        private val STATE_PREFIXES = listOf("can:S", "can:ac_", "can:seat_", "can:C21/", "can:C28/", "can:C22/", "can:C23/", "can:C24/", "can:C25/", "can:C26/", "can:C14/", "can:C41/", "can:C7d/")
 
         fun isKeyCandidate(key: String): Boolean =
             key.startsWith("can:") && key !in STATE_KEYS && STATE_PREFIXES.none { key.startsWith(it) }

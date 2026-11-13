@@ -1,6 +1,8 @@
 package it.driveos.launcher
 
 import it.driveos.launcher.vehicle.CanDecoder
+import it.driveos.launcher.vehicle.CanQuery
+import it.driveos.launcher.vehicle.CanSignalFilter
 import it.driveos.launcher.vehicle.CanStreamParser
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -8,14 +10,17 @@ import org.junit.Test
 
 class CanSerialTest {
     private fun bytes(s: String) = s.trim().split(" ").map { it.toInt(16).toByte() }.toByteArray()
+    private fun hex(b: ByteArray) = b.joinToString(" ") { "%02x".format(it.toInt() and 0xFF) }
+    /** Messaggio CAN completo e con le somme di controllo giuste: es. can(0x22, 3, 1, 1, 1). */
+    private fun can(cmd: Int, vararg data: Int) = hex(CanQuery.frame(CanQuery.raise(cmd, *data)))
 
     // frame reali del giro del 30/10 (porta ant. sx aperta, ant. sx + baule, retro, batteria)
     private val status = "23 53 09 41 04 00 00 00 00 00 00 00 1f"
-    private val door = "23 43 06 2e 24 02 04 01 d4 9c"
-    private val trunkFl = "23 43 06 2e 24 02 04 11 c4 9c"
-    private val closed = "23 43 06 2e 24 02 04 00 d5 9c"
-    private val hbrake = "23 43 06 2e 41 02 01 a0 1b 92"
-    private val batt = "23 43 07 2e 7d 03 0b 14 37 29 15"
+    private val door = can(0x24, 0x04, 0x01)
+    private val trunkFl = can(0x24, 0x04, 0x11)
+    private val closed = can(0x24, 0x04, 0x00)
+    private val hbrake = can(0x41, 0x01, 0xa0)
+    private val batt = can(0x7d, 0x0b, 0x14, 0x37)
     private val rev = "23 53 09 41 05 00 00 00 00 00 00 00 1e"
 
     private fun decode(vararg frames: String): Map<String, String> {
@@ -41,7 +46,7 @@ class CanSerialTest {
     @Test fun handbrakeReverseBattery() {
         val m = decode(hbrake, rev, batt)
         assertEquals("0", m[CanDecoder.HANDBRAKE]) // bit 0x20 a 1 = freno giu'
-        assertEquals("1", decode("23 43 06 2e 41 02 01 80 3b 92")[CanDecoder.HANDBRAKE]) // bit a 0 = tirato
+        assertEquals("1", decode(can(0x41, 0x01, 0x80))[CanDecoder.HANDBRAKE]) // bit a 0 = tirato
         assertEquals("1", m[CanDecoder.REVERSE])
         assertEquals("14.1", m[CanDecoder.BATTERY_V])
         assertEquals("0", decode(status)[CanDecoder.REVERSE])
@@ -57,16 +62,16 @@ class CanSerialTest {
     }
 
     @Test fun lightsAndBelt() {
-        val m = decode("23 43 06 2e 7d 02 01 e0 00 00", "23 43 06 2e 7d 02 06 3d 00 00")
+        val m = decode(can(0x7d, 0x01, 0xe0), can(0x7d, 0x06, 0x3d))
         assertEquals("1", m[CanDecoder.LIGHTS]); assertEquals("1", m[CanDecoder.LOWBEAM])
         assertEquals("1", m[CanDecoder.BELT])
-        val blink = decode("23 43 06 2e 7d 02 01 d0 00 00")
+        val blink = decode(can(0x7d, 0x01, 0xd0))
         assertEquals("1", blink[CanDecoder.LIGHTS]); assertEquals(null, blink["can:C7d/01"])
-        assertEquals("0", decode("23 43 06 2e 7d 02 01 00 00 00")[CanDecoder.LIGHTS])
+        assertEquals("0", decode(can(0x7d, 0x01, 0x00))[CanDecoder.LIGHTS])
     }
 
     @Test fun parkingSensors() {
-        val m = decode("23 43 08 2e 22 04 03 01 01 01 aa 55", "23 43 08 2e 23 04 00 00 00 00 aa 55")
+        val m = decode(can(0x22, 3, 1, 1, 1), can(0x23, 0, 0, 0, 0))
         assertEquals("3 1 1 1", m[CanDecoder.REAR_SENSORS])
         assertEquals(listOf(3, 3, 3, 3), CanDecoder.sensorLevels(m, CanDecoder.REAR_SENSORS))
         assertEquals(listOf(0, 3, 3, 3), CanDecoder.sensorLevels(mapOf(CanDecoder.REAR_SENSORS to "0 3 3 2"), CanDecoder.REAR_SENSORS))
@@ -75,8 +80,82 @@ class CanSerialTest {
         assertEquals(listOf(0, 0, 0, 0), CanDecoder.sensorLevels(m, CanDecoder.FRONT_SENSORS))
     }
 
+    @Test fun realFramesHaveTheChecksumsWeCompute() {
+        // catture del 30/10 e del 07/11: le somme calcolate coincidono con quelle vere
+        assertEquals("23 43 06 2e 24 02 04 01 d4 9c", can(0x24, 0x04, 0x01))
+        val p = CanStreamParser()
+        val real = "23 4b 03 10 05 01 5c " + status + " 23 43 08 2e 22 04 03 01 01 01 d3 92"
+        assertEquals(listOf('K', 'S', 'C'), p.feed(bytes(real)).map { it.type })
+        assertEquals(0L, p.rejected)
+    }
+
+    @Test fun brokenFramesAreDroppedNotDecoded() {
+        // messaggio "porta aperta" con un byte cambiato: prima diventava una porta aperta inesistente
+        val p = CanStreamParser()
+        val bad = bytes(door).also { it[7] = 0x1f }
+        assertEquals(0, p.feed(bad).count { it.type != 'X' })
+        assertEquals(1L, p.rejected)
+        // somma esterna giusta ma interna (Raise) sbagliata: scartato lo stesso
+        val inner = bytes("23 43 06 2e 24 02 04 01 d5 00").also { b -> var x = 0; for (i in 1..8) x = x xor (b[i].toInt() and 0xFF); b[9] = x.toByte() }
+        assertEquals(0, CanStreamParser().feed(inner).count { it.type != 'X' })
+    }
+
+    @Test fun frameCutByTheRadioDoesNotEatTheNextOnes() {
+        // la radio si e' presa la coda di un messaggio: a DriveOS arriva solo la testa, poi messaggi interi
+        val p = CanStreamParser()
+        val head = bytes(door).copyOfRange(0, 5)
+        val got = p.feed(head) + p.feed(bytes(status)) + p.feed(bytes(trunkFl)) + p.feed(bytes(closed))
+        val good = got.filter { it.type != 'X' }
+        assertEquals(listOf('S', 'C', 'C'), good.map { it.type })
+        assertEquals(emptyList<String>(), CanDecoder.openDoors(good.flatMap { CanDecoder.decode(it).entries }.associate { it.key to it.value }))
+    }
+
+    @Test fun parkPilotStatus() {
+        assertEquals("1", decode(can(0x25, 0x02, 0x00))[CanDecoder.PARK])
+        assertEquals("0", decode(can(0x25, 0x00, 0x00))[CanDecoder.PARK])
+    }
+
+    private fun CanSignalFilter.feed(now: Long, vararg frames: String): Map<String, String> {
+        val out = LinkedHashMap<String, String>()
+        val p = CanStreamParser()
+        for (f in frames) p.feed(bytes(f)).forEach { apply(CanDecoder.decode(it), now, out) }
+        return out
+    }
+
+    @Test fun sensorsClearWhenParkPilotTurnsOff() {
+        // sequenza vera (cattura 30/10, s1_16): spento -> "00.." -> "01 01 01 01" -> silenzio
+        val f = CanSignalFilter()
+        assertEquals("1 1 1 1", f.feed(0, can(0x25, 0x02, 0x00), can(0x22, 1, 1, 1, 1))[CanDecoder.REAR_SENSORS])
+        val off = f.feed(1000, can(0x25, 0x00, 0x00))
+        assertEquals("0 0 0 0", off[CanDecoder.REAR_SENSORS]); assertEquals("0", off[CanDecoder.PARK])
+        // la coda dopo lo spegnimento non riaccende i sensori
+        val tail = f.feed(1300, can(0x22, 0, 0, 0, 0), can(0x23, 0, 0, 0, 0), can(0x22, 1, 1, 1, 1), can(0x23, 1, 1, 1, 1))
+        assertNull(tail[CanDecoder.REAR_SENSORS]); assertNull(tail[CanDecoder.FRONT_SENSORS])
+        // riacceso: tornano subito
+        assertEquals("3 1 1 1", f.feed(1400, can(0x25, 0x02, 0x00), can(0x22, 3, 1, 1, 1))[CanDecoder.REAR_SENSORS])
+        // anche senza il messaggio di accensione (preso dalla radio), passato il silenzio i sensori valgono
+        val g = CanSignalFilter()
+        g.feed(0, can(0x22, 2, 1, 1, 1)); g.feed(100, can(0x25, 0x00, 0x00))
+        assertEquals("4 1 1 1", g.feed(100 + CanSignalFilter.MUTE_MS, can(0x22, 4, 1, 1, 1))[CanDecoder.REAR_SENSORS])
+    }
+
+    @Test fun sensorsExpireAndOnlyChangesPass() {
+        val f = CanSignalFilter()
+        assertEquals("2 1 1 1", f.feed(0, can(0x22, 2, 1, 1, 1))[CanDecoder.REAR_SENSORS])
+        assertNull(f.feed(300, can(0x22, 2, 1, 1, 1))[CanDecoder.REAR_SENSORS]) // uguale: non ripubblicato
+        assertEquals(emptyMap<String, String>(), f.expire(300 + CanSignalFilter.EXPIRE_MS))
+        assertEquals("0 0 0 0", f.expire(301 + CanSignalFilter.EXPIRE_MS)[CanDecoder.REAR_SENSORS])
+        // i tasti sono eventi: passano sempre, anche identici
+        assertEquals("05", f.feed(5000, "23 4b 03 10 05 01 5c")[CanDecoder.KEY])
+        assertEquals("05", f.feed(5100, "23 4b 03 10 05 01 5c")[CanDecoder.KEY])
+        // lettura ferma: sensori azzerati, poi tutto ripubblicato
+        f.feed(6000, can(0x22, 2, 1, 1, 1), door)
+        assertEquals(mapOf(CanDecoder.REAR_SENSORS to "0 0 0 0"), f.reset())
+        assertEquals("1", f.feed(7000, door)[CanDecoder.DOOR_FL])
+    }
+
     @Test fun unknownFramesAreLoggedRaw() {
-        val m = decode("23 43 08 2e 22 04 02 01 01 01 aa 55")
+        val m = decode(can(0x22, 2, 1, 1, 1))
         assertEquals("01 01 01", m["can:C22/02"])
     }
 }

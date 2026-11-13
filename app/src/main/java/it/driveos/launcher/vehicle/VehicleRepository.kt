@@ -96,10 +96,26 @@ class VehicleRepository(context: Context) {
     fun ingest(updates: Map<String, String>) = merge(updates)
 
     /** Dimentica dei segnali (es. fari al quadro spento: al risveglio il vecchio valore sarebbe sbagliato). */
-    fun forget(keys: Collection<String>) {
+    fun forget(keys: Collection<String>) = synchronized(lock) {
         val cur = _signals.value
-        if (keys.none { it in cur }) return
+        if (keys.none { it in cur }) return@synchronized
         _signals.value = cur - keys.toSet()
+    }
+
+    /**
+     * Il registro di sistema non si riesce piu' a leggere: il suo ultimo valore di retromarcia non e'
+     * piu' affidabile (resterebbe fermo per sempre e, avendo la precedenza, bloccherebbe la retro).
+     * Da qui vale la seriale, se c'e'; al primo nuovo messaggio del registro torna a comandare lui.
+     */
+    fun dropLogReverse() = synchronized(lock) {
+        val cur = _signals.value
+        if (LogcatParser.REVERSE !in cur) return@synchronized
+        val next = cur.toMutableMap()
+        next.remove(LogcatParser.REVERSE)
+        val serial = cur[CanDecoder.REVERSE]
+        if (serial != null) next[KnownVehicleSignals.REVERSE_MERGED] = serial else next.remove(KnownVehicleSignals.REVERSE_MERGED)
+        _signals.value = next
+        android.util.Log.w("DriveOS", "retromarcia: registro non leggibile, vale la seriale ($serial)")
     }
 
     private fun readSettings(out: MutableMap<String, String>) {
@@ -135,14 +151,22 @@ class VehicleRepository(context: Context) {
         if (updates.isNotEmpty()) merge(updates)
     }
 
-    private fun bump(id: String, value: String) {
+    private fun bump(id: String, value: String) = synchronized(lock) {
         val counts = _changeCounts.value.toMutableMap()
         counts[id] = (counts[id] ?: 0) + 1
         _changeCounts.value = counts
         merge(mapOf(id to ((_signals.value[id]?.toIntOrNull() ?: 0) + 1).toString()))
     }
 
-    private fun merge(updates: Map<String, String>) {
+    /**
+     * I segnali arrivano da piu' thread insieme (seriale, registro, broadcast, lettura periodica).
+     * Ogni aggiornamento legge la mappa, la modifica e la riscrive: senza il blocco due aggiornamenti
+     * contemporanei si sovrascrivevano e uno andava perso (es. una porta aperta o la retromarcia, che
+     * la seriale poi non rimanda perche' "non e' cambiata").
+     */
+    private val lock = Any()
+
+    private fun merge(updates: Map<String, String>) = synchronized(lock) {
         val current = _signals.value
         var changed = false
         val next = current.toMutableMap()

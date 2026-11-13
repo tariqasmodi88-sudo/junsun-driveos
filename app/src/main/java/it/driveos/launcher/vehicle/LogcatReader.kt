@@ -48,7 +48,7 @@ class LogcatReader(context: Context, private val repo: VehicleRepository) {
     @Volatile var onRadioReady: (() -> Unit)? = null
 
     fun stop() {
-        job?.cancel()
+        job?.cancel(); job = null
         runCatching { process?.destroy() }
         process = null
     }
@@ -107,31 +107,55 @@ class LogcatReader(context: Context, private val repo: VehicleRepository) {
         }
     }
 
+    /**
+     * Legge il registro finche' lo schermo e' acceso. Se `logcat` si chiude da solo (succede: il sistema
+     * stacca i lettori troppo lenti, oppure il servizio dei log riparte) si riparte da dove si era
+     * rimasti: prima la lettura moriva in silenzio e la retromarcia dal registro restava ferma
+     * all'ultimo valore fino allo spegnimento del quadro.
+     */
     private suspend fun readLoop() {
-        // filtra per tag: molto meno rumore e consumo. "*:S" silenzia tutto il resto.
-        // Tutto il log da livello Debug in su: poi si tiene solo ciò che riguarda il veicolo
-        // (LogcatParser per i segnali noti).
+        val fmt = java.text.SimpleDateFormat("MM-dd HH:mm:ss.SSS", java.util.Locale.US)
         // solo le righe degli ultimi 10 s: niente storia vecchia (retro di ieri che farebbe scattare schermate),
         // ma si prende la retro inserita appena prima dell'accensione di DriveOS
-        val since = java.text.SimpleDateFormat("MM-dd HH:mm:ss.SSS", java.util.Locale.US).format(java.util.Date(System.currentTimeMillis() - 10_000))
-        val cmd = mutableListOf("logcat", "-v", "brief", "-T", since, "*:V")
-        runCatching {
-            val p = ProcessBuilder(cmd).redirectErrorStream(true).start()
-            process = p
-            BufferedReader(InputStreamReader(p.inputStream)).use { reader ->
-                while (scope.isActive) {
-                    val line = reader.readLine() ?: break
-                    // MainUI ha finito di riagganciare la centralina (registro del 07/11: ~4 s dopo il risveglio)
-                    if (line.contains("WakeUpInint == ok")) runCatching { onRadioReady?.invoke() }
-                    setFreq.find(line)?.let { m -> onTuned(m.groupValues[1].toInt() * 10) }
-                    LogcatParser.parse(line)?.let { (id, value) ->
-                        if (id == LogcatParser.RADIO_NAME) { tracker.onPs(value); _rds.value = tracker.state }
-                        if (id == LogcatParser.RADIO_NAME) repo.ingest(mapOf(id to value, LogcatParser.RADIO_NAME_SEQ to (++nameSeq).toString()))
-                        else repo.ingest(mapOf(id to value))
-                        if (id == LogcatParser.PARKING && value == "1") armParkingClear()
+        var since = System.currentTimeMillis() - 10_000
+        var emptyRuns = 0
+        while (kotlinx.coroutines.currentCoroutineContext().isActive && it.driveos.launcher.system.PowerGate.screenOn && available()) {
+            var lines = 0
+            var lastLineAt = 0L
+            runCatching {
+                // Tutto il registro: poi si tiene solo cio' che riguarda il veicolo (LogcatParser).
+                val p = ProcessBuilder(listOf("logcat", "-v", "brief", "-T", fmt.format(java.util.Date(since)), "*:V"))
+                    .redirectErrorStream(true).start()
+                process = p
+                try {
+                    BufferedReader(InputStreamReader(p.inputStream)).use { reader ->
+                        while (kotlinx.coroutines.currentCoroutineContext().isActive) {
+                            val line = reader.readLine() ?: break
+                            lines++; lastLineAt = System.currentTimeMillis()
+                            handle(line)
+                        }
                     }
-                }
+                } finally { runCatching { p.destroy() } }
             }
+            if (!kotlinx.coroutines.currentCoroutineContext().isActive) break
+            // logcat si e' chiuso da solo
+            if (lines > 0) { emptyRuns = 0; since = lastLineAt - 2_000 } else emptyRuns++
+            android.util.Log.w("DriveOS", "registro di sistema interrotto dopo $lines righe: riparto")
+            // non riparte proprio: la retromarcia del registro non vale piu', si passa alla seriale
+            if (emptyRuns == 3) repo.dropLogReverse()
+            delay(if (emptyRuns >= 3) 5_000 else 1_000)
+        }
+    }
+
+    private fun handle(line: String) {
+        // MainUI ha finito di riagganciare la centralina (registro del 07/11: ~4 s dopo il risveglio)
+        if (line.contains("WakeUpInint == ok")) runCatching { onRadioReady?.invoke() }
+        setFreq.find(line)?.let { m -> onTuned(m.groupValues[1].toInt() * 10) }
+        LogcatParser.parse(line)?.let { (id, value) ->
+            if (id == LogcatParser.RADIO_NAME) { tracker.onPs(value); _rds.value = tracker.state }
+            if (id == LogcatParser.RADIO_NAME) repo.ingest(mapOf(id to value, LogcatParser.RADIO_NAME_SEQ to (++nameSeq).toString()))
+            else repo.ingest(mapOf(id to value))
+            if (id == LogcatParser.PARKING && value == "1") armParkingClear()
         }
     }
 }

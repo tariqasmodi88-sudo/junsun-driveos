@@ -117,8 +117,16 @@ class DriveOSApp : Application() {
                             it.driveos.launcher.system.PowerGate.screenOn = false
                             wakeJob?.cancel(); canReader.pause(); voice.stop(); mediaRepository.pauseForPower()
                             // i fari di adesso non valgono alla prossima accensione (tema giusto da subito)
+                            // Lo stesso per la retromarcia: se spegni con la retro inserita, l'ultimo valore
+                            // restava "inserita" e alla riaccensione la schermata retro si apriva (e restava)
+                            // anche in folle, perche' il registro non riscrive lo stato al risveglio.
+                            // Alla riaccensione lo ridicono il registro o la seriale (S 0x41, ogni 0,3 s).
                             vehicleRepository.forget(listOf(it.driveos.launcher.vehicle.CanDecoder.LIGHTS,
-                                it.driveos.launcher.vehicle.CanDecoder.LOWBEAM, "can:C24/flags"))
+                                it.driveos.launcher.vehicle.CanDecoder.LOWBEAM, "can:C24/flags",
+                                it.driveos.launcher.vehicle.CanDecoder.REVERSE, it.driveos.launcher.vehicle.LogcatParser.REVERSE,
+                                it.driveos.launcher.vehicle.KnownVehicleSignals.REVERSE_ID,
+                                it.driveos.launcher.vehicle.KnownVehicleSignals.REVERSE_MERGED,
+                                it.driveos.launcher.vehicle.CanDecoder.STEER, it.driveos.launcher.vehicle.CanDecoder.PARK))
                             logcatReader.stop(); speedWatcher.stop(); tsBridge.disconnect()
                         }
                         android.content.Intent.ACTION_SCREEN_ON, "com.ts.main.uiaccon", "autochips.intent.action.QB_POWERON" -> {

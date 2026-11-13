@@ -246,7 +246,8 @@ class MainActivity : ComponentActivity() {
             while (true) {
                 kotlinx.coroutines.delay(2000)
                 if (!lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) {
-                    runCatching { driveApp.vehicleRepository.pollOnce() }
+                    // fuori dal thread dell'interfaccia: la lettura lancia `getprop` e aspetta la risposta
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { runCatching { driveApp.vehicleRepository.pollOnce() } }
                 }
             }
         }
@@ -447,7 +448,9 @@ class MainActivity : ComponentActivity() {
         // Aggiorna i segnali del veicolo a intervalli regolari mentre la Home è in primo piano.
         LaunchedEffect(Unit) {
             while (true) {
-                driveApp.vehicleRepository.pollOnce()
+                // La lettura lancia `getprop` e ne aspetta la risposta (decine di millisecondi): fatta sul
+                // thread dell'interfaccia bloccava lo schermo per un attimo ogni 2,5 s (animazioni a scatti).
+                withContext(kotlinx.coroutines.Dispatchers.IO) { runCatching { driveApp.vehicleRepository.pollOnce() } }
                 driveApp.systemControls.refresh()
                 kotlinx.coroutines.delay(2500)
             }
@@ -1048,9 +1051,10 @@ class MainActivity : ComponentActivity() {
                 when (a) {
                     KeyAction.HOME -> { screen = Screen.DASHBOARD; overviewAuto = false; bringHomeFromBackground() }
                     KeyAction.RADIO -> openRadio()
-                    KeyAction.NAV -> openOrPick(s.navApp, PickerTarget.NAV)
-                    KeyAction.PHONE -> openOrPick(s.phoneApp, PickerTarget.PHONE)
-                    KeyAction.MUSIC -> openOrPick(s.musicApp, PickerTarget.MUSIC)
+                    // settingsLive: le app scelte ADESSO (questo blocco parte una volta sola, "s" resterebbe quello dell'avvio)
+                    KeyAction.NAV -> openOrPick(settingsLive.navApp, PickerTarget.NAV)
+                    KeyAction.PHONE -> openOrPick(settingsLive.phoneApp, PickerTarget.PHONE)
+                    KeyAction.MUSIC -> openOrPick(settingsLive.musicApp, PickerTarget.MUSIC)
                     KeyAction.VOICE -> startOfflineVoice()
                     // tasto Indietro dell'autoradio letto da DriveOS (la radio non l'ha visto): indietro di un livello
                     KeyAction.BACK -> if (isForeground) this@MainActivity.onBackPressedDispatcher.onBackPressed()

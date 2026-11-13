@@ -1,16 +1,6 @@
 package it.driveos.launcher.vehicle
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
-import java.io.FileInputStream
-import java.util.concurrent.CopyOnWriteArrayList
-
-/** Un messaggio della seriale auto: '#', tipo ('C' o 'S'), lunghezza, contenuto, somma di controllo. */
+/** Un messaggio della seriale auto: '#', tipo ('C', 'S' o 'K'), lunghezza, contenuto, somma di controllo. */
 class CanFrame(val type: Char, val payload: ByteArray)
 
 /**
@@ -54,18 +44,29 @@ object CanQuery {
 
 /**
  * Taglia in messaggi il flusso di byte di /dev/ttyS1 (MCU/CAN → radio, registrato il 30/10).
- * Struttura: 0x23 ('#'), 'C' o 'S', n, n byte di contenuto, 1 byte di controllo.
- * Se il flusso inizia a meta' di un messaggio, riparte dal primo '#' valido.
+ * Struttura: 0x23 ('#'), 'C' / 'S' / 'K', n, n byte di contenuto, 1 byte di controllo
+ * (XOR di tipo, n e contenuto). Dentro i messaggi 'C' c'e' il protocollo Raise: 0x2E, comando,
+ * lunghezza, dati, NOT(somma di comando + lunghezza + dati).
+ *
+ * La linea e' condivisa con la radio Junsun: un messaggio puo' arrivare a pezzi, meta' a DriveOS e
+ * meta' alla radio. Per questo si accettano SOLO i messaggi con le somme di controllo giuste (sulle
+ * catture reali: 2356 messaggi, tutti corretti): un messaggio spezzato non diventa piu' una porta
+ * aperta o una retromarcia che non esistono. Se la somma non torna si scarta un byte e si riparte
+ * dal '#' successivo, cosi' i messaggi buoni che seguono non si perdono.
  */
 class CanStreamParser {
     private var buf = ByteArray(0)
+
+    /** Messaggi scartati perche' la somma di controllo non torna (diagnostica). */
+    var rejected: Long = 0
+        private set
 
     fun feed(data: ByteArray, len: Int = data.size): List<CanFrame> {
         buf += data.copyOfRange(0, len)
         val out = ArrayList<CanFrame>()
         val junk = java.io.ByteArrayOutputStream()
         fun flushJunk() {
-            // Byte che non fanno parte di nessun messaggio noto (es. tasti dell'autoradio): li teniamo, "X".
+            // Byte che non fanno parte di nessun messaggio noto: li teniamo, "X".
             val b = junk.toByteArray(); junk.reset()
             if (b.isNotEmpty() && b.any { it.toInt() != 0 }) out.add(CanFrame('X', b.copyOfRange(0, minOf(b.size, 24))))
         }
@@ -76,10 +77,15 @@ class CanStreamParser {
             if (buf[i].toInt() == 0x23 && (t == 'C'.code || t == 'S'.code || t == 'K'.code) && (buf[i + 2].toInt() and 0xFF) in 1..40) {
                 val n = buf[i + 2].toInt() and 0xFF
                 if (i + 4 + n > buf.size) break // messaggio incompleto: aspetta altri byte
-                flushJunk()
-                out.add(CanFrame(t.toChar(), buf.copyOfRange(i + 3, i + 3 + n)))
-                i += 4 + n
-            } else { junk.write(buf[i].toInt()); i++ }
+                if (checksumOk(buf, i, n)) {
+                    flushJunk()
+                    out.add(CanFrame(t.toChar(), buf.copyOfRange(i + 3, i + 3 + n)))
+                    i += 4 + n
+                    continue
+                }
+                rejected++
+            }
+            junk.write(buf[i].toInt()); i++
         }
         // Gli ultimi 1-2 byte che non possono iniziare un messaggio ('#') non vanno tenuti in attesa.
         if (i + 3 > buf.size) while (i < buf.size && buf[i].toInt() != 0x23) { junk.write(buf[i].toInt()); i++ }
@@ -88,6 +94,21 @@ class CanStreamParser {
         if (buf.size > 4096) buf = ByteArray(0)
         return out
     }
+
+    companion object {
+        /** Somma esterna (XOR) e, per i messaggi Raise completi, anche quella interna. */
+        fun checksumOk(b: ByteArray, at: Int, n: Int): Boolean {
+            var x = 0
+            for (j in at + 1 until at + 3 + n) x = x xor (b[j].toInt() and 0xFF)
+            if (x != (b[at + 3 + n].toInt() and 0xFF)) return false
+            if (b[at + 1].toInt() != 'C'.code || n < 4 || (b[at + 3].toInt() and 0xFF) != 0x2E) return true
+            val len = b[at + 5].toInt() and 0xFF
+            if (n != len + 4) return true // forma non standard: la decide il decodificatore
+            var sum = 0
+            for (j in at + 4 until at + 6 + len) sum += b[j].toInt() and 0xFF
+            return (sum.inv() and 0xFF) == (b[at + 6 + len].toInt() and 0xFF)
+        }
+    }
 }
 
 /**
@@ -95,6 +116,8 @@ class CanStreamParser {
  *  - C 0x24: 1° byte bit di stato (0x04 = fari), 2° byte maschera porte (1 ant.sx, 2 ant.dx, 4 post.sx, 8 post.dx, 0x10 baule);
  *  - C 0x41 sotto-tipo 01: bit 0x20 a 0 = freno a mano tirato (verificato dall'utente);
  *  - C 0x22 / 0x23: 4 sensori di parcheggio posteriori / anteriori (valore basso = ostacolo vicino; 0 o >= 10 = nulla);
+ *  - C 0x25: stato del Park Pilot, mandato una volta all'accensione e allo spegnimento dei sensori
+ *    (cattura del 30/10: "02 00" entrando in retromarcia, "00 00" allo spegnimento): bit 0x02 = attivo;
  *  - S 0x41: bit 0 del 2° byte = retromarcia;
  *  - C 0x7d sotto-tipo 01 (luci, prova 30/10): bit 0x40 luci accese, 0x20 anabbaglianti, 0x04 retronebbia;
  *    0x10/0x08 sono le frecce (lampeggiano: non vengono registrate);
@@ -121,6 +144,9 @@ object CanDecoder {
     const val BELT_PASSENGER = "can:belt_passenger"
     const val REAR_SENSORS = "can:rear"
     const val FRONT_SENSORS = "can:front"
+    /** Park Pilot (sensori di parcheggio) acceso "1" / spento "0", da C 0x25. */
+    const val PARK = "can:park"
+    const val SENSORS_OFF = "0 0 0 0"
     /** Angolo volante (C 0x26, protocollo Raise VW PQ): little-endian con segno, -500..+500 (libcan59 HandleCanCmd 0x26). */
     const val STEER = "can:steer"
     // Dati motore (C 0x41 sotto-tipo 02): la centralina li manda SOLO su richiesta, vedi [CanQuery].
@@ -251,6 +277,7 @@ object CanDecoder {
             out[STEER] = (((d[1].toInt() and 0xFF) shl 8) or (d[0].toInt() and 0xFF)).toShort().toInt().toString()
             return out
         }
+        if (id == 0x25) out[PARK] = if ((sub and 0x02) != 0) "1" else "0"
         if ((id == 0x22 || id == 0x23) && len == 4) {
             // 4 valori, uno per sensore (sinistra → destra)
             out[if (id == 0x22) REAR_SENSORS else FRONT_SENSORS] = d.joinToString(" ") { (it.toInt() and 0xFF).toString() }
@@ -307,170 +334,73 @@ object CanDecoder {
     }
 }
 
+
 /**
- * Ascolta /dev/ttyS1 (sola lettura, in primo piano o in background) e pubblica le variazioni.
- * Se la porta non si apre (permessi, altro firmware) riprova ogni 2 s senza fare danni; se tace per 20 s la riapre.
+ * Stato tra un messaggio e l'altro della seriale (logica pura, testabile):
+ *  - passa solo le VARIAZIONI (i tasti invece sono eventi: passano sempre);
+ *  - sensori di parcheggio: quando il Park Pilot si spegne (C 0x25 = 0) si azzerano subito e per
+ *    [MUTE_MS] si ignorano i loro messaggi. Nella cattura del 30/10, dopo lo spegnimento, la centralina
+ *    manda ancora "00 00 00 00" e poi "01 01 01 01" (che in scala vale "vicinissimo") e tace: senza
+ *    questo filtro i sensori tornavano rossi per 2 s e la schermata Veicolo si riapriva da sola;
+ *  - se lo spegnimento non e' arrivato (messaggio preso dalla radio) resta la scadenza: senza
+ *    aggiornamenti per [EXPIRE_MS] i sensori si azzerano (a Park Pilot acceso arrivano ogni ~0,3 s).
  */
-class CanSerialReader(private val path: String = "/dev/ttyS1") {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val sinks = CopyOnWriteArrayList<(Map<String, String>) -> Unit>()
-    @Volatile private var job: Job? = null
-    @Volatile private var stream: FileInputStream? = null
-    @Volatile var framesSeen: Long = 0
-        private set
-    /** Ultimo errore della richiesta dati motore (null = inviata). */
-    @Volatile var queryError: String? = null
-        private set
-    private var queryJob: Job? = null
-    @Volatile private var lastByteAt = 0L
+class CanSignalFilter {
+    private val last = HashMap<String, String>()
+    private val sensorSeen = HashMap<String, Long>()
+    private var muteUntil = 0L
 
-    fun addSink(s: (Map<String, String>) -> Unit) { if (!sinks.contains(s)) sinks.add(s) }
-    fun removeSink(s: (Map<String, String>) -> Unit) { sinks.remove(s) }
-
-    fun start() {
-        if (job?.isActive == true) return
-        job = scope.launch {
-            // Mai durante l'avvio o il risveglio della radio: in quei secondi la radio Junsun "saluta" l'MCU
-            // su questa stessa linea (vedi pause()). Si aspetta [notBefore] e che lo schermo sia acceso.
-            while (isActive && (System.currentTimeMillis() < notBefore || !screenOn() || !it.driveos.launcher.system.PowerGate.ready())) delay(1000)
-            startQueries()
-            val last = HashMap<String, String>()
-            while (isActive) {
-                try {
-                    FileInputStream(path).use { ins ->
-                        stream = ins
-                        last.clear() // dopo una riapertura si ripubblica lo stato corrente
-                        lastByteAt = System.currentTimeMillis()
-                        // Guardiano: se la porta tace per 20 s (lettura bloccata dopo un ciclo del quadro, ecc.)
-                        // la si chiude: la lettura fallisce e riparte da capo.
-                        val dog = launch {
-                            while (isActive) {
-                                delay(5_000)
-                                if (System.currentTimeMillis() - lastByteAt > 20_000) { runCatching { ins.close() }; break }
-                            }
-                        }
-                        val parser = CanStreamParser()
-                        val buf = ByteArray(512)
-                        // Sensori: la centralina smette di mandarli quando il Park Pilot si spegne (es. in marcia
-                        // sopra i 15 km/h). Senza aggiornamenti per 1,5 s si azzerano, altrimenti resterebbero "rossi".
-                        val sensorSeen = HashMap<String, Long>()
-                        var lastExpiryCheck = 0L
-                        while (isActive) {
-                            val nowMs = System.currentTimeMillis()
-                            if (nowMs - lastExpiryCheck > 300) {
-                                lastExpiryCheck = nowMs
-                                val expired = LinkedHashMap<String, String>()
-                                for (k in listOf(CanDecoder.REAR_SENSORS, CanDecoder.FRONT_SENSORS)) {
-                                    val seen = sensorSeen[k] ?: continue
-                                    if (nowMs - seen > 2000 && last[k] != null && last[k] != "0 0 0 0") {
-                                        last[k] = "0 0 0 0"; expired[k] = "0 0 0 0"
-                                    }
-                                }
-                                if (expired.isNotEmpty()) sinks.forEach { runCatching { it(expired) } }
-                            }
-                            // Lettura SENZA attesa bloccata: si legge solo cio' che e' gia' arrivato.
-                            // Cosi' allo spegnimento si smette all'istante e non resta una lettura "in sospeso"
-                            // che ruberebbe alla radio la risposta dell'MCU (saluto di spegnimento/riaccensione).
-                            if (paused || !it.driveos.launcher.system.PowerGate.ready()) break
-                            val avail = runCatching { ins.available() }.getOrDefault(-1)
-                            if (avail < 0) break
-                            if (avail == 0) { delay(5); continue }
-                            val n = ins.read(buf, 0, minOf(avail, buf.size))
-                            if (n < 0) break
-                            lastByteAt = System.currentTimeMillis()
-                            val changes = LinkedHashMap<String, String>()
-                            for (f in parser.feed(buf, n)) {
-                                framesSeen++
-                                // diagnostica tasti fisici (07/11): i tasti dell'autoradio arrivano dall'MCU su questa
-                                // linea; si registrano i messaggi non-CAN per riconoscerli
-                                if (f.type == 'K') android.util.Log.i("DriveOSKey", f.payload.joinToString(" ") { "%02x".format(it.toInt() and 0xFF) })
-                                for ((k, v) in CanDecoder.decode(f)) {
-                                    if (k == CanDecoder.REAR_SENSORS || k == CanDecoder.FRONT_SENSORS) sensorSeen[k] = System.currentTimeMillis()
-                                    // I tasti (byte "X") sono eventi: ogni pressione conta, anche se identica alla precedente.
-                                    if (k == CanDecoder.RAW_BYTES || k == CanDecoder.KEY) changes[k] = v
-                                    else if (last[k] != v) { last[k] = v; changes[k] = v }
-                                }
-                            }
-                            if (changes.isNotEmpty()) sinks.forEach { runCatching { it(changes) } }
-                        }
-                        dog.cancel()
-                    }
-                } catch (_: Throwable) { }
-                stream = null
-                if (isActive) delay(2_000)
+    /** Applica i segnali di un messaggio; in [changes] finisce solo cio' che e' cambiato. */
+    fun apply(decoded: Map<String, String>, now: Long, changes: MutableMap<String, String>) {
+        for ((k, v) in decoded) {
+            when {
+                k == CanDecoder.RAW_BYTES || k == CanDecoder.KEY -> { changes[k] = v; continue }
+                k == CanDecoder.PARK -> {
+                    if (v == "0") { muteUntil = now + MUTE_MS; clearSensors(changes) } else muteUntil = 0L
+                }
+                k in SENSOR_KEYS -> {
+                    if (now < muteUntil) continue
+                    sensorSeen[k] = now
+                }
             }
+            if (last[k] != v) { last[k] = v; changes[k] = v }
         }
     }
 
-    /**
-     * Chiede alla centralina i dati motore ogni [periodMs], come fa la schermata dati auto della radio
-     * quando e' aperta. Senza la richiesta la centralina non li manda.
-     */
-    /** Quadro spento / schermo spento: smette di interrogare la centralina (la lascia dormire). */
-    val running: Boolean get() = job?.isActive == true
-    /** Prima di questo istante la seriale non si apre (impostato all'avvio e a ogni riaccensione). */
-    @Volatile var notBefore: Long = System.currentTimeMillis() + 20_000
-    /** Stato dello schermo (impostato da DriveOSApp). */
-    @Volatile var screenOn: () -> Boolean = { true }
-    @Volatile private var paused = false
-
-    /**
-     * Quadro spento: la seriale e' la STESSA linea con cui la radio Junsun parla con l'MCU.
-     * Durante lo spegnimento/riaccensione (QuickBoot) la radio fa un "saluto" con l'MCU su questa linea:
-     * se DriveOS legge o scrive in quel momento, ruba i byte e la radio mostra ErrorCode:001 e resta bloccata.
-     * Quindi a schermo spento si chiude tutto, e si riapre solo qualche secondo dopo la riaccensione.
-     */
-    fun pause() {
-        paused = paused || running || job != null
-        if (!paused) return
-        stopQueries()
-        job?.cancel(); job = null
-        runCatching { stream?.close() }
+    /** Sensori senza aggiornamenti da troppo tempo: si azzerano. */
+    fun expire(now: Long): Map<String, String> {
+        val out = LinkedHashMap<String, String>()
+        for (k in SENSOR_KEYS) {
+            val seen = sensorSeen[k] ?: continue
+            if (now - seen > EXPIRE_MS && last[k] != null && last[k] != CanDecoder.SENSORS_OFF) {
+                last[k] = CanDecoder.SENSORS_OFF; out[k] = CanDecoder.SENSORS_OFF
+            }
+        }
+        return out
     }
 
-    /** Riprende solo se era stata messa in pausa (non riaccende una seriale spenta nelle impostazioni). */
-    fun resumeIfPaused() { if (paused) { paused = false; start() } }
-    fun stopQueries() { queryJob?.cancel(); queryJob = null }
-    /** true in retromarcia: chiede anche l'angolo del volante. */
-    @Volatile var steerWanted = false
+    /**
+     * La lettura si ferma o riparte (quadro spento, porta riaperta): cio' che si sapeva non vale piu'.
+     * Restituisce i sensori da azzerare (non devono restare "rossi" con la seriale ferma); al prossimo
+     * messaggio tutto viene ripubblicato.
+     */
+    fun reset(): Map<String, String> {
+        val out = LinkedHashMap<String, String>()
+        clearSensors(out)
+        last.clear(); sensorSeen.clear(); muteUntil = 0L
+        return out
+    }
 
-    fun startQueries(periodMs: Long = 1000) {
-        if (queryJob?.isActive == true) return
-        queryJob = scope.launch {
-            var n = 0
-            while (isActive) {
-                try {
-                    java.io.FileOutputStream(path).use { out ->
-                        var lastEngine = 0L
-                        while (isActive) {
-                            val now = System.currentTimeMillis()
-                            if (now - lastEngine >= periodMs) {
-                                lastEngine = now
-                                out.write(CanQuery.ENGINE); out.flush()
-                                if (n++ % 5 == 0) {
-                                    delay(50); out.write(CanQuery.STATUS); out.flush()
-                                    // fari e porte: la centralina li manda solo quando cambiano, quindi
-                                    // all'accensione DriveOS non li sapeva finche' non si toccavano i fari
-                                    delay(50); out.write(CanQuery.LIGHTS); out.flush()
-                                    delay(50); out.write(CanQuery.DOORS_FLAGS); out.flush()
-                                }
-                                queryError = null
-                            }
-                            // in retromarcia: angolo volante per le linee che curvano
-                            if (steerWanted) { delay(20); out.write(CanQuery.EPS); out.flush(); delay(120) }
-                            else delay(100)
-                        }
-                    }
-                } catch (t: Throwable) { queryError = t.message ?: t.javaClass.simpleName }
-                if (isActive) delay(5_000)
-            }
+    private fun clearSensors(changes: MutableMap<String, String>) {
+        for (k in SENSOR_KEYS) {
+            val cur = last[k] ?: continue
+            if (cur != CanDecoder.SENSORS_OFF) { last[k] = CanDecoder.SENSORS_OFF; changes[k] = CanDecoder.SENSORS_OFF }
         }
     }
 
-    fun stop() {
-        paused = false
-        queryJob?.cancel(); queryJob = null
-        job?.cancel(); job = null
-        runCatching { stream?.close() }
+    companion object {
+        const val EXPIRE_MS = 2_000L
+        const val MUTE_MS = 1_500L
+        val SENSOR_KEYS = listOf(CanDecoder.REAR_SENSORS, CanDecoder.FRONT_SENSORS)
     }
 }
