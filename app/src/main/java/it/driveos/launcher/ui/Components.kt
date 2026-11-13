@@ -127,17 +127,30 @@ fun BottomBar(
         BigButton(tr("Home"), Icons.Filled.Home, onHome, fixed, selected = current == Screen.DASHBOARD)
         BigButton(tr("Veicolo"), it.driveos.launcher.ui.icons.CarIcon, onVehicle, fixed, selected = current == Screen.OVERVIEW)
         BigButton(tr("Voce"), Icons.Filled.Mic, onVoice, Modifier.width(100.dp).fillMaxHeight())
-        Row(
-            Modifier.weight(1f).fillMaxHeight().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            val m = Modifier.width(128.dp).fillMaxHeight()
-            BigButton(tr("Naviga"), Icons.Filled.Place, onNav, m)
-            BigButton(tr("Radio"), it.driveos.launcher.ui.icons.RadioIcon, onRadio, m, selected = current == Screen.RADIO)
-            BigButton(tr("Musica"), Icons.Filled.PlayArrow, onMusic, m, selected = current == Screen.MUSIC)
-            BigButton(tr("Telefono"), Icons.Filled.Phone, onPhone, m)
-            BigButton(tr("Clima"), Icons.Filled.AcUnit, onClimate, m, selected = current == Screen.CLIMATE)
-            BigButton(tr("App"), Icons.Filled.Menu, onApps, m, selected = current == Screen.APPS)
+        val barScroll = rememberScrollState()
+        Box(Modifier.weight(1f).fillMaxHeight()) {
+            Row(
+                Modifier.fillMaxSize().horizontalScroll(barScroll),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                val m = Modifier.width(128.dp).fillMaxHeight()
+                BigButton(tr("Naviga"), Icons.Filled.Place, onNav, m)
+                BigButton(tr("Radio"), it.driveos.launcher.ui.icons.RadioIcon, onRadio, m, selected = current == Screen.RADIO)
+                BigButton(tr("Musica"), Icons.Filled.PlayArrow, onMusic, m, selected = current == Screen.MUSIC)
+                BigButton(tr("Telefono"), Icons.Filled.Phone, onPhone, m)
+                BigButton(tr("Clima"), Icons.Filled.AcUnit, onClimate, m, selected = current == Screen.CLIMATE)
+                BigButton(tr("App"), Icons.Filled.Menu, onApps, m, selected = current == Screen.APPS)
+            }
+            // Sfumatura ai bordi quando ci sono altri tasti da scorrere: l'ultimo non sembra piu' "tagliato".
+            val bg = MaterialTheme.colorScheme.background
+            if (barScroll.canScrollForward) Box(
+                Modifier.align(Alignment.CenterEnd).fillMaxHeight().width(44.dp)
+                    .background(androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(bg.copy(alpha = 0f), bg))),
+            )
+            if (barScroll.canScrollBackward) Box(
+                Modifier.align(Alignment.CenterStart).fillMaxHeight().width(44.dp)
+                    .background(androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(bg, bg.copy(alpha = 0f)))),
+            )
         }
     }
 }

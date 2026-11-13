@@ -101,7 +101,8 @@ fun SettingsScreen(
         ) {
             SectionTitle(tr("Schermata Home"))
             Row(
-                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                // tutte le schede alte uguali (prima quella con la descrizione corta restava piu' bassa)
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).height(androidx.compose.foundation.layout.IntrinsicSize.Max),
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 DashboardLayout.entries.forEach { layout ->
@@ -283,12 +284,12 @@ private fun LayoutOption(layout: DashboardLayout, selected: Boolean, onClick: ()
         shape = RoundedCornerShape(20.dp),
         color = if (selected) colors.primary.copy(alpha = 0.16f) else colors.surface,
         border = if (selected) androidx.compose.foundation.BorderStroke(3.dp, colors.primary) else null,
-        modifier = Modifier.width(236.dp),
+        modifier = androidx.compose.foundation.layout.fillMaxHeight(Modifier.width(236.dp)),
     ) {
         Column(Modifier.padding(14.dp)) {
             LayoutPreview(layout, Modifier.width(208.dp).height(117.dp))
             Spacer(Modifier.height(10.dp))
-            Text(layout.title, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(layout.title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(layout.description, fontSize = 14.sp, color = colors.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
     }

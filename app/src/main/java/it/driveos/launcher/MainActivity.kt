@@ -1341,6 +1341,7 @@ class MainActivity : ComponentActivity() {
                             )
 
                             Screen.VEHICLE -> VehicleScreen(
+                                bridge = driveApp.tsBridge,
                                 signals = vehicleSignals,
                                 logsGranted = driveApp.logcatReader.available(),
                                 onAutoSetup = {

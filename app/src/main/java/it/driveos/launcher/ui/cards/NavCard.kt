@@ -103,7 +103,9 @@ private fun ColumnScope.Guidance(g: NavGuidance, navEntry: AppEntry, size: CardS
                 g.title.ifBlank { tr("In navigazione") },
                 fontSize = if (compact) 20.sp else if (size == CardSize.LARGE) 34.sp else 26.sp,
                 fontWeight = FontWeight.Bold,
-                maxLines = 1,
+                // scheda grande: l'indicazione va su due righe invece di troncarsi ("Gira a destra s…")
+                maxLines = if (size == CardSize.LARGE) 2 else 1,
+                lineHeight = if (size == CardSize.LARGE) 38.sp else androidx.compose.ui.unit.TextUnit.Unspecified,
                 overflow = TextOverflow.Ellipsis,
                 color = colors.onSurface,
             )

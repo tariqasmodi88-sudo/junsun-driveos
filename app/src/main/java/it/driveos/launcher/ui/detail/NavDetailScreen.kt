@@ -101,7 +101,7 @@ fun NavDetailScreen(
                         onValueChange = onQueryChange,
                         singleLine = true,
                         textStyle = TextStyle(fontSize = 22.sp, color = colors.onSurface),
-                        placeholder = { Text(tr("Indirizzo o luogo"), fontSize = 20.sp) },
+                        placeholder = { Text(tr("Indirizzo o luogo"), fontSize = 18.sp, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis) },
                         leadingIcon = { Icon(Icons.Filled.Search, null, Modifier.size(28.dp)) },
                         trailingIcon = {
                             if (query.isNotEmpty()) IconButton(onClick = { onQueryChange("") }) { Icon(Icons.Filled.Clear, tr("Cancella")) }
