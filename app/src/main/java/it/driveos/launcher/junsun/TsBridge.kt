@@ -114,9 +114,13 @@ class TsBridge(context: Context) {
     @Volatile private var car: IBinder? = null
     private val carConn = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) { car = service }
-        override fun onServiceDisconnected(name: ComponentName?) { car = null }
+        // succede se MainUI si chiude o si riavvia: nella prova va contato
+        override fun onServiceDisconnected(name: ComponentName?) { car = null; carDrops++ }
     }
     @Volatile private var carBound = false
+    /** Quante volte il servizio auto e' caduto (MainUI chiusa o riavviata) da quando DriveOS e' partita. */
+    @Volatile var carDrops = 0
+        private set
 
     fun carConnect() {
         if (!it.driveos.launcher.system.PowerGate.ready() || carBound) return

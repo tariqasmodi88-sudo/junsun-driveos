@@ -141,7 +141,7 @@ fun VehicleScreen(
                 }
             }
 
-            if (bridge != null) CarServiceProbe(bridge, signals)
+            if (bridge != null) CarServiceProbe(bridge, signals, canSerialOn)
 
             Surface(shape = RoundedCornerShape(16.dp), color = if (logsGranted) colors.primary.copy(alpha = 0.14f) else colors.surface,
                 modifier = Modifier.fillMaxWidth()) {
@@ -198,23 +198,46 @@ private fun Secondary(label: String, modifier: Modifier = Modifier, onClick: () 
  * Ogni variazione finisce anche nel registro (etichetta "DriveOSCar") per poterla mandare.
  */
 @Composable
-private fun CarServiceProbe(bridge: it.driveos.launcher.junsun.TsBridge, signals: Map<String, String>) {
+private fun CarServiceProbe(bridge: it.driveos.launcher.junsun.TsBridge, signals: Map<String, String>, serialOn: Boolean) {
     val colors = MaterialTheme.colorScheme
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    // valori di DriveOS e stato della seriale "di adesso", letti dal ciclo qui sotto
+    val sigNow = androidx.compose.runtime.rememberUpdatedState(signals)
+    val serialNow = androidx.compose.runtime.rememberUpdatedState(serialOn)
     var on by remember { mutableStateOf(false) }
     var probe by remember { mutableStateOf<it.driveos.launcher.junsun.TsBridge.CarProbe?>(null) }
     androidx.compose.runtime.LaunchedEffect(on) {
         if (!on) { probe = null; bridge.carDisconnect(); return@LaunchedEffect }
         bridge.carConnect()
-        var lastLine = ""
-        while (true) {
-            val p = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { runCatching { bridge.carProbe() }.getOrNull() }
-            probe = p
-            if (p != null) {
-                val line = "porte=${p.doors} sensori=${p.radar} volante=${p.steer} frecce=${p.left}/${p.right}/${p.emergency} " +
-                    "luci=${p.ill} retro=${p.reverse} freno=${p.brake} err=${p.error}"
-                if (line != lastLine) { lastLine = line; android.util.Log.i("DriveOSCar", line) }
+        // La prova si registra da sola in un file (Android/data/it.driveos.launcher/files/prova_auto.txt):
+        // una riga a ogni variazione e comunque ogni 3 s, con accanto i valori di DriveOS e lo stato della seriale.
+        val file = java.io.File(ctx.getExternalFilesDir(null) ?: ctx.filesDir, "prova_auto.txt")
+        val fmt = java.text.SimpleDateFormat("HH:mm:ss.SSS", java.util.Locale.US)
+        fun write(text: String) = runCatching { file.appendText(fmt.format(java.util.Date()) + " " + text + "\n") }
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { write("=== prova avviata ===") }
+        var lastLine = ""; var lastWrite = 0L
+        try {
+            while (true) {
+                val p = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { runCatching { bridge.carProbe() }.getOrNull() }
+                probe = p
+                if (p != null) {
+                    val s = sigNow.value
+                    val line = "seriale=${if (serialNow.value) "ACCESA" else "SPENTA"} cadute=${bridge.carDrops} | RADIO porte=${p.doors} sensori=${p.radar} volante=${p.steer} " +
+                        "frecce=${p.left}/${p.right}/${p.emergency} luci=${p.ill} retro=${p.reverse} freno=${p.brake} err=${p.error} | " +
+                        "DRIVEOS porte=${CanDecoder.openDoors(s)} post=${s[CanDecoder.REAR_SENSORS]} ant=${s[CanDecoder.FRONT_SENSORS]} " +
+                        "park=${s[CanDecoder.PARK]} volante=${s[CanDecoder.STEER]} luci=${s["prop:forfan_light_state"]} retro=${KnownVehicleSignals.reverseOn(s)} " +
+                        "freno=${s[CanDecoder.HANDBRAKE]} velocita=${s["can:speed"]}"
+                    val now = System.currentTimeMillis()
+                    if (line != lastLine || now - lastWrite >= 3_000) {
+                        if (line != lastLine) android.util.Log.i("DriveOSCar", line)
+                        lastLine = line; lastWrite = now
+                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { write(line) }
+                    }
+                }
+                kotlinx.coroutines.delay(500)
             }
-            kotlinx.coroutines.delay(500)
+        } finally {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable + kotlinx.coroutines.Dispatchers.IO) { write("=== prova fermata ===") }
         }
     }
     androidx.compose.runtime.DisposableEffect(Unit) { onDispose { bridge.carDisconnect() } }
@@ -224,7 +247,7 @@ private fun CarServiceProbe(bridge: it.driveos.launcher.junsun.TsBridge, signals
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(tr("Prova: dati dalla radio Junsun"), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
-                    Text(tr("Confronta quello che dice la radio con quello che DriveOS legge dalla seriale. Prova con «Seriale auto» accesa e poi spenta."),
+                    Text(tr("Confronta quello che dice la radio con quello che DriveOS legge dalla seriale. Prova con «Seriale auto» accesa e poi spenta. Tutto viene registrato in un file."),
                         fontSize = 14.sp, color = colors.onSurfaceVariant)
                 }
                 androidx.compose.material3.Switch(checked = on, onCheckedChange = { on = it })
