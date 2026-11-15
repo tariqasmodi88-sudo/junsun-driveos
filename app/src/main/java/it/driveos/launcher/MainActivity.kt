@@ -44,6 +44,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -154,7 +157,57 @@ class MainActivity : ComponentActivity() {
         registerPackageReceiver()
         lifecycleScope.launch { driveApp.appRepository.refresh() }
         startReverseGuard()
-        setContent { DriveOSRoot() }
+        setContent {
+            Box(Modifier.fillMaxSize()) {
+                DriveOSRoot()
+                StartupImage()
+            }
+        }
+    }
+
+    /**
+     * Immagine di avvio: a ogni accensione del quadro compare per 2,5 s sopra tutto, poi sfuma sulla Home.
+     * Sparisce subito se serve lo schermo (retromarcia, porta aperta, sensori) o se lo tocchi.
+     * L'immagine la mette l'utente (DriveOS non ne contiene): `avvio.jpg` o `avvio.png` nella cartella
+     * dell'app (Android/data/it.driveos.launcher/files). Senza file non compare nulla.
+     */
+    @Composable
+    private fun StartupImage() {
+        val wake by DriveOSApp.wakeCount.collectAsStateWithLifecycle()
+        val signals by driveApp.vehicleRepository.signals.collectAsStateWithLifecycle()
+        var image by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+        var show by remember { mutableStateOf(false) }
+        val busy = KnownVehicleSignals.reverseOn(signals) == true ||
+            CanDecoder.openDoors(signals)?.isNotEmpty() == true || signals[LogcatParser.DOOR] == "aperta" ||
+            signals[CanDecoder.PARK] == "1"
+        val busyNow by androidx.compose.runtime.rememberUpdatedState(busy)
+        LaunchedEffect(wake) {
+            val loaded = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                val dir = getExternalFilesDir(null)
+                listOf("avvio.jpg", "avvio.png").map { java.io.File(dir, it) }.firstOrNull { it.isFile }
+                    ?.let { f -> runCatching { android.graphics.BitmapFactory.decodeFile(f.path)?.asImageBitmap() }.getOrNull() }
+            }
+            image = loaded
+            if (loaded == null || busyNow) return@LaunchedEffect
+            show = true
+            kotlinx.coroutines.delay(2_500)
+            show = false
+        }
+        LaunchedEffect(busy) { if (busy) show = false }
+        androidx.compose.animation.AnimatedVisibility(
+            visible = show && image != null,
+            enter = androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(150)),
+            exit = androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(450)),
+        ) {
+            Box(
+                Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color.Black)
+                    .pointerInput(Unit) { detectTapGestures { show = false } },
+                contentAlignment = androidx.compose.ui.Alignment.Center,
+            ) {
+                image?.let { androidx.compose.foundation.Image(it, contentDescription = null, modifier = Modifier.fillMaxSize(),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Fit) }
+            }
+        }
     }
 
     /** Limite tocchi in marcia (come Android Auto): i tocchi oltre la riserva vengono bloccati. */
