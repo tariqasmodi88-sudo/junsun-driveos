@@ -2,7 +2,6 @@ package it.driveos.launcher.ui
 
 import it.driveos.launcher.i18n.tr
 import it.driveos.launcher.i18n.trf
-import kotlinx.coroutines.launch
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -74,8 +73,6 @@ fun VehicleScreen(
     onToggleRearCamera: (Boolean) -> Unit = {},
     onToggleTouchLimit: (Boolean) -> Unit = {},
     onAutoSetup: (() -> Unit)? = null,
-    bridge: it.driveos.launcher.junsun.TsBridge? = null,
-    reader: it.driveos.launcher.vehicle.CanSerialReader? = null,
 ) {
     var showAll by remember { mutableStateOf(false) }
     val colors = MaterialTheme.colorScheme
@@ -159,10 +156,6 @@ fun VehicleScreen(
                 }
             }
 
-            if (reader != null && canSerialOn) BoxExplorer(reader)
-
-            if (bridge != null) CarServiceProbe(bridge, signals, canSerialOn)
-
             Surface(shape = RoundedCornerShape(16.dp), color = if (logsGranted) colors.primary.copy(alpha = 0.14f) else colors.surface,
                 modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp)) {
@@ -208,148 +201,6 @@ private fun Secondary(label: String, modifier: Modifier = Modifier, onClick: () 
         modifier = modifier.height(52.dp)) {
         Box(Modifier.fillMaxSize().padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
             Text(label, fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-    }
-}
-
-/**
- * PROVA: confronto tra i dati che la radio Junsun offre al suo assistente vocale e quelli che DriveOS
- * legge dalla seriale. Interroga la radio solo finche' l'interruttore e' acceso e la pagina e' aperta.
- * Ogni variazione finisce anche nel registro (etichetta "DriveOSCar") per poterla mandare.
- */
-@Composable
-private fun CarServiceProbe(bridge: it.driveos.launcher.junsun.TsBridge, signals: Map<String, String>, serialOn: Boolean) {
-    val colors = MaterialTheme.colorScheme
-    val ctx = androidx.compose.ui.platform.LocalContext.current
-    // valori di DriveOS e stato della seriale "di adesso", letti dal ciclo qui sotto
-    val sigNow = androidx.compose.runtime.rememberUpdatedState(signals)
-    val serialNow = androidx.compose.runtime.rememberUpdatedState(serialOn)
-    var on by remember { mutableStateOf(false) }
-    var probe by remember { mutableStateOf<it.driveos.launcher.junsun.TsBridge.CarProbe?>(null) }
-    androidx.compose.runtime.LaunchedEffect(on) {
-        if (!on) { probe = null; bridge.carDisconnect(); return@LaunchedEffect }
-        bridge.carConnect()
-        // La prova si registra da sola in un file (Android/data/it.driveos.launcher/files/prova_auto.txt):
-        // una riga a ogni variazione e comunque ogni 3 s, con accanto i valori di DriveOS e lo stato della seriale.
-        val file = java.io.File(ctx.getExternalFilesDir(null) ?: ctx.filesDir, "prova_auto.txt")
-        val fmt = java.text.SimpleDateFormat("HH:mm:ss.SSS", java.util.Locale.US)
-        fun write(text: String) = runCatching { file.appendText(fmt.format(java.util.Date()) + " " + text + "\n") }
-        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { write("=== prova avviata ===") }
-        var lastLine = ""; var lastWrite = 0L
-        try {
-            while (true) {
-                val p = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { runCatching { bridge.carProbe() }.getOrNull() }
-                probe = p
-                if (p != null) {
-                    val s = sigNow.value
-                    val line = "seriale=${if (serialNow.value) "ACCESA" else "SPENTA"} cadute=${bridge.carDrops} | RADIO porte=${p.doors} sensori=${p.radar} volante=${p.steer} " +
-                        "frecce=${p.left}/${p.right}/${p.emergency} luci=${p.ill} retro=${p.reverse} freno=${p.brake} err=${p.error} | " +
-                        "DRIVEOS porte=${CanDecoder.openDoors(s)} post=${s[CanDecoder.REAR_SENSORS]} ant=${s[CanDecoder.FRONT_SENSORS]} " +
-                        "park=${s[CanDecoder.PARK]} volante=${s[CanDecoder.STEER]} luci=${s["prop:forfan_light_state"]} retro=${KnownVehicleSignals.reverseOn(s)} " +
-                        "freno=${s[CanDecoder.HANDBRAKE]} velocita=${s["can:speed"]}"
-                    val now = System.currentTimeMillis()
-                    if (line != lastLine || now - lastWrite >= 3_000) {
-                        if (line != lastLine) android.util.Log.i("DriveOSCar", line)
-                        lastLine = line; lastWrite = now
-                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { write(line) }
-                    }
-                }
-                kotlinx.coroutines.delay(500)
-            }
-        } finally {
-            kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable + kotlinx.coroutines.Dispatchers.IO) { write("=== prova fermata ===") }
-        }
-    }
-    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { bridge.carDisconnect() } }
-
-    Surface(shape = RoundedCornerShape(16.dp), color = if (on) colors.primary.copy(alpha = 0.14f) else colors.surface, modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(tr("Prova: dati dalla radio Junsun"), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
-                    Text(tr("Confronta quello che dice la radio con quello che DriveOS legge dalla seriale. Prova con «Seriale auto» accesa e poi spenta. Tutto viene registrato in un file."),
-                        fontSize = 14.sp, color = colors.onSurfaceVariant)
-                }
-                androidx.compose.material3.Switch(checked = on, onCheckedChange = { on = it })
-            }
-            val p = probe
-            if (on && p != null) {
-                Spacer(Modifier.height(10.dp))
-                fun yes(v: Int?) = when (v) { null -> "—"; 0 -> "no"; else -> "sì" }
-                fun sig(k: String) = signals[k] ?: "—"
-                val names = listOf("ant.sx", "ant.dx", "post.sx", "post.dx", "baule", "cofano")
-                val doorsSvc = p.doors?.let { d -> names.filterIndexed { i, _ -> (d.getOrNull(i) ?: 0) != 0 }.joinToString(", ").ifEmpty { "chiuse" } } ?: "—"
-                val doorsCan = CanDecoder.openDoors(signals)?.joinToString(", ")?.ifEmpty { "chiuse" } ?: "—"
-                val rows = listOf(
-                    Triple("Porte", doorsSvc, doorsCan),
-                    Triple("Sensori post.", p.radar?.drop(4)?.joinToString(" ") ?: "—", sig(CanDecoder.REAR_SENSORS)),
-                    Triple("Sensori ant.", p.radar?.take(4)?.joinToString(" ") ?: "—", sig(CanDecoder.FRONT_SENSORS)),
-                    Triple("Retromarcia", yes(p.reverse), when (KnownVehicleSignals.reverseOn(signals)) { null -> "—"; true -> "sì"; else -> "no" }),
-                    Triple("Luci (posizione)", yes(p.ill), signals["prop:forfan_light_state"] ?: "—"),
-                    Triple("Freno a mano", yes(p.brake), when (signals[CanDecoder.HANDBRAKE]) { null -> "—"; "1" -> "sì"; else -> "no" }),
-                    Triple("Volante", p.steer?.toString() ?: "—", sig(CanDecoder.STEER)),
-                    Triple("Frecce sx / dx / 4", "${yes(p.left)} / ${yes(p.right)} / ${yes(p.emergency)}", "non lette"),
-                )
-                Row(Modifier.fillMaxWidth()) {
-                    Text("", Modifier.weight(1f))
-                    Text(tr("Radio Junsun"), Modifier.weight(1.3f), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = colors.primary)
-                    Text(tr("DriveOS (seriale)"), Modifier.weight(1.3f), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurfaceVariant)
-                }
-                rows.forEach { (label, a, b) ->
-                    Row(Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
-                        Text(tr(label), Modifier.weight(1f), fontSize = 15.sp, color = colors.onSurfaceVariant)
-                        Text(a, Modifier.weight(1.3f), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.Monospace, color = colors.onSurface)
-                        Text(b, Modifier.weight(1.3f), fontSize = 15.sp, fontFamily = FontFamily.Monospace, color = colors.onSurface)
-                    }
-                }
-                p.error?.let { Text(it, fontSize = 13.sp, color = colors.error) }
-            }
-        }
-    }
-}
-
-/**
- * PROVA: chiede alla centralina CAN tutto quello che sa (solo richieste di lettura) e registra domande
- * e risposte in Android/data/it.driveos.launcher/files/prova_centralina.txt.
- */
-@Composable
-private fun BoxExplorer(reader: it.driveos.launcher.vehicle.CanSerialReader) {
-    val colors = MaterialTheme.colorScheme
-    val ctx = androidx.compose.ui.platform.LocalContext.current
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
-    var percent by remember { mutableStateOf(-1) }
-    var done by remember { mutableStateOf(false) }
-    Surface(shape = RoundedCornerShape(16.dp), color = if (percent >= 0) colors.primary.copy(alpha = 0.14f) else colors.surface, modifier = Modifier.fillMaxWidth()) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(tr("Prova: esplora la centralina CAN"), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
-                Text(
-                    when {
-                        percent >= 0 -> trf("In corso: {0}% · resta su questa pagina", percent)
-                        done -> tr("Finita: il risultato e' nel file prova_centralina.txt")
-                        else -> tr("Chiede alla centralina tutti i dati che conosce (solo lettura, circa 2 minuti). Quadro acceso, meglio a motore acceso.")
-                    }, fontSize = 14.sp, color = colors.onSurfaceVariant)
-            }
-            Surface(
-                onClick = {
-                    if (percent < 0) {
-                        percent = 0; done = false
-                        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                            val file = java.io.File(ctx.getExternalFilesDir(null) ?: ctx.filesDir, "prova_centralina.txt")
-                            val fmt = java.text.SimpleDateFormat("HH:mm:ss.SSS", java.util.Locale.US)
-                            runCatching { file.writeText("") }
-                            val lock = Any()
-                            try {
-                                reader.explore(
-                                    write = { line -> synchronized(lock) { runCatching { file.appendText(fmt.format(java.util.Date()) + " " + line + "\n") } } },
-                                    progress = { p -> percent = p },
-                                )
-                            } finally { percent = -1; done = true }
-                        }
-                    }
-                },
-                shape = RoundedCornerShape(14.dp), color = if (percent < 0) colors.primary else colors.surfaceVariant,
-            ) { Text(if (percent < 0) tr("Avvia") else "$percent%", Modifier.padding(horizontal = 22.dp, vertical = 14.dp), fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = if (percent < 0) colors.onPrimary else colors.onSurface) }
         }
     }
 }

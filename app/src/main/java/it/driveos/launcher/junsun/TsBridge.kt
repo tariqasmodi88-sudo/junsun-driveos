@@ -106,11 +106,11 @@ class TsBridge(context: Context) {
     }
 
     // --- Servizio "auto" dell'assistente vocale Junsun (com.ts.tsspeechlib.car.TsCarService) ---
-    // PROVA (13/11): MainUI tiene in memoria porte, cofano, sensori e frecce e li offre all'assistente
-    // vocale con questo servizio. A differenza del CarInfoService (vedi NOTA sopra) NON chiama la libreria
-    // CAN: legge solo variabili gia' aggiornate da MainUI (Can.mCarMsg, Can.mRadarForeInfo/RearInfo).
-    // Se in auto i valori risultano giusti, DriveOS potra' lasciare la seriale alla radio nella guida normale.
-    // Per ora si usa SOLO dalla pagina Debug veicolo, a richiesta.
+    // MainUI tiene in memoria porte e baule e li offre all'assistente vocale con questo servizio.
+    // A differenza del CarInfoService (vedi NOTA sopra) NON chiama la libreria CAN: legge solo variabili
+    // gia' aggiornate da MainUI. Provato in auto il 15/11: 10 minuti di letture, nessuna caduta di MainUI;
+    // porte e baule giusti quando DriveOS non legge la seriale. Sensori, retromarcia, freno a mano,
+    // frecce e cofano da qui NON arrivano (sempre zero). Usato dalla seriale "a richiesta".
     @Volatile private var car: IBinder? = null
     private val carConn = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) { car = service }
@@ -133,17 +133,6 @@ class TsBridge(context: Context) {
         carBound = false; car = null
     }
 
-    /** Valori letti dal servizio auto di MainUI. Ogni campo e' null se la chiamata non e' riuscita. */
-    class CarProbe(
-        /** [ant.sx, ant.dx, post.sx, post.dx, baule, cofano] (1 = aperta). */
-        val doors: List<Int>?,
-        /** [4 anteriori, 4 posteriori], da sinistra a destra. */
-        val radar: List<Int>?,
-        val steer: Int?, val left: Int?, val right: Int?, val emergency: Int?,
-        val ill: Int?, val reverse: Int?, val brake: Int?,
-        val error: String?,
-    )
-
     private fun carCall(code: Int, array: Boolean): Any? {
         val c = car ?: return null
         val data = android.os.Parcel.obtain(); val reply = android.os.Parcel.obtain()
@@ -161,28 +150,6 @@ class TsBridge(context: Context) {
         if (car == null) { carConnect(); return null }
         @Suppress("UNCHECKED_CAST")
         return runCatching { carCall(24, true) as? List<Int> }.getOrNull()
-    }
-
-    /** Legge tutto una volta (bloccante: da un thread di sfondo). Numeri di chiamata ricavati dall'APK MainUI. */
-    fun carProbe(): CarProbe {
-        if (!it.driveos.launcher.system.PowerGate.ready()) return CarProbe(null, null, null, null, null, null, null, null, null, "radio non pronta")
-        if (car == null) { carConnect(); return CarProbe(null, null, null, null, null, null, null, null, null, "servizio non ancora collegato") }
-        var err: String? = null
-        fun <T> safe(block: () -> T?): T? = try { block() } catch (t: Throwable) { err = t.message ?: t.javaClass.simpleName; null }
-        @Suppress("UNCHECKED_CAST")
-        val doors = safe { carCall(24, true) as? List<Int> }
-        @Suppress("UNCHECKED_CAST")
-        val radar = safe { carCall(25, true) as? List<Int> }
-        val f = function
-        return CarProbe(
-            doors = doors, radar = radar,
-            steer = safe { carCall(23, false) as? Int },
-            left = safe { carCall(19, false) as? Int },
-            right = safe { carCall(20, false) as? Int },
-            emergency = safe { carCall(21, false) as? Int },
-            ill = safe { f?.isIllOn() }, reverse = safe { f?.isBackCar() }, brake = safe { f?.withBrakes() },
-            error = err,
-        )
     }
 
     fun connect() {
