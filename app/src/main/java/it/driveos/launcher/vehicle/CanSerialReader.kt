@@ -94,6 +94,7 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
                                     framesSeen++
                                     // tasti fisici dell'autoradio (messaggi 'K'): nel registro, per riconoscerne di nuovi
                                     if (f.type == 'K') android.util.Log.i("DriveOSKey", f.payload.joinToString(" ") { "%02x".format(it.toInt() and 0xFF) })
+                                    rawTap?.let { tap -> runCatching { tap(f) } }
                                     filter.apply(CanDecoder.decode(f), lastByteAt, changes)
                                 }
                                 val rejected = rejectedBefore + parser.rejected
@@ -140,6 +141,62 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
         stopQueries()
         job?.cancel(); job = null
         runCatching { stream?.close() }
+    }
+
+    /** Ogni messaggio ricevuto, cosi' com'e' (usato solo dall'esplorazione). */
+    @Volatile private var rawTap: ((CanFrame) -> Unit)? = null
+    @Volatile var exploring = false
+        private set
+
+    /**
+     * ESPLORAZIONE (prova): chiede alla centralina CAN tutto quello che sa.
+     * Usa SOLO il comando 0x90 ("richiesta dati", lo stesso con cui la radio chiede i dati motore) con
+     * tutti i 256 identificativi possibili, poi le "pagine" 0x00-0x1F di quelli che hanno risposto.
+     * Non manda mai comandi di impostazione. Le richieste normali si fermano durante la prova, cosi'
+     * ogni risposta e' attribuibile; [write] riceve una riga per ogni domanda (TX) e risposta (RX).
+     */
+    suspend fun explore(write: (String) -> Unit, progress: (Int) -> Unit) {
+        if (exploring || !running || paused || !PowerGate.ready()) { write("ERR seriale non attiva"); return }
+        exploring = true
+        fun hex(b: ByteArray) = b.joinToString(" ") { "%02x".format(it.toInt() and 0xFF) }
+        val base = java.util.Collections.synchronizedSet(HashSet<Int>())
+        val seen = java.util.Collections.synchronizedSet(HashSet<Int>())
+        var phase = 0
+        try {
+            stopQueries()
+            rawTap = { f ->
+                if (f.type == 'C') {
+                    write("RX " + hex(f.payload))
+                    if (f.payload.size >= 2) (if (phase == 0) base else seen).add(f.payload[1].toInt() and 0xFF)
+                }
+            }
+            write("FASE ascolto (nessuna domanda)")
+            delay(4_000)
+            phase = 1
+            java.io.FileOutputStream(path).use { out ->
+                suspend fun ask(id: Int, page: Int): Boolean {
+                    if (!running || paused || !PowerGate.ready()) return false
+                    write("TX %02x %02x".format(id, page))
+                    out.write(CanQuery.frame(CanQuery.raise(0x90, id, page))); out.flush()
+                    delay(220)
+                    return true
+                }
+                write("FASE identificativi")
+                for (id in 0x00..0xFF) { if (!ask(id, 0)) return; progress(id * 60 / 256) }
+                val pages = (listOf(0x41, 0x7D) + (seen - base).sorted()).distinct().take(10)
+                write("FASE pagine di " + pages.joinToString(" ") { "%02x".format(it) })
+                var n = 0
+                for (id in pages) for (page in 0x00..0x1F) { if (!ask(id, page)) return; progress(60 + (++n) * 40 / (pages.size * 32)) }
+                delay(1_000)
+            }
+            write("FINE")
+        } catch (t: Throwable) {
+            if (t is kotlinx.coroutines.CancellationException) throw t
+            write("ERR " + (t.message ?: t.javaClass.simpleName))
+        } finally {
+            rawTap = null; exploring = false
+            if (running && !paused) startQueries()
+        }
     }
 
     /** Toglie la pausa senza riaprire la porta (seriale "a richiesta": la riapre DriveOSApp quando serve). */

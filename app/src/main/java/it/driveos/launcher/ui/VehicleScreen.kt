@@ -2,6 +2,7 @@ package it.driveos.launcher.ui
 
 import it.driveos.launcher.i18n.tr
 import it.driveos.launcher.i18n.trf
+import kotlinx.coroutines.launch
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -74,6 +75,7 @@ fun VehicleScreen(
     onToggleTouchLimit: (Boolean) -> Unit = {},
     onAutoSetup: (() -> Unit)? = null,
     bridge: it.driveos.launcher.junsun.TsBridge? = null,
+    reader: it.driveos.launcher.vehicle.CanSerialReader? = null,
 ) {
     var showAll by remember { mutableStateOf(false) }
     val colors = MaterialTheme.colorScheme
@@ -156,6 +158,8 @@ fun VehicleScreen(
                     androidx.compose.material3.Switch(checked = serialOnDemand, onCheckedChange = onToggleSerialOnDemand)
                 }
             }
+
+            if (reader != null && canSerialOn) BoxExplorer(reader)
 
             if (bridge != null) CarServiceProbe(bridge, signals, canSerialOn)
 
@@ -300,6 +304,52 @@ private fun CarServiceProbe(bridge: it.driveos.launcher.junsun.TsBridge, signals
                 }
                 p.error?.let { Text(it, fontSize = 13.sp, color = colors.error) }
             }
+        }
+    }
+}
+
+/**
+ * PROVA: chiede alla centralina CAN tutto quello che sa (solo richieste di lettura) e registra domande
+ * e risposte in Android/data/it.driveos.launcher/files/prova_centralina.txt.
+ */
+@Composable
+private fun BoxExplorer(reader: it.driveos.launcher.vehicle.CanSerialReader) {
+    val colors = MaterialTheme.colorScheme
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    var percent by remember { mutableStateOf(-1) }
+    var done by remember { mutableStateOf(false) }
+    Surface(shape = RoundedCornerShape(16.dp), color = if (percent >= 0) colors.primary.copy(alpha = 0.14f) else colors.surface, modifier = Modifier.fillMaxWidth()) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(tr("Prova: esplora la centralina CAN"), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
+                Text(
+                    when {
+                        percent >= 0 -> trf("In corso: {0}% · resta su questa pagina", percent)
+                        done -> tr("Finita: il risultato e' nel file prova_centralina.txt")
+                        else -> tr("Chiede alla centralina tutti i dati che conosce (solo lettura, circa 2 minuti). Quadro acceso, meglio a motore acceso.")
+                    }, fontSize = 14.sp, color = colors.onSurfaceVariant)
+            }
+            Surface(
+                onClick = {
+                    if (percent < 0) {
+                        percent = 0; done = false
+                        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                            val file = java.io.File(ctx.getExternalFilesDir(null) ?: ctx.filesDir, "prova_centralina.txt")
+                            val fmt = java.text.SimpleDateFormat("HH:mm:ss.SSS", java.util.Locale.US)
+                            runCatching { file.writeText("") }
+                            val lock = Any()
+                            try {
+                                reader.explore(
+                                    write = { line -> synchronized(lock) { runCatching { file.appendText(fmt.format(java.util.Date()) + " " + line + "\n") } } },
+                                    progress = { p -> percent = p },
+                                )
+                            } finally { percent = -1; done = true }
+                        }
+                    }
+                },
+                shape = RoundedCornerShape(14.dp), color = if (percent < 0) colors.primary else colors.surfaceVariant,
+            ) { Text(if (percent < 0) tr("Avvia") else "$percent%", Modifier.padding(horizontal = 22.dp, vertical = 14.dp), fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = if (percent < 0) colors.onPrimary else colors.onSurface) }
         }
     }
 }
