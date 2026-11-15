@@ -168,7 +168,8 @@ class MainActivity : ComponentActivity() {
     /**
      * Immagine di avvio: a ogni accensione del quadro compare per 2,5 s sopra tutto, poi sfuma sulla Home.
      * Sparisce subito se serve lo schermo (retromarcia, porta aperta, sensori) o se lo tocchi.
-     * Allo spegnimento la stessa immagine la mostra [it.driveos.launcher.system.ShutdownImage].
+     * Allo spegnimento NON si puo' mostrare: tolta la chiave la radio spegne subito lo schermo (provato il
+     * 15/11, anche con una finestra sopra le altre app), prima che un'app possa disegnare qualcosa.
      * L'immagine la mette l'utente (DriveOS non ne contiene): `avvio.jpg` o `avvio.png` nella cartella
      * dell'app (Android/data/it.driveos.launcher/files). Senza file non compare nulla.
      */

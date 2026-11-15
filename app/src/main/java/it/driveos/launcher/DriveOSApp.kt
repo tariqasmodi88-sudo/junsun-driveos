@@ -175,7 +175,6 @@ class DriveOSApp : Application() {
             r.addSink { keyMapper.onChanges(it) }
         }
         startSerialDirector()
-        serialScope.launch { it.driveos.launcher.system.ShutdownImage.preload(this@DriveOSApp) }
         // A quadro spento lo schermo si spegne: DriveOS smette di scrivere alla centralina CAN e di
         // chiedere dati alla radio, cosi' radio e auto possono andare in standby normalmente.
         runCatching {
@@ -185,8 +184,6 @@ class DriveOSApp : Application() {
                         android.content.Intent.ACTION_SCREEN_OFF, "com.cusc.action.ACC_OFF", "com.ts.main.uiaccoff",
                         "autochips.intent.action.QB_POWEROFF" -> {
                             // quadro spento: si stacca TUTTO dalla radio Junsun
-                            // chiave tolta: immagine di avvio sopra la schermata nera della radio, finche' spegne lo schermo
-                            if (!wasOff) it.driveos.launcher.system.ShutdownImage.show(this@DriveOSApp)
                             wasOff = true
                             it.driveos.launcher.system.PowerGate.screenOn = false
                             wakeJob?.cancel(); canReader.pause(); voice.stop(); mediaRepository.pauseForPower()
@@ -207,8 +204,6 @@ class DriveOSApp : Application() {
                             // prima accensione dopo uno spegnimento (i segnali arrivano in tre, e uno anche a ogni
                             // ritorno sulla Home): solo quella fa comparire l'immagine di avvio
                             if (wasOff) { wasOff = false; wakeCount.value = wakeCount.value + 1 }
-                            it.driveos.launcher.system.ShutdownImage.hide(this@DriveOSApp)
-                            serialScope.launch { it.driveos.launcher.system.ShutdownImage.preload(this@DriveOSApp) }
                             wakeJob?.cancel()
                             it.driveos.launcher.system.PowerGate.screenOn = true
                             it.driveos.launcher.system.PowerGate.notBefore = System.currentTimeMillis() + 20_000
