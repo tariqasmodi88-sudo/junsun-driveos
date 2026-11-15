@@ -200,8 +200,11 @@ class MainActivity : ComponentActivity() {
             show = false
         }
         LaunchedEffect(busy) { if (busy) show = false }
+        // Sicurezza: se la riaccensione non viene segnalata, l'immagine non deve restare a schermo per sempre.
+        LaunchedEffect(off) { if (off) { kotlinx.coroutines.delay(90_000); DriveOSApp.poweredOff.value = false } }
         androidx.compose.animation.AnimatedVisibility(
-            visible = (show || off) && image != null,
+            // retromarcia, porte e sensori vincono sempre, anche a quadro "spento"
+            visible = (show || off) && !busy && image != null,
             enter = androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(150)),
             exit = androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(450)),
         ) {
