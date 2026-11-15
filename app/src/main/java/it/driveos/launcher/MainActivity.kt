@@ -168,12 +168,16 @@ class MainActivity : ComponentActivity() {
     /**
      * Immagine di avvio: a ogni accensione del quadro compare per 2,5 s sopra tutto, poi sfuma sulla Home.
      * Sparisce subito se serve lo schermo (retromarcia, porta aperta, sensori) o se lo tocchi.
+     * Compare anche allo spegnimento del quadro e resta finche' la radio non spegne lo schermo (solo se
+     * DriveOS e' gia' davanti: non la si porta davanti apposta, perche' tornare sulla Home in quel
+     * momento varrebbe come "risveglio" e riaprirebbe i collegamenti con la radio che si sta spegnendo).
      * L'immagine la mette l'utente (DriveOS non ne contiene): `avvio.jpg` o `avvio.png` nella cartella
      * dell'app (Android/data/it.driveos.launcher/files). Senza file non compare nulla.
      */
     @Composable
     private fun StartupImage() {
         val wake by DriveOSApp.wakeCount.collectAsStateWithLifecycle()
+        val off by DriveOSApp.poweredOff.collectAsStateWithLifecycle()
         val signals by driveApp.vehicleRepository.signals.collectAsStateWithLifecycle()
         var image by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
         var show by remember { mutableStateOf(false) }
@@ -182,26 +186,28 @@ class MainActivity : ComponentActivity() {
             signals[CanDecoder.PARK] == "1"
         val busyNow by androidx.compose.runtime.rememberUpdatedState(busy)
         LaunchedEffect(wake) {
+            // riaccensione con l'immagine gia' a schermo dallo spegnimento: resta su, senza un lampo di Home
+            if (image != null && !busyNow) show = true
             val loaded = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                 val dir = getExternalFilesDir(null)
                 listOf("avvio.jpg", "avvio.png").map { java.io.File(dir, it) }.firstOrNull { it.isFile }
                     ?.let { f -> runCatching { android.graphics.BitmapFactory.decodeFile(f.path)?.asImageBitmap() }.getOrNull() }
             }
             image = loaded
-            if (loaded == null || busyNow) return@LaunchedEffect
+            if (loaded == null || busyNow) { show = false; return@LaunchedEffect }
             show = true
             kotlinx.coroutines.delay(2_500)
             show = false
         }
         LaunchedEffect(busy) { if (busy) show = false }
         androidx.compose.animation.AnimatedVisibility(
-            visible = show && image != null,
+            visible = (show || off) && image != null,
             enter = androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(150)),
             exit = androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(450)),
         ) {
             Box(
                 Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color.Black)
-                    .pointerInput(Unit) { detectTapGestures { show = false } },
+                    .pointerInput(Unit) { detectTapGestures { show = false; DriveOSApp.poweredOff.value = false } },
                 contentAlignment = androidx.compose.ui.Alignment.Center,
             ) {
                 image?.let { androidx.compose.foundation.Image(it, contentDescription = null, modifier = Modifier.fillMaxSize(),

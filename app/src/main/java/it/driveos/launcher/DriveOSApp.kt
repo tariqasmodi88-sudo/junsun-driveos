@@ -32,6 +32,8 @@ class DriveOSApp : Application() {
         /** Sale di uno a ogni accensione del quadro (e vale 1 all'avvio): fa comparire l'immagine di avvio. */
         val wakeCount = kotlinx.coroutines.flow.MutableStateFlow(1)
         @Volatile private var wasOff = false
+        /** true da quando si spegne il quadro a quando si riaccende: l'immagine di avvio resta a schermo. */
+        val poweredOff = kotlinx.coroutines.flow.MutableStateFlow(false)
         /** Segnali delle porte: restano validi anche a seriale lasciata alla radio (li da' il suo servizio). */
         private val DOOR_KEYS = setOf(
             it.driveos.launcher.vehicle.CanDecoder.DOOR_FL, it.driveos.launcher.vehicle.CanDecoder.DOOR_FR,
@@ -182,7 +184,7 @@ class DriveOSApp : Application() {
                         android.content.Intent.ACTION_SCREEN_OFF, "com.cusc.action.ACC_OFF", "com.ts.main.uiaccoff",
                         "autochips.intent.action.QB_POWEROFF" -> {
                             // quadro spento: si stacca TUTTO dalla radio Junsun
-                            wasOff = true
+                            wasOff = true; poweredOff.value = true
                             it.driveos.launcher.system.PowerGate.screenOn = false
                             wakeJob?.cancel(); canReader.pause(); voice.stop(); mediaRepository.pauseForPower()
                             // i fari di adesso non valgono alla prossima accensione (tema giusto da subito)
@@ -202,6 +204,7 @@ class DriveOSApp : Application() {
                             // prima accensione dopo uno spegnimento (i segnali arrivano in tre, e uno anche a ogni
                             // ritorno sulla Home): solo quella fa comparire l'immagine di avvio
                             if (wasOff) { wasOff = false; wakeCount.value = wakeCount.value + 1 }
+                            poweredOff.value = false
                             wakeJob?.cancel()
                             it.driveos.launcher.system.PowerGate.screenOn = true
                             it.driveos.launcher.system.PowerGate.notBefore = System.currentTimeMillis() + 20_000
