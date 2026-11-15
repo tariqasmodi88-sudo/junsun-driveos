@@ -473,7 +473,9 @@ class MainActivity : ComponentActivity() {
         val speedKmh by driveApp.speedWatcher.speedKmh.collectAsStateWithLifecycle()
         // velocita' per il limite tocchi: la piu' alta tra GPS e centralina dell'auto
         val canKmh = vehicleSignals[CanDecoder.SPEED]?.toDoubleOrNull()
-        val lockSpeed = listOfNotNull(speedKmh, canKmh).maxOrNull()
+        // La velocita' vera e' quella dell'auto (centralina). Il GPS serve solo quando quella non c'e'
+        // (seriale lasciata alla radio): prima si prendeva la piu' alta e un GPS impreciso faceva "muovere" l'auto ferma.
+        val lockSpeed = canKmh ?: speedKmh
         LaunchedEffect(lockSpeed, settingsState?.touchLimit) {
             val lock = driveApp.driveLock
             lock.enabled = settingsState?.touchLimit != false
@@ -1548,7 +1550,7 @@ class MainActivity : ComponentActivity() {
                                             base + (if (high == "1") " + abbaglianti" else "") + (if (fog == "1") " + retronebbia" else "")
                                         }
                                     },
-                                    speedKmh = speedKmh,
+                                    speedKmh = lockSpeed,
                                     alerts = vehicleAlerts,
                                     logsGranted = driveApp.logcatReader.available(),
                                     gpsPermission = driveApp.speedWatcher.hasPermission(),
