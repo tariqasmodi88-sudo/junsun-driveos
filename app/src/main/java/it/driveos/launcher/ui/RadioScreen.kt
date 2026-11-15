@@ -93,8 +93,9 @@ fun RadioScreen(
     val name = stationName ?: current?.name?.takeIf { !it.startsWith("FM ") }
 
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader(tr("Radio"), onBack)
-        Row(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        // Senza intestazione ne' freccia "indietro" (si torna con la barra in basso o col tasto fisico):
+        // lo spazio va alla scheda della stazione e a due preferiti in piu'.
+        Row(Modifier.fillMaxSize().padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 4.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             // --- Sintonizzatore ---
             Column(Modifier.weight(0.52f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Surface(shape = RoundedCornerShape(24.dp), color = colors.surface, modifier = Modifier.fillMaxWidth().weight(1f)) {
@@ -149,10 +150,10 @@ fun RadioScreen(
                 Spacer(Modifier.height(4.dp))
             }
 
-            // --- Preferiti: 6 posti fissi ---
+            // --- Preferiti: 8 posti fissi ---
             Column(Modifier.weight(0.48f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("PREFERITI", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.5.sp, color = colors.primary)
-                for (row in 0 until 3) {
+                for (row in 0 until RadioPresetLogic.MAX_PRESETS / 2) {
                     Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         for (col in 0 until 2) {
                             val i = row * 2 + col

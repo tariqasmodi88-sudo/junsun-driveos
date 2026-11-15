@@ -164,6 +164,8 @@ class LocalPlayer(context: Context, private val onChange: (MediaInfo?) -> Unit) 
 
     fun playPause() { if (!hasItems) return; if (player.isPlaying) player.pause() else player.play() }
     fun pause() { if (hasItems) player.pause() }
+    /** Volume ridotto mentre suona altro (notifica): la musica continua sotto. */
+    fun duck(on: Boolean) { if (hasItems) player.volume = if (on) 0.2f else 1f }
     fun play() { if (hasItems) player.play() }
     fun next() { if (hasItems) { if (player.hasNextMediaItem()) player.seekToNextMediaItem() else player.seekTo(0, 0L) } }
     fun previous() { if (hasItems) { if (player.currentPosition > 3000 || !player.hasPreviousMediaItem()) player.seekTo(0) else player.seekToPreviousMediaItem() } }

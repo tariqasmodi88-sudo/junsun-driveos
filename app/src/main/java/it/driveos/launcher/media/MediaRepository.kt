@@ -287,6 +287,8 @@ class MediaRepository(context: Context) {
     /** Quadro spento: ferma la musica (la radio sta andando in standby). */
     /** Un'altra sorgente (AutoLink/telefono) prende l'audio: il lettore interno si ferma. */
     fun pauseLocalForOther() = handler.post { if (localActive && local.isPlaying) local.pause() }
+    /** Abbassa (true) o riporta al normale (false) il volume della musica locale, senza fermarla. */
+    fun duckLocal(on: Boolean) = handler.post { local.duck(on) }
     fun isLocalPlaying(): Boolean = localActive && local.isPlaying
 
     fun pauseForPower() = handler.post {

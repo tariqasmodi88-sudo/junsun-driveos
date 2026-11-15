@@ -34,7 +34,7 @@ object RadioPresetLogic {
     const val FM_MAX_KHZ = 108_000
     const val FM_STEP_KHZ = 100 // 0,1 MHz
     /** Massimo di stazioni preferite. */
-    const val MAX_PRESETS = 6
+    const val MAX_PRESETS = 8
 
     /** Converte "101.5" o "101,5" in kHz; null se non valido. */
     fun parseFm(text: String): Int? {

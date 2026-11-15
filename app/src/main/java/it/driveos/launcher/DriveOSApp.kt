@@ -32,8 +32,8 @@ class DriveOSApp : Application() {
         /** Sale di uno a ogni accensione del quadro (e vale 1 all'avvio): fa comparire l'immagine di avvio. */
         val wakeCount = kotlinx.coroutines.flow.MutableStateFlow(1)
         @Volatile private var wasOff = false
-        /** true da quando si spegne il quadro a quando si riaccende: l'immagine di avvio resta a schermo. */
-        val poweredOff = kotlinx.coroutines.flow.MutableStateFlow(false)
+        /** Quanto dura al massimo un suono "breve" (notifica) prima di considerarlo musica. */
+        private const val DUCK_MS = 6_000L
         /** Segnali delle porte: restano validi anche a seriale lasciata alla radio (li da' il suo servizio). */
         private val DOOR_KEYS = setOf(
             it.driveos.launcher.vehicle.CanDecoder.DOOR_FL, it.driveos.launcher.vehicle.CanDecoder.DOOR_FR,
@@ -175,6 +175,7 @@ class DriveOSApp : Application() {
             r.addSink { keyMapper.onChanges(it) }
         }
         startSerialDirector()
+        serialScope.launch { it.driveos.launcher.system.ShutdownImage.preload(this@DriveOSApp) }
         // A quadro spento lo schermo si spegne: DriveOS smette di scrivere alla centralina CAN e di
         // chiedere dati alla radio, cosi' radio e auto possono andare in standby normalmente.
         runCatching {
@@ -184,7 +185,9 @@ class DriveOSApp : Application() {
                         android.content.Intent.ACTION_SCREEN_OFF, "com.cusc.action.ACC_OFF", "com.ts.main.uiaccoff",
                         "autochips.intent.action.QB_POWEROFF" -> {
                             // quadro spento: si stacca TUTTO dalla radio Junsun
-                            wasOff = true; poweredOff.value = true
+                            // chiave tolta: immagine di avvio sopra la schermata nera della radio, finche' spegne lo schermo
+                            if (!wasOff) it.driveos.launcher.system.ShutdownImage.show(this@DriveOSApp)
+                            wasOff = true
                             it.driveos.launcher.system.PowerGate.screenOn = false
                             wakeJob?.cancel(); canReader.pause(); voice.stop(); mediaRepository.pauseForPower()
                             // i fari di adesso non valgono alla prossima accensione (tema giusto da subito)
@@ -204,7 +207,8 @@ class DriveOSApp : Application() {
                             // prima accensione dopo uno spegnimento (i segnali arrivano in tre, e uno anche a ogni
                             // ritorno sulla Home): solo quella fa comparire l'immagine di avvio
                             if (wasOff) { wasOff = false; wakeCount.value = wakeCount.value + 1 }
-                            poweredOff.value = false
+                            it.driveos.launcher.system.ShutdownImage.hide(this@DriveOSApp)
+                            serialScope.launch { it.driveos.launcher.system.ShutdownImage.preload(this@DriveOSApp) }
                             wakeJob?.cancel()
                             it.driveos.launcher.system.PowerGate.screenOn = true
                             it.driveos.launcher.system.PowerGate.notBefore = System.currentTimeMillis() + 20_000
@@ -327,18 +331,39 @@ class DriveOSApp : Application() {
      * il lettore interno si mette in pausa. Il lettore DriveOS non usa il "focus audio" (lo perdeva da solo),
      * quindi si guardano i lettori audio attivi del sistema: piu' di uno = qualcun altro sta suonando.
      */
+    private val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var duckPending: Runnable? = null
+    private var otherPlaying = false
+
     private fun watchOtherPlayers() {
         val am = getSystemService(android.media.AudioManager::class.java) ?: return
         runCatching {
             am.registerAudioPlaybackCallback(object : android.media.AudioManager.AudioPlaybackCallback() {
                 override fun onPlaybackConfigChanged(configs: MutableList<android.media.AudioPlaybackConfiguration>) {
-                    if (!mediaRepository.isLocalPlaying()) return
                     val media = configs.count { c ->
                         val u = c.audioAttributes.usage
                         u == android.media.AudioAttributes.USAGE_MEDIA || u == android.media.AudioAttributes.USAGE_GAME ||
                             u == android.media.AudioAttributes.USAGE_UNKNOWN
                     }
-                    if (media >= 2) mediaRepository.pauseLocalForOther()
+                    otherPlaying = media >= 2
+                    if (otherPlaying) {
+                        if (!mediaRepository.isLocalPlaying() || duckPending != null) return
+                        // Un altro suono e' partito (notifica del telefono via Bluetooth, avviso del navigatore…):
+                        // prima si ABBASSA la musica. Se dopo [DUCK_MS] l'altro suona ancora e' musica vera
+                        // (telefono, AutoLink): solo allora si mette in pausa.
+                        mediaRepository.duckLocal(true)
+                        val r = Runnable {
+                            duckPending = null
+                            if (otherPlaying) mediaRepository.pauseLocalForOther()
+                            mediaRepository.duckLocal(false)
+                        }
+                        duckPending = r
+                        mainHandler.postDelayed(r, DUCK_MS)
+                    } else if (duckPending != null) {
+                        // suono breve finito: volume di prima, la musica non si e' mai fermata
+                        mainHandler.removeCallbacks(duckPending!!); duckPending = null
+                        mediaRepository.duckLocal(false)
+                    }
                 }
             }, android.os.Handler(android.os.Looper.getMainLooper()))
         }

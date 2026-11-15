@@ -168,16 +168,13 @@ class MainActivity : ComponentActivity() {
     /**
      * Immagine di avvio: a ogni accensione del quadro compare per 2,5 s sopra tutto, poi sfuma sulla Home.
      * Sparisce subito se serve lo schermo (retromarcia, porta aperta, sensori) o se lo tocchi.
-     * Compare anche allo spegnimento del quadro e resta finche' la radio non spegne lo schermo (solo se
-     * DriveOS e' gia' davanti: non la si porta davanti apposta, perche' tornare sulla Home in quel
-     * momento varrebbe come "risveglio" e riaprirebbe i collegamenti con la radio che si sta spegnendo).
+     * Allo spegnimento la stessa immagine la mostra [it.driveos.launcher.system.ShutdownImage].
      * L'immagine la mette l'utente (DriveOS non ne contiene): `avvio.jpg` o `avvio.png` nella cartella
      * dell'app (Android/data/it.driveos.launcher/files). Senza file non compare nulla.
      */
     @Composable
     private fun StartupImage() {
         val wake by DriveOSApp.wakeCount.collectAsStateWithLifecycle()
-        val off by DriveOSApp.poweredOff.collectAsStateWithLifecycle()
         val signals by driveApp.vehicleRepository.signals.collectAsStateWithLifecycle()
         var image by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
         var show by remember { mutableStateOf(false) }
@@ -186,8 +183,6 @@ class MainActivity : ComponentActivity() {
             signals[CanDecoder.PARK] == "1"
         val busyNow by androidx.compose.runtime.rememberUpdatedState(busy)
         LaunchedEffect(wake) {
-            // riaccensione con l'immagine gia' a schermo dallo spegnimento: resta su, senza un lampo di Home
-            if (image != null && !busyNow) show = true
             val loaded = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                 val dir = getExternalFilesDir(null)
                 listOf("avvio.jpg", "avvio.png").map { java.io.File(dir, it) }.firstOrNull { it.isFile }
@@ -200,17 +195,14 @@ class MainActivity : ComponentActivity() {
             show = false
         }
         LaunchedEffect(busy) { if (busy) show = false }
-        // Sicurezza: se la riaccensione non viene segnalata, l'immagine non deve restare a schermo per sempre.
-        LaunchedEffect(off) { if (off) { kotlinx.coroutines.delay(90_000); DriveOSApp.poweredOff.value = false } }
         androidx.compose.animation.AnimatedVisibility(
-            // retromarcia, porte e sensori vincono sempre, anche a quadro "spento"
-            visible = (show || off) && !busy && image != null,
+            visible = show && !busy && image != null,
             enter = androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(150)),
             exit = androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(450)),
         ) {
             Box(
                 Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color.Black)
-                    .pointerInput(Unit) { detectTapGestures { show = false; DriveOSApp.poweredOff.value = false } },
+                    .pointerInput(Unit) { detectTapGestures { show = false } },
                 contentAlignment = androidx.compose.ui.Alignment.Center,
             ) {
                 image?.let { androidx.compose.foundation.Image(it, contentDescription = null, modifier = Modifier.fillMaxSize(),
@@ -1484,7 +1476,7 @@ class MainActivity : ComponentActivity() {
                                     val khz = bridgeKhz ?: radioState?.khz ?: vehicleSignals[LogcatParser.RADIO_FREQ]?.toIntOrNull()
                                     if (khz != null) {
                                         val p = RadioPreset(khz, stationNames[khz] ?: "FM ${RadioPreset(khz, "").displayFrequency()}", RadioBand.FM)
-                                        if (RadioPresetLogic.isFull(s.radioPresets, p)) message(tr("Hai già 6 stazioni: rimuovine una."))
+                                        if (RadioPresetLogic.isFull(s.radioPresets, p)) message(tr("Hai già 8 stazioni: rimuovine una."))
                                         else scope.launch { driveApp.settingsRepository.setRadioPresets(RadioPresetLogic.add(s.radioPresets, p)) }
                                     }
                                 },
@@ -1695,7 +1687,7 @@ class MainActivity : ComponentActivity() {
                         } else {
                             val label = name.ifBlank { "FM ${RadioPreset(khz, "").displayFrequency()}" }
                             if (RadioPresetLogic.isFull(s.radioPresets, RadioPreset(khz, label, RadioBand.FM))) {
-                                message(tr("Hai già 6 stazioni: rimuovine una."))
+                                message(tr("Hai già 8 stazioni: rimuovine una."))
                                 radioDialog = false
                                 return@RadioPresetDialog
                             }
