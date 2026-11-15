@@ -167,6 +167,8 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
     /** Riprende solo se era stata messa in pausa (non riaccende una seriale spenta nelle impostazioni). */
     fun resumeIfPaused() { if (paused) { paused = false; start() } }
     fun stopQueries() { queryJob?.cancel(); queryJob = null }
+    /** true con la schermata Clima aperta: chiede anche lo stato del clima. */
+    @Volatile var climateWanted = false
     /** true in retromarcia: chiede anche l'angolo del volante. */
     @Volatile var steerWanted = false
 
@@ -195,6 +197,11 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
                                     // all'accensione DriveOS non li sapeva finche' non si toccavano i fari
                                     delay(50); out.write(CanQuery.LIGHTS); out.flush()
                                     delay(50); out.write(CanQuery.DOORS_FLAGS); out.flush()
+                                    // Park Pilot: la centralina lo dice solo quando cambia. Chiedendolo, alla
+                                    // riapertura della seriale si sa subito se i sensori sono accesi.
+                                    delay(50); out.write(CanQuery.PARK); out.flush()
+                                    // clima: solo con la sua schermata aperta (altrimenti arriva quando cambia)
+                                    if (climateWanted) { delay(50); out.write(CanQuery.CLIMATE); out.flush() }
                                 }
                                 queryError = null
                             }

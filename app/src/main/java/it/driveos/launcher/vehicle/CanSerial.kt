@@ -39,6 +39,10 @@ object CanQuery {
     val EPS: ByteArray = frame(raise(0x90, 0x26, 0x00))
     /** Richieste generiche Raise (0x90 [comando, sotto]): stato porte/fari (0x24) e luci (0x7D/01). */
     val DOORS_FLAGS: ByteArray = frame(raise(0x90, 0x24, 0x00))
+    /** Stato del Park Pilot (risposta verificata in auto il 15/11: "25 02 00 00" spento, "02 00" acceso). */
+    val PARK: ByteArray = frame(raise(0x90, 0x25, 0x00))
+    /** Stato del clima (risposta verificata il 15/11: "21 05 d8 02 0b 0b 00"). */
+    val CLIMATE: ByteArray = frame(raise(0x90, 0x21, 0x00))
     val LIGHTS: ByteArray = frame(raise(0x90, 0x7D, 0x01))
 }
 

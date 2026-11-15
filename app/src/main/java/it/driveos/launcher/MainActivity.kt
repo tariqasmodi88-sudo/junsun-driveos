@@ -523,6 +523,7 @@ class MainActivity : ComponentActivity() {
         val serialScreen = isForeground && (screen == Screen.OVERVIEW || screen == Screen.VEHICLE || screen == Screen.REAR_CAM ||
             screen == Screen.KEYS || screen == Screen.CLIMATE)
         LaunchedEffect(serialScreen) { driveApp.uiWantsSerial = serialScreen }
+        LaunchedEffect(screen) { driveApp.canReader.climateWanted = screen == Screen.CLIMATE }
         LaunchedEffect(s.vehicleLogging, s.discoveredActions) {
             // registrazione continua (debug) dismessa: si ferma se era rimasta accesa
             VehicleLogService.stop(context)
