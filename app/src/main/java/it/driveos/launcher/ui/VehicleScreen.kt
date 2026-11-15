@@ -59,6 +59,8 @@ fun VehicleScreen(
     onToggleLogging: (Boolean) -> Unit,
     canSerialOn: Boolean,
     onToggleCanSerial: (Boolean) -> Unit,
+    serialOnDemand: Boolean = false,
+    onToggleSerialOnDemand: (Boolean) -> Unit = {},
     onOpenKeys: () -> Unit,
     onExportLog: () -> Unit,
     onClearLog: () -> Unit,
@@ -138,6 +140,20 @@ fun VehicleScreen(
                             fontSize = 14.sp, color = colors.onSurfaceVariant)
                     }
                     androidx.compose.material3.Switch(checked = frontSensorsOn, onCheckedChange = onToggleFrontSensors)
+                }
+            }
+
+            if (canSerialOn) Surface(shape = RoundedCornerShape(16.dp), color = if (serialOnDemand) colors.primary.copy(alpha = 0.14f) else colors.surface,
+                modifier = Modifier.fillMaxWidth()) {
+                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(tr("Lascia la seriale alla radio"), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
+                        Text(tr("DriveOS legge la seriale solo in retromarcia e sulle schermate del veicolo. In guida normale resta alla radio: tasti e funzioni Junsun tornano normali. Porte e baule si vedono lo stesso."),
+                            fontSize = 14.sp, color = colors.onSurfaceVariant)
+                        if (serialOnDemand && !logsGranted) Text(tr("Serve la lettura del registro (qui sotto): senza, la seriale resta sempre accesa."),
+                            fontSize = 14.sp, color = colors.error)
+                    }
+                    androidx.compose.material3.Switch(checked = serialOnDemand, onCheckedChange = onToggleSerialOnDemand)
                 }
             }
 

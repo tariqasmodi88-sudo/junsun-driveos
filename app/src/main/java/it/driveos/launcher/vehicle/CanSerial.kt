@@ -286,6 +286,13 @@ object CanDecoder {
         return out
     }
 
+    /** Porte dal servizio "auto" della radio: [ant.sx, ant.dx, post.sx, post.dx, baule, cofano], 1 = aperta. */
+    fun doorsFromService(d: List<Int>): Map<String, String> {
+        var mask = 0
+        for (i in 0 until minOf(5, d.size)) if (d[i] != 0) mask = mask or (1 shl i)
+        return LinkedHashMap<String, String>().also { doors(mask, it) }
+    }
+
     private fun doors(mask: Int, out: MutableMap<String, String>) {
         out[DOORS_MASK] = (mask and 0x1F).toString()
         out[DOOR_FL] = bit(mask, 0x01)
@@ -348,6 +355,8 @@ object CanDecoder {
 class CanSignalFilter {
     private val last = HashMap<String, String>()
     private val sensorSeen = HashMap<String, Long>()
+    private val streamAt = HashMap<String, Long>()
+    private val streamCount = HashMap<String, Int>()
     private var muteUntil = 0L
 
     /** Applica i segnali di un messaggio; in [changes] finisce solo cio' che e' cambiato. */
@@ -360,6 +369,16 @@ class CanSignalFilter {
                 }
                 k in SENSOR_KEYS -> {
                     if (now < muteUntil) continue
+                    // Park Pilot non dichiarato acceso: un messaggio isolato non basta. Prova del 15/11: alla
+                    // riapertura della seriale, a sensori SPENTI, la centralina manda un "2 1 1 2" e poi tace
+                    // (archi rossi per 2 s). A sensori accesi i messaggi arrivano ogni ~0,3 s: ne servono
+                    // [STREAM_FRAMES] di fila, cosi' funziona anche se l'accensione (C 0x25) e' andata persa.
+                    if (last[CanDecoder.PARK] != "1" && v != CanDecoder.SENSORS_OFF) {
+                        val prev = streamAt[k]
+                        val n = if (prev != null && now - prev <= STREAM_GAP_MS) (streamCount[k] ?: 0) + 1 else 1
+                        streamAt[k] = now; streamCount[k] = n
+                        if (n < STREAM_FRAMES) continue
+                    }
                     sensorSeen[k] = now
                 }
             }
@@ -387,7 +406,7 @@ class CanSignalFilter {
     fun reset(): Map<String, String> {
         val out = LinkedHashMap<String, String>()
         clearSensors(out)
-        last.clear(); sensorSeen.clear(); muteUntil = 0L
+        last.clear(); sensorSeen.clear(); streamAt.clear(); streamCount.clear(); muteUntil = 0L
         return out
     }
 
@@ -401,6 +420,33 @@ class CanSignalFilter {
     companion object {
         const val EXPIRE_MS = 2_000L
         const val MUTE_MS = 1_500L
+        const val STREAM_FRAMES = 3
+        const val STREAM_GAP_MS = 1_000L
         val SENSOR_KEYS = listOf(CanDecoder.REAR_SENSORS, CanDecoder.FRONT_SENSORS)
+    }
+}
+
+/**
+ * Seriale "a richiesta" (logica pura): decide se DriveOS deve leggere la seriale ADESSO.
+ *
+ * Prova in auto del 15/11: quando DriveOS legge la seriale la radio Junsun perde quasi tutti i messaggi
+ * (porte viste in ritardo o mai, tasti a tratti); a seriale spenta li vede tutti e subito, e il suo
+ * servizio "auto" da' porte e luci senza errori. Sensori, freno a mano e dati motore invece arrivano
+ * solo dalla seriale. Quindi: in guida normale la seriale resta alla radio; DriveOS la prende solo
+ * quando serve (retromarcia, sensori accesi, schermate del veicolo) e la tiene ancora [holdMs] dopo.
+ */
+class SerialPolicy(private val holdMs: Long = 6_000) {
+    private var holdUntil = 0L
+
+    /**
+     * @param reverseWithoutSerial DriveOS vede la retromarcia anche senza seriale (registro di sistema):
+     *        se no, la seriale deve restare sempre accesa, altrimenti la retro non si aprirebbe piu'.
+     */
+    fun wanted(enabled: Boolean, onDemand: Boolean, reverse: Boolean, uiWants: Boolean, parkActive: Boolean,
+               reverseWithoutSerial: Boolean, now: Long): Boolean {
+        if (!enabled) return false
+        if (!onDemand || !reverseWithoutSerial) return true
+        if (reverse || uiWants || parkActive) { holdUntil = now + holdMs; return true }
+        return now < holdUntil
     }
 }

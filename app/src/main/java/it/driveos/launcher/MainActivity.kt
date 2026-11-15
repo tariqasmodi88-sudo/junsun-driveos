@@ -518,9 +518,11 @@ class MainActivity : ComponentActivity() {
         }
 
         // Registrazione continua: avvia/ferma il servizio in base all'impostazione.
-        LaunchedEffect(s.canSerial) {
-            if (s.canSerial) driveApp.canReader.start() else driveApp.canReader.stop()
-        }
+        // La seriale la accende e la spegne la regia in DriveOSApp (impostazioni + modalita' "a richiesta").
+        // Qui le si dice solo se e' aperta una schermata che usa i dati dell'auto.
+        val serialScreen = isForeground && (screen == Screen.OVERVIEW || screen == Screen.VEHICLE || screen == Screen.REAR_CAM ||
+            screen == Screen.KEYS || screen == Screen.CLIMATE)
+        LaunchedEffect(serialScreen) { driveApp.uiWantsSerial = serialScreen }
         LaunchedEffect(s.vehicleLogging, s.discoveredActions) {
             // registrazione continua (debug) dismessa: si ferma se era rimasta accesa
             VehicleLogService.stop(context)
@@ -1352,6 +1354,8 @@ class MainActivity : ComponentActivity() {
                                 loggedChanges = loggedChanges,
                                 onToggleLogging = { on -> scope.launch { driveApp.settingsRepository.setVehicleLogging(on) } },
                                 canSerialOn = s.canSerial,
+                                serialOnDemand = s.serialOnDemand,
+                                onToggleSerialOnDemand = { on -> scope.launch { driveApp.settingsRepository.setSerialOnDemand(on) } },
                                 onToggleCanSerial = { on -> scope.launch { driveApp.settingsRepository.setCanSerial(on) } },
                                 frontSensorsOn = s.frontSensors,
                                 onToggleFrontSensors = { on -> scope.launch { driveApp.settingsRepository.setFrontSensors(on) } },

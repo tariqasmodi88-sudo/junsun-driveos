@@ -29,6 +29,11 @@ class DriveOSApp : Application() {
     companion object {
         /** DriveOS riportata davanti per i sensori: la Home apre la schermata Veicolo. */
         @Volatile var openOverview = false
+        /** Segnali delle porte: restano validi anche a seriale lasciata alla radio (li da' il suo servizio). */
+        private val DOOR_KEYS = setOf(
+            it.driveos.launcher.vehicle.CanDecoder.DOOR_FL, it.driveos.launcher.vehicle.CanDecoder.DOOR_FR,
+            it.driveos.launcher.vehicle.CanDecoder.DOOR_RL, it.driveos.launcher.vehicle.CanDecoder.DOOR_RR,
+            it.driveos.launcher.vehicle.CanDecoder.TRUNK, it.driveos.launcher.vehicle.CanDecoder.DOORS_MASK)
     }
 
     lateinit var settingsRepository: SettingsRepository
@@ -57,6 +62,65 @@ class DriveOSApp : Application() {
     lateinit var canReader: CanSerialReader
         private set
     val driveLock = it.driveos.launcher.system.DriveLock()
+    /** Una schermata che usa i dati dell'auto e' aperta e visibile (impostato da MainActivity). */
+    @Volatile var uiWantsSerial = false
+    /** true = in questo momento la seriale e' lasciata alla radio (modalita' "a richiesta"). */
+    @Volatile var serialReleased = false
+        private set
+    private val serialScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    @Volatile private var serialOnDemand = false
+
+    /**
+     * Regia della seriale: unico punto che la accende e la spegne.
+     *  - impostazione "Seriale auto" spenta: mai letta;
+     *  - "a richiesta" spenta: sempre letta (come prima);
+     *  - "a richiesta" accesa: letta solo quando serve ([it.driveos.launcher.vehicle.SerialPolicy]);
+     *    il resto del tempo resta alla radio e le porte si chiedono al suo servizio una volta al secondo.
+     */
+    private fun startSerialDirector() {
+        serialScope.launch {
+            val policy = it.driveos.launcher.vehicle.SerialPolicy()
+            var settings = settingsRepository.settings.first()
+            launch { settingsRepository.settings.collect { s -> settings = s; serialOnDemand = s.serialOnDemand } }
+            var doorsTrustAt = 0L
+            var tick = 0
+            while (true) {
+                kotlinx.coroutines.delay(400); tick++
+                // quadro spento o radio che si sta riaccendendo: decidono pause() e reconnectAll()
+                if (!it.driveos.launcher.system.PowerGate.ready()) continue
+                val sig = vehicleRepository.signals.value
+                val now = System.currentTimeMillis()
+                val park = sig[it.driveos.launcher.vehicle.CanDecoder.PARK] == "1" ||
+                    listOf(it.driveos.launcher.vehicle.CanDecoder.REAR_SENSORS, it.driveos.launcher.vehicle.CanDecoder.FRONT_SENSORS)
+                        .any { k -> sig[k]?.let { v -> v != it.driveos.launcher.vehicle.CanDecoder.SENSORS_OFF } == true }
+                val want = policy.wanted(
+                    enabled = settings.canSerial, onDemand = settings.serialOnDemand,
+                    reverse = it.driveos.launcher.vehicle.KnownVehicleSignals.reverseOn(sig) == true,
+                    uiWants = uiWantsSerial, parkActive = park,
+                    reverseWithoutSerial = it.driveos.launcher.system.SelfSetup.logsGranted(this@DriveOSApp), now = now)
+                if (want) {
+                    if (serialReleased) { serialReleased = false; android.util.Log.i("DriveOS", "seriale: la prende DriveOS") }
+                    if (!canReader.running) canReader.start()
+                    continue
+                }
+                if (canReader.running) {
+                    canReader.stop()
+                    if (settings.canSerial) {
+                        android.util.Log.i("DriveOS", "seriale: lasciata alla radio")
+                        // valori che senza seriale non si aggiornano piu': meglio "non noto" che vecchio
+                        vehicleRepository.forget(sig.keys.filter { k -> k.startsWith("can:") && k !in DOOR_KEYS })
+                        canReader.askForRadio()
+                        doorsTrustAt = now + 2_500
+                    }
+                }
+                serialReleased = settings.canSerial && settings.serialOnDemand
+                // porte dal servizio della radio (una volta al secondo), non prima che si sia riallineata
+                if (serialReleased && now >= doorsTrustAt && tick % 2 == 0) {
+                    tsBridge.carDoors()?.let { d -> vehicleRepository.ingest(it.driveos.launcher.vehicle.CanDecoder.doorsFromService(d)) }
+                }
+            }
+        }
+    }
     private val wakeScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var wakeJob: kotlinx.coroutines.Job? = null
@@ -105,6 +169,7 @@ class DriveOSApp : Application() {
             r.addSink { vehicleRepository.ingest(it) }
             r.addSink { keyMapper.onChanges(it) }
         }
+        startSerialDirector()
         // A quadro spento lo schermo si spegne: DriveOS smette di scrivere alla centralina CAN e di
         // chiedere dati alla radio, cosi' radio e auto possono andare in standby normalmente.
         runCatching {
@@ -312,7 +377,8 @@ class DriveOSApp : Application() {
         tsBridge.connect()
         logcatReader.start()
         speedWatcher.start()
-        canReader.resumeIfPaused()
+        // "a richiesta": al risveglio la seriale non si riapre da sola, la riapre la regia se serve
+        if (serialOnDemand) canReader.unpause() else canReader.resumeIfPaused()
         mediaRepository.resumeAfterPower()
         // Al risveglio la radio Junsun riaccende da sola il sintonizzatore: se intanto e' ripartita la
         // musica di DriveOS si sentirebbero tutte e due. Si chiude la radio (anche se riparte in ritardo).

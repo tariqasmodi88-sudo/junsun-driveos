@@ -135,13 +135,16 @@ class CanSerialTest {
         assertEquals("3 1 1 1", f.feed(1400, can(0x25, 0x02, 0x00), can(0x22, 3, 1, 1, 1))[CanDecoder.REAR_SENSORS])
         // anche senza il messaggio di accensione (preso dalla radio), passato il silenzio i sensori valgono
         val g = CanSignalFilter()
-        g.feed(0, can(0x22, 2, 1, 1, 1)); g.feed(100, can(0x25, 0x00, 0x00))
-        assertEquals("4 1 1 1", g.feed(100 + CanSignalFilter.MUTE_MS, can(0x22, 4, 1, 1, 1))[CanDecoder.REAR_SENSORS])
+        g.feed(0, can(0x25, 0x02, 0x00), can(0x22, 2, 1, 1, 1)); g.feed(100, can(0x25, 0x00, 0x00))
+        val t = 100 + CanSignalFilter.MUTE_MS
+        assertNull(g.feed(t, can(0x22, 4, 1, 1, 1))[CanDecoder.REAR_SENSORS])
+        assertNull(g.feed(t + 300, can(0x22, 4, 1, 1, 1))[CanDecoder.REAR_SENSORS])
+        assertEquals("4 1 1 1", g.feed(t + 600, can(0x22, 4, 1, 1, 1))[CanDecoder.REAR_SENSORS])
     }
 
     @Test fun sensorsExpireAndOnlyChangesPass() {
         val f = CanSignalFilter()
-        assertEquals("2 1 1 1", f.feed(0, can(0x22, 2, 1, 1, 1))[CanDecoder.REAR_SENSORS])
+        assertEquals("2 1 1 1", f.feed(0, can(0x25, 0x02, 0x00), can(0x22, 2, 1, 1, 1))[CanDecoder.REAR_SENSORS])
         assertNull(f.feed(300, can(0x22, 2, 1, 1, 1))[CanDecoder.REAR_SENSORS]) // uguale: non ripubblicato
         assertEquals(emptyMap<String, String>(), f.expire(300 + CanSignalFilter.EXPIRE_MS))
         assertEquals("0 0 0 0", f.expire(301 + CanSignalFilter.EXPIRE_MS)[CanDecoder.REAR_SENSORS])
@@ -152,6 +155,32 @@ class CanSerialTest {
         f.feed(6000, can(0x22, 2, 1, 1, 1), door)
         assertEquals(mapOf(CanDecoder.REAR_SENSORS to "0 0 0 0"), f.reset())
         assertEquals("1", f.feed(7000, door)[CanDecoder.DOOR_FL])
+        // seriale appena riaperta a sensori spenti (prova 15/11): un messaggio isolato non accende gli archi
+        assertNull(f.feed(7100, can(0x22, 2, 1, 1, 2), can(0x23, 1, 1, 1, 1))[CanDecoder.REAR_SENSORS])
+        assertNull(f.feed(9000, can(0x22, 2, 1, 1, 2))[CanDecoder.REAR_SENSORS])
+    }
+
+    @Test fun serialOnDemandPolicy() {
+        val p = it.driveos.launcher.vehicle.SerialPolicy(holdMs = 6_000)
+        fun w(reverse: Boolean = false, ui: Boolean = false, park: Boolean = false, now: Long, onDemand: Boolean = true, enabled: Boolean = true, logs: Boolean = true) =
+            p.wanted(enabled, onDemand, reverse, ui, park, logs, now)
+        assertEquals(false, w(now = 0))                       // guida normale: resta alla radio
+        assertEquals(true, w(reverse = true, now = 1_000))    // retromarcia: la prende DriveOS
+        assertEquals(true, w(park = true, now = 2_000))       // tolta la retro i sensori sono ancora accesi
+        assertEquals(true, w(now = 7_999))                    // ancora 6 s dopo l'ultima necessita'
+        assertEquals(false, w(now = 8_001))
+        assertEquals(true, w(ui = true, now = 9_000))         // schermata Veicolo aperta
+        assertEquals(true, w(now = 20_000, onDemand = false)) // modalita' spenta: sempre letta, come prima
+        assertEquals(true, w(now = 30_000, logs = false))     // senza registro la retro si vede solo dalla seriale
+        assertEquals(false, w(reverse = true, now = 40_000, enabled = false)) // seriale spenta dall'utente
+    }
+
+    @Test fun doorsFromRadioService() {
+        // prova in auto 15/11: [ant.sx, ant.dx, post.sx, post.dx, baule, cofano]
+        assertEquals(listOf("post. sx"), CanDecoder.openDoors(CanDecoder.doorsFromService(listOf(0, 0, 1, 0, 0, 0))))
+        assertEquals(listOf("ant. sx", "baule"), CanDecoder.openDoors(CanDecoder.doorsFromService(listOf(1, 0, 0, 0, 1, 0))))
+        assertEquals(emptyList<String>(), CanDecoder.openDoors(CanDecoder.doorsFromService(listOf(0, 0, 0, 0, 0, 1))))
+        assertEquals("0", CanDecoder.doorsFromService(listOf(0, 0, 0, 0, 0, 0))[CanDecoder.DOOR_FL])
     }
 
     @Test fun unknownFramesAreLoggedRaw() {

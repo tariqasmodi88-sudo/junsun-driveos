@@ -155,6 +155,14 @@ class TsBridge(context: Context) {
         } finally { data.recycle(); reply.recycle() }
     }
 
+    /** Porte e baule dal servizio auto (bloccante). null se il servizio non e' collegato o non risponde. */
+    fun carDoors(): List<Int>? {
+        if (!it.driveos.launcher.system.PowerGate.ready()) return null
+        if (car == null) { carConnect(); return null }
+        @Suppress("UNCHECKED_CAST")
+        return runCatching { carCall(24, true) as? List<Int> }.getOrNull()
+    }
+
     /** Legge tutto una volta (bloccante: da un thread di sfondo). Numeri di chiamata ricavati dall'APK MainUI. */
     fun carProbe(): CarProbe {
         if (!it.driveos.launcher.system.PowerGate.ready()) return CarProbe(null, null, null, null, null, null, null, null, null, "radio non pronta")

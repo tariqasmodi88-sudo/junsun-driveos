@@ -60,6 +60,8 @@ data class DriveSettings(
     val vehicleLogging: Boolean = false,
     /** Lettura della seriale auto (porte, baule, freno a mano…). */
     val canSerial: Boolean = true,
+    /** Seriale "a richiesta": letta solo in retromarcia e sulle schermate del veicolo; altrimenti resta alla radio. */
+    val serialOnDemand: Boolean = false,
     /** Sensori di parcheggio anteriori montati sull'auto (di default no: non si disegnano). */
     val frontSensors: Boolean = false,
     val touchLimit: Boolean = true,
@@ -109,6 +111,7 @@ class SettingsRepository(context: Context) {
         val OFFLINE_MUSIC = stringPreferencesKey("offline_music_app")
         val VEH_LOG = stringPreferencesKey("vehicle_logging")
         val CAN_SERIAL = stringPreferencesKey("can_serial")
+        val SERIAL_ON_DEMAND = stringPreferencesKey("serial_on_demand")
         val FRONT_SENSORS = stringPreferencesKey("front_sensors")
         val TOUCH_LIMIT = stringPreferencesKey("touch_limit")
         val VOICE_LANG = stringPreferencesKey("voice_lang")
@@ -154,6 +157,7 @@ class SettingsRepository(context: Context) {
                 offlineMusicApp = AppKey.decode(p[Keys.OFFLINE_MUSIC]),
                 vehicleLogging = p[Keys.VEH_LOG] != "0",
                 canSerial = p[Keys.CAN_SERIAL] != "0",
+                serialOnDemand = p[Keys.SERIAL_ON_DEMAND] == "1",
                 frontSensors = p[Keys.FRONT_SENSORS] == "1",
                 touchLimit = p[Keys.TOUCH_LIMIT] != "0",
                 voiceLang = p[Keys.VOICE_LANG] ?: "it",
@@ -208,6 +212,8 @@ class SettingsRepository(context: Context) {
     suspend fun setVoiceLang(code: String) { store.edit { it[Keys.VOICE_LANG] = code } }
     suspend fun setTouchLimit(on: Boolean) { store.edit { it[Keys.TOUCH_LIMIT] = if (on) "1" else "0" } }
     suspend fun setFrontSensors(on: Boolean) { store.edit { it[Keys.FRONT_SENSORS] = if (on) "1" else "0" } }
+
+    suspend fun setSerialOnDemand(on: Boolean) { store.edit { it[Keys.SERIAL_ON_DEMAND] = if (on) "1" else "0" } }
 
     suspend fun setCanSerial(on: Boolean) {
         store.edit { it[Keys.CAN_SERIAL] = if (on) "1" else "0" }

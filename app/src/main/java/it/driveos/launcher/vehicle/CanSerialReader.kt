@@ -142,6 +142,28 @@ class CanSerialReader(private val path: String = "/dev/ttyS1") {
         runCatching { stream?.close() }
     }
 
+    /** Toglie la pausa senza riaprire la porta (seriale "a richiesta": la riapre DriveOSApp quando serve). */
+    fun unpause() { paused = false }
+
+    /**
+     * DriveOS lascia la seriale alla radio: mentre leggeva DriveOS la radio ha perso dei messaggi e
+     * potrebbe credere ancora aperta una porta gia' chiusa. Si SCRIVONO (senza leggere) le richieste di
+     * porte e stato: la centralina risponde e la risposta arriva alla radio, che cosi' si riallinea.
+     */
+    fun askForRadio() {
+        scope.launch {
+            runCatching {
+                delay(300)
+                if (paused || running || !PowerGate.ready()) return@launch
+                java.io.FileOutputStream(path).use { out ->
+                    out.write(CanQuery.DOORS_FLAGS); out.flush(); delay(150)
+                    out.write(CanQuery.STATUS); out.flush(); delay(500)
+                    out.write(CanQuery.DOORS_FLAGS); out.flush()
+                }
+            }
+        }
+    }
+
     /** Riprende solo se era stata messa in pausa (non riaccende una seriale spenta nelle impostazioni). */
     fun resumeIfPaused() { if (paused) { paused = false; start() } }
     fun stopQueries() { queryJob?.cancel(); queryJob = null }
