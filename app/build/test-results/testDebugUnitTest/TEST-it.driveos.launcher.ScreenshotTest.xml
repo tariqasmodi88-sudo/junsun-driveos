@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="it.driveos.launcher.ScreenshotTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-15T17:23:17" hostname="runnervmccnms" time="7.613">
+  <properties/>
+  <testcase name="overviewDayDoors" classname="it.driveos.launcher.ScreenshotTest" time="6.798"/>
+  <testcase name="keys" classname="it.driveos.launcher.ScreenshotTest" time="0.293"/>
+  <testcase name="debug" classname="it.driveos.launcher.ScreenshotTest" time="0.183"/>
+  <testcase name="overviewNightReverse" classname="it.driveos.launcher.ScreenshotTest" time="0.169"/>
+  <testcase name="overviewNightDriving" classname="it.driveos.launcher.ScreenshotTest" time="0.17"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
